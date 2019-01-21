@@ -3,6 +3,7 @@
 // TODO(michiel): @Remove <stdlib> calloc/realloc/malloc/free stuff
 #include <stdlib.h>
 
+#include <stdarg.h>    // va_start, va_end
 #include <stddef.h>    // size_t, ssize_t
 #include <stdint.h>    // uint*_t, int*_t
 #include <float.h>     // FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX
@@ -96,13 +97,17 @@ typedef size_t   umm;
 #define F32_SIGN_MASK           0x80000000
 #define F32_EXP_MASK            0x7F800000
 #define F32_FRAC_MASK           0x007FFFFF
-#define F32_MIN                -FLT_MAX
-#define F32_MAX                 FLT_MAX
+#define F32_MAX                 FLT_MAX   // NOTE(michiel): Sign bit 0, Exponent (8bit) 254,     Mantissa all 1's
+#define F32_MIN                -FLT_MAX   // NOTE(michiel): Sign bit 0, Exponent (8bit) 254,     Mantissa all 1's
+#define F32_INF                 3.403e38 // NOTE(michiel): Sign bit 0, Exponent (8bit) all 1's, Mantissa all 0's
+#define F32_MINF               -3.403e38 // NOTE(michiel): Sign bit 0, Exponent (8bit) all 1's, Mantissa all 0's
+
 #define F64_SIGN_MASK           0x8000000000000000
 #define F64_EXP_MASK            0x7FF0000000000000
 #define F64_FRAC_MASK           0x000FFFFFFFFFFFFF
 #define F64_MIN                -DBL_MAX
 #define F64_MAX                 DBL_MAX
+// TODO(michiel): Inf and -inf
 
 #define LONG_PI   3.1415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091456485669234603486104543266482133936072602491412737245870066063155881748
 #define LONG_E    2.7182818284590452353602874713526624977572470936999595749669676277240766303535475945713821785251664274274663919320030599218174135966290435729003342952605956307381323286279434907632338298807531952510190115738341879307021540891499348841675092447614606680822648001684774118537423454424371075390777449920695517027618386062613314
@@ -112,6 +117,10 @@ typedef size_t   umm;
 #define F32_TAU                 ((f32)F64_TAU)
 #define F64_E                   ((f64)LONG_E)
 #define F32_E                   ((f32)F64_E)
+
+#define enum8(name)             u8
+#define enum16(name)            u16
+#define enum32(name)            u32
 
 #define offset_of(type, member) (umm)&(((type *)0)->member)
 
@@ -136,6 +145,11 @@ typedef size_t   umm;
 #define minimum(a, b)           ((a) < (b) ? (a) : (b))
 #define maximum(a, b)           ((a) > (b) ? (a) : (b))
 #define clamp(min, x, max)      (maximum(min, minimum(max, x)))
+
+// TODO(michiel): Type checkable versions?
+#define absolute(a)             (((a) < 0) ? -(a) : (a))
+#define square(a)               ((a) * (a))
+#define lerp(a, t, b)           ((a) + (t) * ((b) - (a)))
 
 #define kilobytes(kB)           ((kB) * 1024LL)
 #define megabytes(MB)           (kilobytes(MB) * 1024LL)
@@ -166,21 +180,38 @@ copy(umm size, const void *src, void *dst)
     }
 }
 
+internal void
+copySingle(umm size, u32 value, void *dst)
+{
+    u8 value8 = value & 0xFF;
+    u32 value32 = (value8 << 24) | (value << 16) | (value << 8) | value;
+    u32 *dst32 = (u32 *)dst;
+    umm size4 = size >> 2; // size/4
+    umm rem = size - (size4 << 2);
+    while(size4--) {
+        *dst32++ = value32;
+    }
+    u8 *d = (u8 *)dst32;
+    while (rem--) {
+        *d++ = value8;
+    }
+}
+
+internal inline f32 
+clamp01(f32 value)
+{
+    if (value < 0.0f) { value = 0.0f; }
+    if (value > 1.0f) { value = 1.0f; }
+    return value;
+}
+
 // NOTE(michiel): Generic buffer (memory data and a size)
  typedef struct Buffer
 {
-    u32 size;
+    umm size;
     u8 *data;
 } Buffer;
 typedef Buffer String;
-
-typedef struct FileStream
-{
-    b32 verbose;
-    u32 indent;
-    // TODO(michiel): Own struct for this (PlatformFile)
-    FILE *file;
-} FileStream;
 
 // NOTE(michiel): Stretchy buffer header (prepended to keep track of num items etc)
 #define BUF_MAGIC 0xB0FFE20F20F78D1E
@@ -192,7 +223,11 @@ typedef struct BufHdr
     u8 data[1];
 } BufHdr;
 
+//
 // NOTE(michiel): Memory allocation pool/arena, auto block growth
+//
+
+// NOTE(michiel): This block represents a single allocation, this data won't change after creation
 typedef struct ArenaBlock
 {
     struct ArenaBlock *next;
@@ -201,12 +236,23 @@ typedef struct ArenaBlock
 } ArenaBlock;
 
 // TODO(michiel): Random freeing of allocated data
+// NOTE(michiel): This is the arena, which has a current and end pointer of the currently used
+// ArenaBlock.
 typedef struct Arena
 {
     u8 *at;
     u8 *end;
      ArenaBlock sentinel;
 } Arena;
+
+// NOTE(michiel): Temporary memory, will deallocate every allocation when destroy_temporary() is called
+typedef struct TempMemory
+{
+    Arena *arena;
+    ArenaBlock *block;
+    u8 *origAt;
+    u8 *origEnd;
+} TempMemory;
 
 // NOTE(michiel): Hashmap/dict implementation to map some key to a value (both must be non-zero)
 typedef struct Map
@@ -224,6 +270,15 @@ typedef struct Interns
     Map map;
 } Interns;
 
+// NOTE(michiel): Image buffer (32bit pixels assumed)
+typedef struct Image
+{
+    u32 width;
+    u32 height;
+    u32 *pixels;
+} Image;
+
+
 
 //
 // NOTE(michiel): Allocation
@@ -234,7 +289,7 @@ typedef enum AllocateFlags
     Alloc_NoClear = 0x01,
 } AllocateFlags;
 
-#define allocate_array(count, type, ...) (type *)allocate_size(sizeof(type)*count, ## __VA_ARGS__)
+#define allocate_array(type, count, ...) (type *)allocate_size(sizeof(type)*count, ## __VA_ARGS__)
 #define allocate_struct(type, ...)       (type *)allocate_size(sizeof(type), ## __VA_ARGS__)
 internal inline void *allocate_size(u32 size, u32 flags)
 {
@@ -255,7 +310,7 @@ internal inline Buffer allocate_buffer(u32 size, u32 flags)
 {
     Buffer result = {0};
     result.size = size;
-    result.data = allocate_array(size, u8, flags);
+    result.data = allocate_array(u8, size, flags);
     if (result.data == NULL)
     {
         result.size = 0;
@@ -300,7 +355,7 @@ arena_grow(Arena *arena, umm newSize)
     arena->sentinel.next = newBlock;
 }
 
-#define arena_allocate_array(a, c, t) (t *)arena_allocate((a), (c) * sizeof(t))
+#define arena_allocate_array(a, t, c) (t *)arena_allocate((a), (c) * sizeof(t))
 #define arena_allocate_struct(a, t)   (t *)arena_allocate((a), sizeof(t))
 internal inline void *
 arena_allocate(Arena *arena, umm newSize)
@@ -332,6 +387,35 @@ arena_free(Arena *arena)
 }
 }
 
+internal inline TempMemory
+temporary_memory(Arena *arena)
+{
+    TempMemory result = {0};
+    result.arena = arena;
+    result.block = arena->sentinel.next;
+    result.origAt = arena->at;
+    result.origEnd = arena->end;
+    return result;
+}
+
+internal inline void
+destroy_temporary(TempMemory temp)
+{
+    Arena *arena = temp.arena;
+    i_expect(arena->sentinel.size == 0);
+    i_expect(arena->sentinel.mem == 0);
+    while ((arena->sentinel.next != temp.block) &&
+           (arena->sentinel.next != &arena->sentinel)) {
+        ArenaBlock *block = arena->sentinel.next;
+        arena->sentinel.next = block->next;
+        deallocate(block->mem);
+        deallocate(block);
+    }
+    i_expect(arena->sentinel.next == temp.block);
+    arena->at = temp.origAt;
+    arena->end = temp.origEnd;
+}
+
 //
 // NOTE(michiel): Stretchy buffer, see Sean Barrett (stb libs) for credits.
 //   Can be used as simple growing array, for fast prototyping.
@@ -350,6 +434,7 @@ arena_free(Arena *arena)
 #define buf_free(x)      ((x) ? (free(buf__hdr(x)), (x) = NULL) : 0)
 #define buf_fit(x, n)    ((n) <= buf_cap(x) ? 0 : (buf_grow((x), (n)), 0))
 #define buf_push(x, v)   (buf_fit((x), 1 + buf_len(x)), (x)[buf__hdr(x)->len++] = (v))
+#define buf_pop(x)       (buf_len(x) ? (x)[--buf__hdr(x)->len] : *x) // NOTE(michiel): This can fail!!!!
 #define buf_clear(x)     ((x) ? buf__hdr(x)->len = 0 : 0)
 #define buf_printf(x, fmt, ...) (buf__printf((void **)&(x), sizeof(*(x)), (fmt), ## __VA_ARGS__))
 
@@ -492,8 +577,8 @@ map_grow(Map *map, umm newCap)
 {
     newCap = maximum(newCap, 16);
     Map newMap = {0};
-    newMap.keys = allocate_array(newCap, u64, 0);
-    newMap.values = allocate_array(newCap, u64, Alloc_NoClear);
+    newMap.keys = allocate_array(u64, newCap, 0);
+    newMap.values = allocate_array(u64, newCap, Alloc_NoClear);
     newMap.cap = safe_truncate_to_u32(newCap);
     // NOTE(michiel): Reissue the insertions into our bigger map
     for (u32 mapIndex = 0; mapIndex < map->cap; ++mapIndex) {
@@ -565,6 +650,14 @@ is_digit(char n)
 }
 
 internal inline b32
+is_hex_digit(char n)
+{
+    return (is_digit(n) ||
+            (('a' <= n) && (n <= 'f')) ||
+            (('A' <= n) && (n <= 'F')));
+}
+
+internal inline b32
 is_alpha(char a)
 {
     return ((('a' <= a) && (a <= 'z')) ||
@@ -609,6 +702,10 @@ string_length(const char *cString)
     }
     return safe_truncate_to_u32(length);
 }
+
+// NOTE(michiel): Use this to clean up string formatting arguments (for usage with "%.*s")
+// TODO(michiel): Have our own printf with %S to support strings
+#define STR_FMT(s)  safe_truncate_to_u32(s.size), s.data
 
 internal inline String
 string(umm size, const void *data)
@@ -821,6 +918,63 @@ str_intern_c(Interns *interns, const char *str)
 
 #endif
 
+internal s64
+string_to_number(String s)
+{
+    s64 result = 0;
+    s64 base = 10;
+    if ((s.size > 2) &&
+        (s.data[0] == '0'))
+    {
+        if ((s.data[1] == 'b') ||
+            (s.data[1] == 'B'))
+        {
+            base = 2;
+            --s.size;
+            ++s.data;
+        }
+        else if ((s.data[1] == 'x') ||
+                 (s.data[1] == 'X'))
+        {
+            base = 16;
+            --s.size;
+            ++s.data;
+        }
+        else
+        {
+            base = 8;
+        }
+        --s.size;
+        ++s.data;
+    }
+    
+    for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
+    {
+        result *= base;
+        s64 adding = 0;
+        if (('0' <= s.data[sIdx]) &&
+            (s.data[sIdx] <= '9'))
+        {
+            adding = s.data[sIdx] - '0';
+        }
+        else if (('a' <= s.data[sIdx]) && (s.data[sIdx] <= 'f'))
+        {
+            i_expect(base == 16);
+            adding = (s.data[sIdx] - 'a') + 10;
+        }
+        else 
+        {
+            i_expect(('A' <= s.data[sIdx]) && (s.data[sIdx] <= 'F'));
+            i_expect(base == 16);
+            adding = (s.data[sIdx] - 'A') + 10;
+        }
+        i_expect(adding >= 0);
+        i_expect(adding < base);
+        result += adding;
+    }
+    return result;
+}
+
 #ifdef __cplusplus
-#include "common_cpp.h" // Overloaded functions and such things c won't handle
+#include "./common_cpp.h" // Overloaded functions and such things c won't handle
 #endif
