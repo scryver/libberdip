@@ -75,6 +75,9 @@ internal f32
 get_horizontal_advance_for_pair(BitmapFont *font, u32 prevPoint, u32 codePoint)
 {
     i_expect(prevPoint < font->info.onePastHighestCodePoint);
+    if (codePoint >= font->info.onePastHighestCodePoint) {
+        fprintf(stderr, "Codepoint too high: 0x%X\n", codePoint);
+    }
     i_expect(codePoint < font->info.onePastHighestCodePoint);
     u32 prevGlyph = get_glyph_from_code_point(font, prevPoint);
     u32 glyph = get_glyph_from_code_point(font, codePoint);
