@@ -1364,6 +1364,7 @@ clamp01(v4 a)
 
 //
 // NOTE(michiel): Rectangle2u
+//
 
 internal inline Rectangle2u
 rect_from_dim(u32 x, u32 y, u32 w, u32 h)
@@ -1380,6 +1381,28 @@ internal inline v2u
 get_dim(Rectangle2u rect)
 {
     v2u result = rect.max - rect.min;
+    return result;
+}
+
+//
+// NOTE(michiel): Rectangle2s
+//
+
+internal inline Rectangle2s
+rect_from_dim(s32 x, s32 y, s32 w, s32 h)
+{
+    Rectangle2s result = {0};
+    result.min.x = x;
+    result.min.y = y;
+    result.max.x = x + w;
+    result.max.y = y + h;
+    return result;
+}
+
+internal inline v2s
+get_dim(Rectangle2s rect)
+{
+    v2s result = rect.max - rect.min;
     return result;
 }
 

@@ -56,6 +56,59 @@ unpack_font(u8 *fontData, BitmapFont *result)
 }
 
 //
+// NOTE(michiel): UTF-8 support
+//
+#define adv(s, c) *c = (*c << 6) | ((*s++) & ~0xC0)
+internal inline u32
+get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
+{
+    // NOTE(michiel): Returns amounts of bytes to skip, 0 on malformed encoding.
+    u8 *source = startOfUtf8;
+    u32 bytes = 0;
+     *codePoint = (u32)(*source);
+    if ((*codePoint & 0xF8) == 0xF0) {
+        // NOTE(michiel): 4-bytes
+        *codePoint = (*codePoint & ~0xF8);
+        ++source;
+        if (*source && ((*source & 0xC0) == 0x80)) {
+            adv(source, codePoint);
+            if (*source && ((*source & 0xC0) == 0x80)) {
+                adv(source, codePoint);
+                if (*source && ((*source & 0xC0) == 0x80)) {
+                    adv(source, codePoint);
+                    bytes = 4;
+                }
+            }
+        }
+    } else if ((*codePoint & 0xF0) == 0xE0) {
+// NOTE(michiel): 3-bytes
+        *codePoint = (*codePoint & ~0xF0);
+        ++source;
+        if (*source && ((*source & 0xC0) == 0x80)) {
+            adv(source, codePoint);
+            if (*source && ((*source & 0xC0) == 0x80)) {
+                adv(source, codePoint);
+                bytes = 3;
+            }
+        }
+    } else if ((*codePoint & 0xE0) == 0xC0) {
+        // NOTE(michiel): 2-bytes
+        *codePoint = (*codePoint & ~0xE0);
+        ++source;
+        if (*source && ((*source & 0xC0) == 0x80)) {
+            adv(source, codePoint);
+            bytes = 2;
+        }
+    } else if ((*codePoint & 0x80) == 0) {
+        // NOTE(michiel): Single byte (ansii eqv)
+        bytes = 1;
+    }
+    
+    return bytes;
+}
+#undef adv
+
+//
 // NOTE(michiel): Font drawing
 //
 
@@ -75,9 +128,6 @@ internal f32
 get_horizontal_advance_for_pair(BitmapFont *font, u32 prevPoint, u32 codePoint)
 {
     i_expect(prevPoint < font->info.onePastHighestCodePoint);
-    if (codePoint >= font->info.onePastHighestCodePoint) {
-        fprintf(stderr, "Codepoint too high: 0x%X\n", codePoint);
-    }
     i_expect(codePoint < font->info.onePastHighestCodePoint);
     u32 prevGlyph = get_glyph_from_code_point(font, prevPoint);
     u32 glyph = get_glyph_from_code_point(font, codePoint);

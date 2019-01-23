@@ -1,6 +1,7 @@
 #include "./common.h"
 #include "./maths.h"
 #include "./vectors.h"
+#include "./keys.h"
 #include "./fonts.h"
 
 typedef enum FileOpenType
@@ -34,10 +35,39 @@ typedef enum MouseButtons
 } MouseButtons;
 typedef struct Mouse
 {
-    v2u pixelPosition;
+    v2s pixelPosition;
     v2  relativePosition; // NOTE(michiel): 0, 0 is is topleft (or should it be 0, 1)
+    s32 scroll; // NOTE(michiel): + for scroll up, - for down
     u32 mouseDowns;
 } Mouse;
+
+typedef struct Key
+{
+    b8 isDown;
+    b8 isPressed;
+    b8 isReleased;
+    u8 edgeCount;
+} Key;
+typedef enum KeyModifiers
+{
+    KeyMod_LeftCtrl = 0x01,
+    KeyMod_RightCtrl = 0x02,
+    KeyMod_Ctrl = 0x03,
+    KeyMod_LeftShift = 0x04,
+    KeyMod_RightShift = 0x08,
+    KeyMod_Shift = 0x0C,
+    KeyMod_LeftAlt = 0x10,
+    KeyMod_RightAlt = 0x20,
+    KeyMod_Alt = 0x30,
+} KeyModifiers;
+typedef struct Keyboard
+{
+    Interns interns; // Storage for all the small strings
+    
+     Key keys[256];
+    u32 modifiers;
+    String lastInput;
+} Keyboard;
 
 // TODO(michiel): Use String
 #define READ_ENTIRE_FILE(name) ApiFile name(char *filename)
@@ -76,4 +106,5 @@ struct API
     b32 closeProgram;
     
     Mouse mouse;
+    Keyboard keyboard;
 };
