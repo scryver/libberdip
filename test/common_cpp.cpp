@@ -52,6 +52,25 @@ str_intern_test(void)
 
 int main(int argc, char **argv)
 {
+    fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("test.bla"))));
+    fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("testbla"))));
+    fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("tes.t.la"))));
+    fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string(".testbla"))));
+    fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("testbla."))));
+    char testStrange[256] = "../../test.abcdef";
+    String strange = string(testStrange);
+    fprintf(stdout, "Exten : %.*s (%lu)\n", STR_FMT(get_extension(strange)),
+            get_extension(strange).size);
+    
+    String testStr = string("testing something 1230(%@$!*(!#^% and more");
+    fprintf(stdout, "Base  : %.*s\n", STR_FMT(testStr));
+    fprintf(stdout, "Normal: %.*s\n", STR_FMT(normalize(testStr)));
+    fprintf(stdout, "Lower : %.*s\n", STR_FMT(to_lower(testStr)));
+    fprintf(stdout, "Upper : %.*s\n", STR_FMT(to_upper(testStr)));
+    fprintf(stdout, "Camel : %.*s\n", STR_FMT(to_camel(testStr)));
+    fprintf(stdout, "Snake : %.*s\n", STR_FMT(to_snake(testStr)));
+fprintf(stdout, "Title : %.*s\n", STR_FMT(titleize(testStr)));
+fprintf(stdout, "Caps  : %.*s\n", STR_FMT(capitalize(testStr)));
     buf_test();
     map_test(100);
     str_intern_test();

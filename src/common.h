@@ -658,10 +658,21 @@ is_hex_digit(char n)
 }
 
 internal inline b32
+is_lower_case(char c)
+{
+    return ((c >= 'a') && (c <= 'z'));
+}
+
+internal inline b32
+is_upper_case(char c)
+{
+    return ((c >= 'A') && (c <= 'Z'));
+}
+
+internal inline b32
 is_alpha(char a)
 {
-    return ((('a' <= a) && (a <= 'z')) ||
-            (('A' <= a) && (a <= 'Z')));
+    return is_lower_case(a) || is_upper_case(a);
 }
 
 internal inline b32
@@ -684,13 +695,173 @@ is_printable(char a)
 }
 
 internal inline char
-to_lower(char x)
+to_lower_case(char x)
 {
-    if (('A' <= x) && (x <= 'Z')) {
-        return x + ('a' - 'A');
+    if (is_upper_case(x)) {
+        return x | 0x20;
     } else {
         return x;
     }
+}
+
+internal inline char
+to_upper_case(char x)
+{
+    if (is_lower_case(x)) {
+        return x & ~0x20;
+    } else {
+        return x;
+    }
+}
+
+internal inline b32
+is_snake_case(String name)
+{
+    b32 result = true;
+    for (u32 i = 0; i < name.size; ++i) {
+        if (!is_lower_case(name.data[i]) &&
+            (name.data[i] != '_')) 
+        {
+            result = false;
+            break;
+        }
+    }
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+normalize(String str)
+{
+    // NOTE(michiel): Replace all non alpha-numeric chars with a space,
+    //   makes sure it doesn't start with a space and lowers all letters.
+    persist u8 normalBuf[1024];
+    i_expect(str.size < array_count(normalBuf));
+    
+    String result = {0};
+    result.data = normalBuf;
+    
+    b32 first = true;
+    b32 space = false;
+    for (u32 i = 0; i < str.size; ++i) {
+        if (!is_alnum(str.data[i])) {
+             space = !first;
+            continue;
+        }
+        
+        if (space) {
+            result.data[result.size++] = ' ';
+             space = false;
+        }
+        result.data[result.size++] = to_lower_case(str.data[i]);
+        first = false;
+    }
+    
+    result.data[result.size] = 0;
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+to_lower(String str)
+{
+    persist u8 lowerBuf[1024];
+    i_expect(str.size < array_count(lowerBuf));
+    
+    String result = {0};
+    result.size = str.size;
+    result.data = lowerBuf;
+    
+    for (u32 i = 0; i < str.size; ++i) {
+        result.data[i] = to_lower_case(str.data[i]);
+    }
+    
+    result.data[result.size] = 0;
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+to_upper(String str)
+{
+    persist u8 upperBuf[1024];
+    i_expect(str.size < array_count(upperBuf));
+    
+    String result = {0};
+    result.size = str.size;
+    result.data = upperBuf;
+    
+    for (u32 i = 0; i < str.size; ++i) {
+        result.data[i] = to_upper_case(str.data[i]);
+    }
+    
+    result.data[result.size] = 0;
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+to_camel(String str)
+{
+    // NOTE(michiel): Replace all non alpha-numeric chars with a capital letter for the 
+    //   next char
+    String result = normalize(str);
+    b32 toUpper = true;
+    u32 index = 0;
+    for (u32 i = 0; i < result.size; ++i) {
+        if (result.data[i] == ' ') {
+            toUpper = true;
+            continue;
+        }
+        
+        result.data[index++] = toUpper ? to_upper_case(result.data[i]) : result.data[i];
+        toUpper = false;
+    }
+    
+    result.data[index] = 0;
+    result.size = index;
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+to_snake(String str)
+{
+    // NOTE(michiel): Replace all non alpha-numeric chars with an underscore
+    String result = normalize(str);
+    for (u32 i = 0; i < result.size; ++i) {
+        if (result.data[i] == ' ') {
+            result.data[i] = '_';
+        }
+    }
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+titleize(String str)
+{
+    // NOTE(michiel): Replace all non alpha-numeric chars with a space and capitalize the
+    //   first char
+    String result = normalize(str);
+    result.data[0] = to_upper_case(result.data[0]);
+    return result;
+}
+
+// NOTE(michiel): This returns a pointer to a internal buffer!!!
+internal String
+capitalize(String str)
+{
+    // NOTE(michiel): Replace all non alpha-numeric chars with a space and capitalize the
+    //   next char
+    String result = normalize(str);
+    for (u32 i = 1; i < result.size; ++i) {
+        if (result.data[i - 1] == ' ') {
+            result.data[i] = to_upper_case(result.data[i]);
+        }
+    }
+    result.data[0] = to_upper_case(result.data[0]);
+    return result;
 }
 
 internal inline u32
@@ -803,7 +974,25 @@ strings_are_equal_c(const char *a, String b)
     return strings_are_equal(string(string_length(a), a), b);
 }
 
-#endif
+#endif // __cplusplus
+
+internal String
+get_extension(String name)
+{
+    s32 dotPos = name.size - 1;
+    while (dotPos >= 0) {
+        if (name.data[dotPos] == '.') {
+            break;
+        }
+        --dotPos;
+    }
+    String result = {0};
+    if (dotPos >= 0) {
+    result.size = name.size - dotPos - 1;
+    result.data = name.data + dotPos + 1;
+    }
+    return result;
+}
 
 internal void
 str_interns_free(Interns *interns)
@@ -870,6 +1059,10 @@ str_intern_fmt_(Interns *interns, char *fmt, ...)
 internal String
 str_intern(Interns *interns, String str)
 {
+    if (!str.size) {
+        String result = {0};
+        return result;
+    }
     InternedString *intStr = str_intern_(interns, str);
     return string(intStr->size, intStr->data);
 }
