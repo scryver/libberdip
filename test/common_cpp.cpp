@@ -71,6 +71,18 @@ int main(int argc, char **argv)
     fprintf(stdout, "Snake : %.*s\n", STR_FMT(to_snake(testStr)));
 fprintf(stdout, "Title : %.*s\n", STR_FMT(titleize(testStr)));
 fprintf(stdout, "Caps  : %.*s\n", STR_FMT(capitalize(testStr)));
+    
+    Interns tests = {0};
+    String formatting = str_intern_fmt(&tests, "%.*s_%.*s", STR_FMT(string("one")),
+                                       STR_FMT(string("two")));
+    fprintf(stdout, "Test str: %.*s\n", STR_FMT(formatting));
+    str_interns_free(&tests);
+                
+    char testBuf[256] = "Onish";
+    String testBufStr = string(testBuf);
+    testBufStr = append_string(testBufStr, string("_twish"), array_count(testBuf));
+    fprintf(stdout, "Morish: %.*s\n", STR_FMT(testBufStr));
+    
     buf_test();
     map_test(100);
     str_intern_test();

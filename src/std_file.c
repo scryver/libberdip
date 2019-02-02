@@ -65,6 +65,20 @@ internal WRITE_TO_FILE(write_to_file)
     fwrite(data, size, 1, outFile);
 }
 
+internal WRITE_VFMT_TO_FILE(write_vfmt_to_file)
+{
+    FILE *outFile = (FILE *)file.handle;
+    vfprintf(outFile, fmt, args);
+}
+
+internal WRITE_FMT_TO_FILE(write_fmt_to_file)
+{
+    va_list args;
+    va_start(args, fmt);
+    write_vfmt_to_file(file, fmt, args);
+    va_end(args);
+}
+
 internal CLOSE_FILE(close_file)
 {
     FILE *f = (FILE *)file->handle;

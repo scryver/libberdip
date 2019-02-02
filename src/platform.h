@@ -86,6 +86,12 @@ typedef READ_FROM_FILE(ReadFromFile);
 #define WRITE_TO_FILE(name) void name(ApiFile file, umm size, void *data)
 typedef WRITE_TO_FILE(WriteToFile);
 
+#define WRITE_FMT_TO_FILE(name) void name(ApiFile file, char *fmt, ...)
+typedef WRITE_FMT_TO_FILE(WriteFmtToFile);
+
+#define WRITE_VFMT_TO_FILE(name) void name(ApiFile file, char *fmt, va_list args)
+typedef WRITE_VFMT_TO_FILE(WriteVFmtToFile);
+
 #define CLOSE_FILE(name) void name(ApiFile *file)
 typedef CLOSE_FILE(CloseFile);
 
@@ -96,6 +102,8 @@ typedef struct FileAPI
     OpenFile *open_file;
     ReadFromFile *read_from_file;
     WriteToFile *write_to_file;
+    WriteFmtToFile *write_fmt_to_file;
+    WriteVFmtToFile *write_vfmt_to_file;
     CloseFile *close_file;
 } FileAPI;
 

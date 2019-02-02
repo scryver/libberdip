@@ -994,6 +994,17 @@ get_extension(String name)
     return result;
 }
 
+internal String
+append_string(String base, String suffix, u32 maxCount)
+{
+    for (u32 i = 0; i < suffix.size; ++i) {
+        if (base.size < maxCount) {
+            base.data[base.size++] = suffix.data[i];
+        }
+    }
+    return base;
+}
+
 internal void
 str_interns_free(Interns *interns)
 {
@@ -1049,11 +1060,11 @@ str_intern_fmt_(Interns *interns, char *fmt, ...)
     
     va_list args;
     va_start(args, fmt);
-    u64 written = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
+    buffer[total] = 0;
     
-    i_expect(written <= sizeof(buffer));
-    return str_intern_(interns, string(written, buffer));
+    return str_intern_(interns, string(total, buffer));
 }
 
 internal String
@@ -1074,11 +1085,11 @@ str_intern_fmt(Interns *interns, char *fmt, ...)
     
     va_list args;
     va_start(args, fmt);
-    u64 written = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    buffer[total] = 0;
     va_end(args);
     
-    i_expect(written <= sizeof(buffer));
-    return str_intern(interns, string(written, buffer));
+    return str_intern(interns, string(total, buffer));
 }
 
 #ifdef __cplusplus
