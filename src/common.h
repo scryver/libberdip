@@ -878,6 +878,9 @@ string_length(const char *cString)
 // TODO(michiel): Have our own printf with %S to support strings
 #define STR_FMT(s)  safe_truncate_to_u32(s.size), s.data
 
+#define static_string(c) {sizeof(c), (u8 *)c}
+#define to_cstring(s)    ((char *)s.data)
+
 internal inline String
 string(umm size, const void *data)
 {
