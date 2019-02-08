@@ -1,4 +1,6 @@
 #include "../src/common.h"
+#include "../src/maps.h"
+#include "../src/strings.h"
 
 internal void
 buf_test(void)

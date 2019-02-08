@@ -1,4 +1,6 @@
 #include "./common.h"
+#include "./maps.h"
+#include "./strings.h"
 #include "./maths.h"
 #include "./vectors.h"
 #include "./keys.h"
