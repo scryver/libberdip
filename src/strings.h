@@ -3,6 +3,8 @@
 //
 typedef Buffer String;
 
+// TODO(michiel): Proper UTF8 support
+
 // NOTE(michiel): String interning
 typedef struct Interns
 {
@@ -27,13 +29,13 @@ is_hex_digit(char n)
 internal inline b32
 is_lower_case(char c)
 {
-    return ((c >= 'a') && (c <= 'z'));
+    return (('a' <= c) && (c <= 'z'));
 }
 
 internal inline b32
 is_upper_case(char c)
 {
-    return ((c >= 'A') && (c <= 'Z'));
+    return (('A' <= c) && (c <= 'Z'));
 }
 
 internal inline b32
@@ -100,8 +102,8 @@ is_snake_case(String name)
 internal String
 normalize(String str)
 {
-    // NOTE(michiel): Replace all non alpha-numeric chars with a space,
-    //   makes sure it doesn't start with a space and lowers all letters.
+    // NOTE(michiel): Remove all non alpha-numeric chars except single spaces,
+    //   make sure it doesn't start with a space and lower all letters.
     persist u8 normalBuf[1024];
     i_expect(str.size < array_count(normalBuf));
     
@@ -208,10 +210,20 @@ to_snake(String str)
 internal String
 titleize(String str)
 {
-    // NOTE(michiel): Replace all non alpha-numeric chars with a space and capitalize the
-    //   first char
-    String result = normalize(str);
+    // NOTE(michiel): Capitalize the first char
+    persist u8 titleBuf[1024];
+    i_expect(str.size < (array_count(titleBuf) - 1));
+    
+    String result = {0};
+    if (!str.size) {
+        return result;
+    }
+    result.data = titleBuf;
+    
+    copy(str.size, str.data, result.data);
+    result.size = str.size;
     result.data[0] = to_upper_case(result.data[0]);
+    result.data[result.size] = 0;
     return result;
 }
 
@@ -219,15 +231,27 @@ titleize(String str)
 internal String
 capitalize(String str)
 {
-    // NOTE(michiel): Replace all non alpha-numeric chars with a space and capitalize the
-    //   next char
-    String result = normalize(str);
-    for (u32 i = 1; i < result.size; ++i) {
-        if (result.data[i - 1] == ' ') {
-            result.data[i] = to_upper_case(result.data[i]);
+    // NOTE(michiel): Capitalize the next char after a space (and the first char)
+    persist u8 titleBuf[1024];
+    i_expect(str.size < (array_count(titleBuf) - 1));
+    
+    String result = {0};
+    result.data = titleBuf;
+    
+    b32 first = true;
+    b32 space = false;
+    for (u32 i = 0; i < str.size; ++i) {
+        if (str.data[i] == ' ') {
+            space = true;
+            result.data[result.size++] = ' ';
+            continue;
         }
-    }
-    result.data[0] = to_upper_case(result.data[0]);
+        
+        result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
+        first = false;
+    space = false;
+        }
+    result.data[result.size] = 0;
     return result;
 }
 
@@ -245,7 +269,7 @@ string_length(const char *cString)
 // TODO(michiel): Have our own printf with %S to support strings
 #define STR_FMT(s)  safe_truncate_to_u32(s.size), s.data
 
-#define static_string(c) {sizeof(c), (u8 *)c}
+#define static_string(c) {sizeof(c) - 1, (u8 *)c}
 #define to_cstring(s)    ((char *)s.data)
 
 internal inline String
@@ -307,6 +331,27 @@ strings_are_equal(const char *a, String b)
     return string(string_length(a), a) == b;
 }
 
+internal inline b32
+string_contains(String str, String subStr)
+{
+    b32 result = (subStr.size <= str.size);
+    if (result) {
+        if (str.data != subStr.data) {
+            u32 curIndex = 0;
+            result = false;
+            while (curIndex <= (str.size - subStr.size)) {
+                String test = {subStr.size, str.data + curIndex};
+                if (test == subStr) {
+                    result = true;
+                    break;
+                }
+                ++curIndex;
+            }
+        }
+    }
+    return result;
+}
+
 #else
 
 internal inline String
@@ -342,6 +387,27 @@ internal inline b32
 strings_are_equal_c(const char *a, String b)
 {
     return strings_are_equal(string(string_length(a), a), b);
+}
+
+internal inline b32
+string_contains(String str, String subStr)
+{
+    b32 result = (subStr.size <= str.size);
+    if (result) {
+        if (str.data != subStr.data) {
+            u32 curIndex = 0;
+            result = false;
+            while (curIndex <= (str.size - subStr.size)) {
+                String test = {subStr.size, str.data + curIndex};
+                if (strings_are_equal(test, subStr)) {
+                    result = true;
+                    break;
+                }
+                ++curIndex;
+            }
+        }
+    }
+    return result;
 }
 
 #endif // __cplusplus
