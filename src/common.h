@@ -54,7 +54,7 @@
 #define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); __builtin_trap(); }
 #else
 #define i_expect_simple(expr)   ((expr) ? (void)0 : (*(int *)0 = 0))
-#define i_expect(expr)          if (!(expr)) { *(int *)0 = 0; }
+#define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); *(int *)0 = 0; }
 #endif
 
 #define INVALID_CODE_PATH    i_expect(0 && "Invalid code path")

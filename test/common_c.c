@@ -1,6 +1,7 @@
 #include "../src/common.h"
 #include "../src/maps.h"
 #include "../src/strings.h"
+#include "../src/tests.h"
 
 internal void
 buf_test(void)
@@ -20,7 +21,7 @@ map_test(umm size) {
     }
     for (u64 i = 1; i < n; ++i) {
         u64 val = map_u64_get_u64(&map, i);
-        i_expect(val == i - 1);
+        i_expect_equal_u64(val, i - 1);
     }
     map_free(&map);
 }
