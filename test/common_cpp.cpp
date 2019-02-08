@@ -42,6 +42,7 @@ TEST_BEGIN(string_intern)
     
     char b[] = "Hallow";
     i_expect_not_equal(b, a);
+    i_expect_equal(string(b), string(a));
     i_expect_equal(str_intern(interns, b), str_intern(interns, a));
     char *c = "Hallow!";
     i_expect_not_equal(str_intern(interns, c), str_intern(interns, a));

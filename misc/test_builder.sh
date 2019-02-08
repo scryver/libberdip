@@ -22,9 +22,11 @@ pushd "$buildDir" > /dev/null
 
     echo "" >> main_test.c
     echo "int main(int argc, char **argv) {" >> main_test.c
+    echo "    fprintf(stdout, \"Testing C-files of $testDir\\n\");" >> main_test.c
 
     find "$testDir" -type f -name "*.c" -exec sh -c "grep TEST_BEGIN {} | sed s\"/TEST_BEGIN(\(.*\))$/    testrun_\1();/g\" >> main_test.c" \;
 
+    echo "    fprintf(stdout, \"\\n\");" >> main_test.c
     echo "}" >> main_test.c
     echo "" >> main_test.c
 
@@ -32,9 +34,11 @@ pushd "$buildDir" > /dev/null
 
     echo "" >> main_test.cpp
     echo "int main(int argc, char **argv) {" >> main_test.cpp
+    echo "    fprintf(stdout, \"Testing C++-files of $testDir\\n\");" >> main_test.cpp
 
     find "$testDir" -type f -name "*.cpp" -exec sh -c "grep TEST_BEGIN {} | sed s\"/TEST_BEGIN(\(.*\))$/    testrun_\1();/g\" >> main_test.cpp" \;
 
+    echo "    fprintf(stdout, \"\\n\");" >> main_test.cpp
     echo "}" >> main_test.cpp
     echo "" >> main_test.cpp
 
