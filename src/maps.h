@@ -2,6 +2,15 @@
 // NOTE(michiel): Map
 //
 
+// NOTE(michiel): Hashmap/dict implementation to map some key to a value (both must be non-zero)
+typedef struct Map
+{
+    u64 *keys;
+    u64 *values;
+    u32 len;
+    u32 cap;
+} Map;
+
 // NOTE(michiel): map_(get/put)         => key = ptr, val = ptr
 // NOTE(michiel): map_(get/put)_u64     => key = ptr, val = u64
 // NOTE(michiel): map_u64_(get/put)     => key = u64, val = ptr

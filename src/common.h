@@ -211,7 +211,6 @@ clamp01(f32 value)
     umm size;
     u8 *data;
 } Buffer;
-typedef Buffer String;
 
 // NOTE(michiel): Stretchy buffer header (prepended to keep track of num items etc)
 #define BUF_MAGIC 0xB0FFE20F20F78D1E
@@ -253,22 +252,6 @@ typedef struct TempMemory
     u8 *origAt;
     u8 *origEnd;
 } TempMemory;
-
-// NOTE(michiel): Hashmap/dict implementation to map some key to a value (both must be non-zero)
-typedef struct Map
-{
-    u64 *keys;
-    u64 *values;
-    u32 len;
-    u32 cap;
- } Map;
-
-// NOTE(michiel): String interning
-typedef struct Interns
-{
-    Arena arena;
-    Map map;
-} Interns;
 
 // NOTE(michiel): Image buffer (32bit pixels assumed)
 typedef struct Image

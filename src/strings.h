@@ -1,6 +1,14 @@
 //
 // NOTE(michiel): Strings and string interning
 //
+typedef Buffer String;
+
+// NOTE(michiel): String interning
+typedef struct Interns
+{
+    Arena arena;
+    Map map;
+} Interns;
 
 internal inline b32
 is_digit(char n)
