@@ -53,6 +53,8 @@ internal void testrun_##name(void) \
 // NOTE(michiel): C++-test interface
 //
 
+#if LIBBERDIP_EXPECT
+
 #define i_expect_equal(a, b)            i_expect_equal_(__FILE__, __LINE__, #a, #b, a, b)
 #define i_expect_not_equal(a, b)        i_expect_not_equal_(__FILE__, __LINE__, #a, #b, a, b)
 #define i_expect_almost_equal(a, b, e)  i_expect_almost_equal_(__FILE__, __LINE__, #a, #b, a, b, e)
@@ -64,6 +66,20 @@ internal void testrun_##name(void) \
 #define i_expect_greater_or_equal(a, b) i_expect_greater_or_equal_(__FILE__, __LINE__, #a, #b, a, b)
 #define i_expect_contains(a, b)         i_expect_contains_(__FILE__, __LINE__, #a, #b, a, b)
 
+#else  // LIBBERDIP_EXPECT
+
+#define i_expect_equal(a, b)
+#define i_expect_not_equal(a, b)
+#define i_expect_almost_equal(a, b, e)
+#define i_expect_bool_equal(a, b)
+#define i_expect_bool_not_equal(a, b)
+#define i_expect_less(a, b)
+#define i_expect_greater(a, b)
+#define i_expect_less_or_equal(a, b)
+#define i_expect_greater_or_equal(a, b)
+#define i_expect_contains(a, b)
+
+#endif // LIBBERDIP_EXPECT
 //
 // NOTE(michiel): End of C++-test interface
 //
@@ -75,6 +91,8 @@ internal void testrun_##name(void) \
 //
 // NOTE(michiel): C-test interface, difference here are the types, no overloading
 //
+
+#if LIBBERDIP_EXPECT
 
 #define i_expect_equal_u8(a, b)             i_expect_equal_u8_(__FILE__, __LINE__, #a, #b, a, b)
 #define i_expect_equal_u16(a, b)            i_expect_equal_u16_(__FILE__, __LINE__, #a, #b, a, b)
@@ -167,6 +185,100 @@ internal void testrun_##name(void) \
 
 #define i_expect_string_contains(a, b)      i_expect_string_contains_(__FILE__, __LINE__, #a, #b, a, b)
 
+#else // LIBBERDIP_EXPECT
+
+#define i_expect_equal_u8(a, b)
+#define i_expect_equal_u16(a, b)
+#define i_expect_equal_u32(a, b)
+#define i_expect_equal_u64(a, b)
+#define i_expect_equal_s8(a, b)
+#define i_expect_equal_s16(a, b)
+#define i_expect_equal_s32(a, b)
+#define i_expect_equal_s64(a, b)
+#define i_expect_equal_f32(a, b)
+#define i_expect_equal_f64(a, b)
+#define i_expect_bool_equal_b8(a, b)
+#define i_expect_bool_equal_b16(a, b)
+#define i_expect_bool_equal_b32(a, b)
+#define i_expect_bool_equal_b64(a, b)
+#define i_expect_string_equal(a, b)
+#define i_expect_ptr_equal(a, b)
+
+#define i_expect_not_equal_u8(a, b)
+#define i_expect_not_equal_u16(a, b)
+#define i_expect_not_equal_u32(a, b)
+#define i_expect_not_equal_u64(a, b)
+#define i_expect_not_equal_s8(a, b)
+#define i_expect_not_equal_s16(a, b)
+#define i_expect_not_equal_s32(a, b)
+#define i_expect_not_equal_s64(a, b)
+#define i_expect_not_equal_f32(a, b)
+#define i_expect_not_equal_f64(a, b)
+#define i_expect_bool_not_equal_b8(a, b)
+#define i_expect_bool_not_equal_b16(a, b)
+#define i_expect_bool_not_equal_b32(a, b)
+#define i_expect_bool_not_equal_b64(a, b)
+#define i_expect_string_not_equal(a, b)
+#define i_expect_ptr_not_equal(a, b)
+
+#define i_expect_almost_equal_u8(a, b, e)
+#define i_expect_almost_equal_u16(a, b, e)
+#define i_expect_almost_equal_u32(a, b, e)
+#define i_expect_almost_equal_u64(a, b, e)
+#define i_expect_almost_equal_s8(a, b, e)
+#define i_expect_almost_equal_s16(a, b, e)
+#define i_expect_almost_equal_s32(a, b, e)
+#define i_expect_almost_equal_s64(a, b, e)
+#define i_expect_almost_equal_f32(a, b, e)
+#define i_expect_almost_equal_f64(a, b, e)
+
+#define i_expect_less_u8(a, b)
+#define i_expect_less_u16(a, b)
+#define i_expect_less_u32(a, b)
+#define i_expect_less_u64(a, b)
+#define i_expect_less_s8(a, b)
+#define i_expect_less_s16(a, b)
+#define i_expect_less_s32(a, b)
+#define i_expect_less_s64(a, b)
+#define i_expect_less_f32(a, b)
+#define i_expect_less_f64(a, b)
+
+#define i_expect_greater_u8(a, b)
+#define i_expect_greater_u16(a, b)
+#define i_expect_greater_u32(a, b)
+#define i_expect_greater_u64(a, b)
+#define i_expect_greater_s8(a, b)
+#define i_expect_greater_s16(a, b)
+#define i_expect_greater_s32(a, b)
+#define i_expect_greater_s64(a, b)
+#define i_expect_greater_f32(a, b)
+#define i_expect_greater_f64(a, b)
+
+#define i_expect_less_or_equal_u8(a, b)
+#define i_expect_less_or_equal_u16(a, b)
+#define i_expect_less_or_equal_u32(a, b)
+#define i_expect_less_or_equal_u64(a, b)
+#define i_expect_less_or_equal_s8(a, b)
+#define i_expect_less_or_equal_s16(a, b)
+#define i_expect_less_or_equal_s32(a, b)
+#define i_expect_less_or_equal_s64(a, b)
+#define i_expect_less_or_equal_f32(a, b)
+#define i_expect_less_or_equal_f64(a, b)
+
+#define i_expect_greater_or_equal_u8(a, b)
+#define i_expect_greater_or_equal_u16(a, b)
+#define i_expect_greater_or_equal_u32(a, b)
+#define i_expect_greater_or_equal_u64(a, b)
+#define i_expect_greater_or_equal_s8(a, b)
+#define i_expect_greater_or_equal_s16(a, b)
+#define i_expect_greater_or_equal_s32(a, b)
+#define i_expect_greater_or_equal_s64(a, b)
+#define i_expect_greater_or_equal_f32(a, b)
+#define i_expect_greater_or_equal_f64(a, b)
+
+#define i_expect_string_contains(a, b)
+
+#endif // LIBBERDIP_EXPECT
 //
 // NOTE(michiel): End of C-test interface
 //
