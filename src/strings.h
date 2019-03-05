@@ -340,13 +340,15 @@ string_contains(String str, String subStr)
             u32 curIndex = 0;
             result = false;
             while (curIndex <= (str.size - subStr.size)) {
+                if (subStr.data[0] == str.data[curIndex]) {
                 String test = {subStr.size, str.data + curIndex};
                 if (test == subStr) {
                     result = true;
                     break;
                 }
-                ++curIndex;
-            }
+                }
+            ++curIndex;
+                }
         }
     }
     return result;
@@ -398,10 +400,12 @@ string_contains(String str, String subStr)
             u32 curIndex = 0;
             result = false;
             while (curIndex <= (str.size - subStr.size)) {
+                if (subStr.data[0] == str.data[curIndex]) {
                 String test = {subStr.size, str.data + curIndex};
                 if (strings_are_equal(test, subStr)) {
                     result = true;
                     break;
+                }
                 }
                 ++curIndex;
             }

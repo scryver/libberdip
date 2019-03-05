@@ -16,7 +16,8 @@
 #define sqrt __builtin_sqrtf
 //#define exp  __builtin_expf
 #define exp  fast_expf
-#define log   __builtin_logf
+#define log     __builtin_logf
+#define floor(f)                __builtin_floorf(f)
 #define round(f)                ((s32)((f) + ((f) < 0.0f ? -0.5f : 0.5f)))
 //#define round                   __builtin_roundf
 #define trunc(f)                ((s32)(f))
