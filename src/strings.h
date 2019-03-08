@@ -184,7 +184,7 @@ to_camel(String str)
         }
         
         result.data[index++] = toUpper ? to_upper_case(result.data[i]) : result.data[i];
-        toUpper = false;
+        toUpper = !is_alpha(result.data[i]);
     }
     
     result.data[index] = 0;
@@ -249,7 +249,7 @@ capitalize(String str)
         
         result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
         first = false;
-    space = false;
+        space = !is_alpha(result.data[i]);;
         }
     result.data[result.size] = 0;
     return result;
