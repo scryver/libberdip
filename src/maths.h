@@ -21,6 +21,7 @@
 #define round(f)                ((s32)((f) + ((f) < 0.0f ? -0.5f : 0.5f)))
 //#define round                   __builtin_roundf
 #define trunc(f)                ((s32)(f))
+#define fabs(f)                 __builtin_fabsf(f)
 
 #define powd  __builtin_pow
 
