@@ -18,14 +18,21 @@ TEST_BEGIN(map)
 {
     umm size = 100;
     Map map = {0};
-    for (u64 i = 1; i < size; ++i) {
-        map_u64_put_u64(&map, i, i-1);
+    for (u64 i = 0; i < size; ++i) {
+        map_u64_put_u64(&map, i, i);
     }
-    for (u64 i = 1; i < size; ++i) {
+    for (u64 i = 0; i < size; ++i) {
         u64 val = map_u64_get_u64(&map, i);
         i_expect_less(val, size);
-        i_expect_equal(val, i - 1);
+        i_expect_equal(val, i);
     }
+    
+    u64 val = map_u64_get_u64(&map, 12);
+    i_expect_equal(val, 12ULL);
+    map_u64_remove_u64(&map, 12);
+    val = map_u64_get_u64(&map, 12);
+    i_expect_equal(val, 0ULL);
+    
     map_free(&map);
 }
 TEST_END(map)
@@ -68,7 +75,7 @@ TEST_BEGIN(string_funcs)
     String camelStr = string("TestingSomething1230AAndMore");
     String snakeStr = string("testing_something_1230_a_and_more");
     String titleStr = string("Testing sOmething 1230(%@$!*(!#^%a and more");
-    String capitStr = string("Testing SOmething 1230(%@$!*(!#^%a And More");
+    String capitStr = string("Testing SOmething 1230(%@$!*(!#^%A And More");
     
     i_expect_equal(normalize(testStr), normalStr);
     i_expect_equal(to_lower(testStr), lowerStr);
@@ -159,7 +166,7 @@ TEST_BEGIN(get_extension)
 }
 TEST_END(get_extension)
 
-#if 0
+#if 1
 int main(int argc, char **argv)
 {
     fprintf(stdout, "C++ Tests\n\n");

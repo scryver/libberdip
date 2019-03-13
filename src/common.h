@@ -190,7 +190,7 @@ copy(umm size, const void *src, void *dst)
 }
 
 internal void
-copySingle(umm size, u32 value, void *dst)
+copy_single(umm size, u32 value, void *dst)
 {
     u8 value8 = value & 0xFF;
     u32 value32 = (value8 << 24) | (value << 16) | (value << 8) | value;
