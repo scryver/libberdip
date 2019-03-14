@@ -618,3 +618,32 @@ string_to_number(String s)
     }
     return result;
 }
+
+internal u64
+string_to_hex(String s)
+{
+    u64 result = 0;
+    for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
+    {
+        result *= 16;
+        s64 adding = 0;
+        if (('0' <= s.data[sIdx]) &&
+            (s.data[sIdx] <= '9'))
+        {
+            adding = s.data[sIdx] - '0';
+        }
+        else if (('a' <= s.data[sIdx]) && (s.data[sIdx] <= 'f'))
+        {
+            adding = (s.data[sIdx] - 'a') + 10;
+        }
+        else 
+        {
+            i_expect(('A' <= s.data[sIdx]) && (s.data[sIdx] <= 'F'));
+            adding = (s.data[sIdx] - 'A') + 10;
+        }
+        i_expect(adding >= 0);
+        i_expect(adding < 16);
+        result += adding;
+    }
+    return result;
+}
