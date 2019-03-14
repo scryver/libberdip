@@ -11,13 +11,18 @@ flags="-O0 -g -ggdb -Wall -Werror -pedantic"
 cppFlags="$flags -std=c++11 -Wno-writable-strings"
 cFlags="$flags -std=c99"
 
-exceptions="-Wno-gnu-zero-variadic-macro-arguments -Wno-missing-braces"
+exceptions="-Wno-gnu-zero-variadic-macro-arguments -Wno-missing-braces -Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-c99-extensions"
 devExcept="-Wno-unused-function"
 
 mkdir -p "$buildDir"
 
 pushd "$buildDir" > /dev/null
     rm -f main_test.c main_test.cpp
+    echo "#include \"$libDir/common.h\"" > main_test.c
+    echo "#include \"$libDir/maps.h\"" >> main_test.c
+    echo "#include \"$libDir/strings.h\"" >> main_test.c
+    echo "#include \"$libDir/tests.h\"" >> main_test.c
+
     find "$testDir" -type f -name "*.c" -exec echo "#include \"{}\"" >> main_test.c \;
 
     echo "" >> main_test.c
@@ -29,6 +34,11 @@ pushd "$buildDir" > /dev/null
     echo "    fprintf(stdout, \"\\n\");" >> main_test.c
     echo "}" >> main_test.c
     echo "" >> main_test.c
+
+
+    echo "#include \"$libDir/platform.h\"" > main_test.cpp
+    echo "#include \"$libDir/tests.h\"" >> main_test.cpp
+    echo "#include \"$libDir/std_file.c\"" >> main_test.cpp
 
     find "$testDir" -type f -name "*.cpp" -exec echo "#include \"{}\"" >> main_test.cpp \;
 

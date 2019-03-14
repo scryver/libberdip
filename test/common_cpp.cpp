@@ -1,8 +1,3 @@
-#include "../src/common.h"
-#include "../src/maps.h"
-#include "../src/strings.h"
-#include "../src/tests.h"
-
 TEST_BEGIN(buffer)
 {
     char *buf = 0;
@@ -166,7 +161,7 @@ TEST_BEGIN(get_extension)
 }
 TEST_END(get_extension)
 
-#if 1
+#if 0
 int main(int argc, char **argv)
 {
     fprintf(stdout, "C++ Tests\n\n");
