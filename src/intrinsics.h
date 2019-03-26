@@ -29,6 +29,13 @@ internal inline u64 atomic_add_u64(u64 volatile *value, u64 addend)
     return result;
 }
 
+internal inline u32 atomic_add_u32(u32 volatile *value, u32 addend)
+{
+    // NOTE(michiel): Returns the original value _prior_ to adding
+    u32 result = _InterlockedExchangeAdd((long *)value, addend);
+    return result;
+}
+
 internal inline u32 get_thread_id(void)
 {
     u8 *thread_local_storage = (u8 *)__readgsqword(0x30);
@@ -64,6 +71,13 @@ internal inline u64 atomic_add_u64(u64 volatile *value, u64 addend)
 {
     // NOTE(michiel): Returns the original value _prior_ to adding
     u64 result = __sync_fetch_and_add(value, addend);
+    return result;
+}
+
+internal inline u32 atomic_add_u32(u32 volatile *value, u32 addend)
+{
+    // NOTE(michiel): Returns the original value _prior_ to adding
+    u32 result = __sync_fetch_and_add(value, addend);
     return result;
 }
 
