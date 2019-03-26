@@ -1,7 +1,35 @@
 //
 // NOTE(michiel): Strings and string interning
 //
+
+internal inline u32
+string_length(const char *cString)
+{
+    u64 length = 0;
+    while (*cString++) {
+        ++length;
+    }
+    return safe_truncate_to_u32(length);
+}
+
+#ifdef __cplusplus
+
+struct String : Buffer 
+{
+    String(umm strSize = 0, u8 *strData = 0) {
+        size = strSize;
+        data = strData;
+    }
+
+    String(const char *cString) {
+        size = string_length(cString);
+        data = (u8 *)cString;
+    }
+};
+
+#else
 typedef Buffer String;
+#endif
 
 // TODO(michiel): Proper UTF8 support
 
@@ -107,7 +135,7 @@ normalize(String str)
     persist u8 normalBuf[1024];
     i_expect(str.size < array_count(normalBuf));
     
-    String result = {0};
+    String result = {0, 0};
     result.data = normalBuf;
     
     b32 first = true;
@@ -137,7 +165,7 @@ to_lower(String str)
     persist u8 lowerBuf[1024];
     i_expect(str.size < array_count(lowerBuf));
     
-    String result = {0};
+    String result = {0, 0};
     result.size = str.size;
     result.data = lowerBuf;
     
@@ -156,7 +184,7 @@ to_upper(String str)
     persist u8 upperBuf[1024];
     i_expect(str.size < array_count(upperBuf));
     
-    String result = {0};
+    String result = {0, 0};
     result.size = str.size;
     result.data = upperBuf;
     
@@ -214,7 +242,7 @@ titleize(String str)
     persist u8 titleBuf[1024];
     i_expect(str.size < (array_count(titleBuf) - 1));
     
-    String result = {0};
+    String result = {0, 0};
     if (!str.size) {
         return result;
     }
@@ -235,7 +263,7 @@ capitalize(String str)
     persist u8 titleBuf[1024];
     i_expect(str.size < (array_count(titleBuf) - 1));
     
-    String result = {0};
+    String result = {0, 0};
     result.data = titleBuf;
     
     b32 first = true;
@@ -255,16 +283,6 @@ capitalize(String str)
     return result;
 }
 
-internal inline u32
-string_length(const char *cString)
-{
-    u64 length = 0;
-    while (*cString++) {
-        ++length;
-    }
-    return safe_truncate_to_u32(length);
-}
-
 // NOTE(michiel): Use this to clean up string formatting arguments (for usage with "%.*s")
 // TODO(michiel): Have our own printf with %S to support strings
 #define STR_FMT(s)  safe_truncate_to_u32(s.size), s.data
@@ -275,7 +293,7 @@ string_length(const char *cString)
 internal inline String
 string(umm size, const void *data)
 {
-    String result = {0};
+    String result = {0, 0};
     result.size = size;
     result.data = (u8 *)data;
     return result;
@@ -426,7 +444,7 @@ get_extension(String name)
         }
         --dotPos;
     }
-    String result = {0};
+    String result = {0, 0};
     if (dotPos >= 0) {
         result.size = name.size - dotPos - 1;
         result.data = name.data + dotPos + 1;
@@ -443,6 +461,19 @@ append_string(String base, String suffix, u32 maxCount)
         }
     }
     return base;
+}
+
+internal String
+temp_string_fmt(const char *fmt, ...)
+{
+    persist char tempBuffer[1024] = "\0";
+    va_list args;
+    va_start(args, fmt);
+    umm printed = vsnprintf(tempBuffer, sizeof(tempBuffer) - 1, fmt, args);
+    va_end(args);
+    
+    tempBuffer[printed] = 0;
+    return string(printed, (u8 *)tempBuffer);
 }
 
 internal void
@@ -511,7 +542,7 @@ internal String
 str_intern(Interns *interns, String str)
 {
     if (!str.size) {
-        String result = {0};
+        String result = {0, 0};
         return result;
     }
     InternedString *intStr = str_intern_(interns, str);
@@ -519,17 +550,25 @@ str_intern(Interns *interns, String str)
 }
 
 internal String
-str_intern_fmt(Interns *interns, char *fmt, ...)
+vstr_intern_fmt(Interns *interns, char *fmt, va_list args)
 {
     static char buffer[4096];
+    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
+    buffer[total] = 0;
+    return str_intern(interns, string(total, buffer));
+}
+
+internal String
+str_intern_fmt(Interns *interns, char *fmt, ...)
+{
+    String result = {};
     
     va_list args;
     va_start(args, fmt);
-    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
-    buffer[total] = 0;
+    result = vstr_intern_fmt(interns, fmt, args);
     va_end(args);
     
-    return str_intern(interns, string(total, buffer));
+    return result;
 }
 
 #ifdef __cplusplus
