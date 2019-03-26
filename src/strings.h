@@ -6,8 +6,10 @@ internal inline u32
 string_length(const char *cString)
 {
     u64 length = 0;
-    while (*cString++) {
-        ++length;
+    if (cString) {
+        while (cString && *cString++) {
+            ++length;
+        }
     }
     return safe_truncate_to_u32(length);
 }
