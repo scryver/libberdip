@@ -81,10 +81,16 @@ is_alnum(char a)
 }
 
 internal inline b32
+is_end_of_line(char s)
+{
+    return ((s == '\n') || (s == '\r'));
+}
+
+internal inline b32
 is_space(char s)
 {
-    return ((s == ' ') || (s == '\n') || (s == '\r') ||
-            (s == '\t') || (s == '\v'));
+    return ((s == ' ') || (s == '\t') || (s == '\v') ||
+            is_end_of_line(s));
 }
 
 internal inline b32
@@ -128,17 +134,14 @@ is_snake_case(String name)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-normalize(String str)
+normalize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Remove all non alpha-numeric chars except single spaces,
     //   make sure it doesn't start with a space and lower all letters.
-    persist u8 normalBuf[1024];
-    i_expect(str.size < array_count(normalBuf));
+    i_expect(str.size < maxDestSize);
     
-    String result = {0, 0};
-    result.data = normalBuf;
+    String result = {0, dest};
     
     b32 first = true;
     b32 space = false;
@@ -160,16 +163,12 @@ normalize(String str)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-to_lower(String str)
+to_lower(String str, u32 maxDestSize, u8 *dest)
 {
-    persist u8 lowerBuf[1024];
-    i_expect(str.size < array_count(lowerBuf));
+    i_expect(str.size < maxDestSize);
     
-    String result = {0, 0};
-    result.size = str.size;
-    result.data = lowerBuf;
+    String result = {str.size, dest};
     
     for (u32 i = 0; i < str.size; ++i) {
         result.data[i] = to_lower_case(str.data[i]);
@@ -179,16 +178,12 @@ to_lower(String str)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-to_upper(String str)
+to_upper(String str, u32 maxDestSize, u8 *dest)
 {
-    persist u8 upperBuf[1024];
-    i_expect(str.size < array_count(upperBuf));
+    i_expect(str.size < maxDestSize);
     
-    String result = {0, 0};
-    result.size = str.size;
-    result.data = upperBuf;
+    String result = {str.size, dest};
     
     for (u32 i = 0; i < str.size; ++i) {
         result.data[i] = to_upper_case(str.data[i]);
@@ -198,13 +193,12 @@ to_upper(String str)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-to_camel(String str)
+to_camel(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Replace all non alpha-numeric chars with a capital letter for the 
     //   next char
-    String result = normalize(str);
+    String result = normalize(str, maxDestSize, dest);
     b32 toUpper = true;
     u32 index = 0;
     for (u32 i = 0; i < result.size; ++i) {
@@ -222,12 +216,11 @@ to_camel(String str)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-to_snake(String str)
+to_snake(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Replace all non alpha-numeric chars with an underscore
-    String result = normalize(str);
+    String result = normalize(str, maxDestSize, dest);
     for (u32 i = 0; i < result.size; ++i) {
         if (result.data[i] == ' ') {
             result.data[i] = '_';
@@ -236,37 +229,30 @@ to_snake(String str)
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-titleize(String str)
+titleize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Capitalize the first char
-    persist u8 titleBuf[1024];
-    i_expect(str.size < (array_count(titleBuf) - 1));
+    i_expect(str.size < maxDestSize);
     
-    String result = {0, 0};
-    if (!str.size) {
-        return result;
+    String result = {0, dest};
+    if (str.size) {
+        copy(str.size, str.data, result.data);
+        result.size = str.size;
+        result.data[0] = to_upper_case(result.data[0]);
+        result.data[result.size] = 0;
     }
-    result.data = titleBuf;
     
-    copy(str.size, str.data, result.data);
-    result.size = str.size;
-    result.data[0] = to_upper_case(result.data[0]);
-    result.data[result.size] = 0;
     return result;
 }
 
-// NOTE(michiel): This returns a pointer to a internal buffer!!!
 internal String
-capitalize(String str)
+capitalize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Capitalize the next char after a space (and the first char)
-    persist u8 titleBuf[1024];
-    i_expect(str.size < (array_count(titleBuf) - 1));
+    i_expect(str.size < maxDestSize);
     
-    String result = {0, 0};
-    result.data = titleBuf;
+    String result = {0, dest};
     
     b32 first = true;
     b32 space = false;
@@ -279,7 +265,7 @@ capitalize(String str)
         
         result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
         first = false;
-        space = !is_alpha(result.data[i]);;
+        space = !is_alpha(result.data[i]);
         }
     result.data[result.size] = 0;
     return result;
@@ -352,6 +338,12 @@ strings_are_equal(const char *a, String b)
 }
 
 internal inline b32
+strings_are_equal(String a, const char *b)
+{
+    return a == string(string_length(b), b);
+}
+
+internal inline b32
 string_contains(String str, String subStr)
 {
     b32 result = (subStr.size <= str.size);
@@ -372,6 +364,18 @@ string_contains(String str, String subStr)
         }
     }
     return result;
+}
+
+internal inline b32
+string_contains(const char *str, String subStr)
+{
+    return string_contains(string(string_length(str), str), subStr);
+}
+
+internal inline b32
+string_contains(String str, const char *subStr)
+{
+    return string_contains(str, string(string_length(subStr), subStr));
 }
 
 #else
