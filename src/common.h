@@ -175,6 +175,8 @@ internal inline s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s3
 internal void
 copy(umm size, const void *src, void *dst)
 {
+    i_expect(((u8 *)dst < ((u8 *)src - 4)) || 
+             ((u8 *)dst >= ((u8 *)src + size)));
     u32 *src32 = (u32 *)src;
     u32 *dst32 = (u32 *)dst;
     umm size4 = size >> 2; // size/4
