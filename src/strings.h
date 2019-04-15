@@ -27,6 +27,11 @@ struct String : Buffer
         size = string_length(cString);
         data = (u8 *)cString;
     }
+    
+    String(Buffer buffer) {
+        size = buffer.size;
+        data = buffer.data;
+    }
 };
 
 #else
