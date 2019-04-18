@@ -14,29 +14,7 @@ string_length(const char *cString)
     return safe_truncate_to_u32(length);
 }
 
-#ifdef __cplusplus
-
-struct String : Buffer 
-{
-    String(umm strSize = 0, u8 *strData = 0) {
-        size = strSize;
-        data = strData;
-    }
-
-    String(const char *cString) {
-        size = string_length(cString);
-        data = (u8 *)cString;
-    }
-    
-    String(Buffer buffer) {
-        size = buffer.size;
-        data = buffer.data;
-    }
-};
-
-#else
 typedef Buffer String;
-#endif
 
 // TODO(michiel): Proper UTF8 support
 

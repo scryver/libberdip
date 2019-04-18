@@ -172,7 +172,7 @@ internal inline s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32
 internal inline s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
 internal inline s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
 
-internal void
+internal umm
 copy(umm size, const void *src, void *dst)
 {
     i_expect(((u8 *)dst < ((u8 *)src - 4)) || 
@@ -189,6 +189,8 @@ copy(umm size, const void *src, void *dst)
     while (rem--) {
         *d++ = *s++;
     }
+    
+    return size;
 }
 
 internal void
@@ -217,7 +219,7 @@ clamp01(f32 value)
 }
 
 // NOTE(michiel): Generic buffer (memory data and a size)
- typedef struct Buffer
+typedef struct Buffer
 {
     umm size;
     u8 *data;
@@ -252,7 +254,7 @@ typedef struct Arena
 {
     u8 *at;
     u8 *end;
-     ArenaBlock sentinel;
+    ArenaBlock sentinel;
 } Arena;
 
 // NOTE(michiel): Temporary memory, will deallocate every allocation when destroy_temporary() is called
@@ -293,7 +295,7 @@ internal inline void *allocate_size(u32 size, u32 flags)
     // TODO(michiel): Platform allocation
     if (clear) {
         result = calloc(size, 1);
-     } else {
+    } else {
         result = malloc(size);
     }
     
@@ -356,7 +358,7 @@ arena_allocate(Arena *arena, umm newSize)
 {
     if (newSize > (umm)(arena->end - arena->at)) {
         arena_grow(arena, newSize);
-        }
+    }
     i_expect(newSize <= (umm)(arena->end - arena->at));
     
     void *at = arena->at;
@@ -378,7 +380,7 @@ arena_free(Arena *arena)
         deallocate(it->mem);
         deallocate(it);
         it = next;
-}
+    }
 }
 
 internal inline TempMemory
