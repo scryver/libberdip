@@ -53,20 +53,29 @@ global String gTokenKindName[TokenCount] =
     [Token_EOF]          = static_string("end of file"),
 };
 
+// TODO(michiel): Add Token to error
 internal void
-tokenize_error(Tokenizer *tokenizer, char *fmt, ...)
+tokenize_error(Tokenizer *tokenizer, char *fmt, va_list args)
 {
     fprintf(stderr, "TOKENIZER::ERROR::%.*s:%d:%d\n\t", STR_FMT(tokenizer->origin.filename),
             tokenizer->origin.line,
             tokenizer->origin.column);
-    va_list args;
-    va_start(args, fmt);
     vfprintf(stderr, fmt, args);
-    va_end(args);
     fprintf(stderr, "\n");
+    
+    tokenizer->error = true;
 }
 
-internal inline void
+internal void
+tokenize_error(Tokenizer *tokenizer, char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    tokenize_error(tokenizer, fmt, args);
+    va_end(args);
+}
+
+internal void
 advance_scanner(Tokenizer *tokenizer)
 {
     if (tokenizer->scanner.data[0] == '\n') {
@@ -77,6 +86,12 @@ advance_scanner(Tokenizer *tokenizer)
     }
     ++tokenizer->scanner.data;
     --tokenizer->scanner.size;
+}
+
+internal b32
+is_valid(Tokenizer *tokenizer)
+{
+    return !tokenizer->error;
 }
 
 #define CASE1(t, k) \
@@ -210,16 +225,16 @@ get_token(Tokenizer *tokenizer)
                 ++result.value.size;
                 advance_scanner(tokenizer);
             } else if (tokenizer->scanner.data[0] == '/') {
-            do {
-                advance_scanner(tokenizer);
-            } while (tokenizer->scanner.data[0] &&
-                     (tokenizer->scanner.data[0] != '\n'));
-            
-            if (tokenizer->scanner.data[0] == '\n') {
-                advance_scanner(tokenizer);
-            }
-            result.indent = 0;
-            goto repeat;
+                do {
+                    advance_scanner(tokenizer);
+                } while (tokenizer->scanner.data[0] &&
+                         (tokenizer->scanner.data[0] != '\n'));
+                
+                if (tokenizer->scanner.data[0] == '\n') {
+                    advance_scanner(tokenizer);
+                }
+                result.indent = 0;
+                goto repeat;
             }
         } break;
         
@@ -324,10 +339,10 @@ get_token(Tokenizer *tokenizer)
         default: {
             if (is_printable(tokenizer->scanner.data[0])) {
                 tokenize_error(tokenizer, "Unexpected character encountered '%c'.",
-                      tokenizer->scanner.data[0]);
+                               tokenizer->scanner.data[0]);
             } else {
                 tokenize_error(tokenizer, "Unexpected character encountered '\\x%X'.",
-                      tokenizer->scanner.data[0]);
+                               tokenizer->scanner.data[0]);
             }
             advance_scanner(tokenizer);
         } break;

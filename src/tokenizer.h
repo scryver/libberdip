@@ -86,4 +86,6 @@ struct Tokenizer
 {
     SourcePos origin;
     String scanner;
+    
+    b32 error;
 };
