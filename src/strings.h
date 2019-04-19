@@ -249,7 +249,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
         result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
         first = false;
         space = !is_alpha(result.data[i]);
-        }
+    }
     result.data[result.size] = 0;
     return result;
 }
@@ -336,14 +336,14 @@ string_contains(String str, String subStr)
             result = false;
             while (curIndex <= (str.size - subStr.size)) {
                 if (subStr.data[0] == str.data[curIndex]) {
-                String test = {subStr.size, str.data + curIndex};
-                if (test == subStr) {
-                    result = true;
-                    break;
+                    String test = {subStr.size, str.data + curIndex};
+                    if (test == subStr) {
+                        result = true;
+                        break;
+                    }
                 }
-                }
-            ++curIndex;
-                }
+                ++curIndex;
+            }
         }
     }
     return result;
@@ -408,11 +408,11 @@ string_contains(String str, String subStr)
             result = false;
             while (curIndex <= (str.size - subStr.size)) {
                 if (subStr.data[0] == str.data[curIndex]) {
-                String test = {subStr.size, str.data + curIndex};
-                if (strings_are_equal(test, subStr)) {
-                    result = true;
-                    break;
-                }
+                    String test = {subStr.size, str.data + curIndex};
+                    if (strings_are_equal(test, subStr)) {
+                        result = true;
+                        break;
+                    }
                 }
                 ++curIndex;
             }
@@ -453,16 +453,23 @@ append_string(String base, String suffix, u32 maxCount)
 }
 
 internal String
-temp_string_fmt(const char *fmt, ...)
+vstring_fmt(u32 maxDestCount, u8 *dest, const char *fmt, va_list args)
 {
-    persist char tempBuffer[1024] = "\0";
+    umm printed = vsnprintf((char *)dest, maxDestCount, fmt, args);
+    String result = {safe_truncate_to_u32(printed), dest};
+    i_expect(result.size < maxDestCount);
+    result.data[result.size] = 0;
+    return result;
+}
+
+internal String
+string_fmt(u32 maxDestCount, u8 *dest, const char *fmt, ...)
+{
     va_list args;
     va_start(args, fmt);
-    umm printed = vsnprintf(tempBuffer, sizeof(tempBuffer) - 1, fmt, args);
+    String result = vstring_fmt(maxDestCount, dest, fmt, args);
     va_end(args);
-    
-    tempBuffer[printed] = 0;
-    return string(printed, (u8 *)tempBuffer);
+    return result;
 }
 
 internal void
