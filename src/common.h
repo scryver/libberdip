@@ -66,6 +66,13 @@
 #define i_expect(expr)
 #endif // LIBBERDIP_EXPECT
 
+#define compile_expect(expr)    static_assert(expr, "Expectation failed: " #expr)
+#if LIBBERDIP_EXPECT
+#define NOT_IMPLEMENTED      i_expect(0 && "Not implemented!")
+#else
+#define NOT_IMPLEMENTED      compile_expect(0 && "Not implemented!")
+#endif
+
 #define INVALID_CODE_PATH    i_expect(0 && "Invalid code path")
 #define INVALID_DEFAULT_CASE default: { i_expect(0 && "Invalid default case"); } break
 
