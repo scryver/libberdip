@@ -12,7 +12,7 @@ internal READ_ENTIRE_FILE(read_entire_file)
         result.content.data = (u8 *)allocate_size(result.content.size, 0);
         i_expect(result.content.data);
         // TODO(michiel): Checking read size
-        fread(result.content.data, result.content.size, 1, input);
+        fread(result.content.data, 1, result.content.size, input);
         fclose(input);
     }
     
@@ -25,7 +25,7 @@ internal WRITE_ENTIRE_FILE(write_entire_file)
     if (output)
     {
         // TODO(michiel): Checking write size
-        fwrite(data, size, 1, output);
+        fwrite(data, 1, size, output);
         fclose(output);
     }
 }
@@ -53,16 +53,31 @@ internal OPEN_FILE(open_file)
     return result;
 }
 
+internal GET_FILE_SIZE(get_file_size)
+{
+    umm size = 0;
+    FILE *stdFile = (FILE *)file.handle;
+    if (stdFile) {
+        umm oldPos = ftell(stdFile);
+        fseek(stdFile, 0, SEEK_END);
+        size = ftell(stdFile);
+        fseek(stdFile, oldPos, SEEK_SET);
+    }
+    return size;
+}
+
 internal READ_FROM_FILE(read_from_file)
 {
+    umm result = 0;
     FILE *inFile = (FILE *)file.handle;
-      fread(buffer, size, 1, inFile);
+    result = fread(buffer, 1, size, inFile);
+    return result;
 }
 
 internal WRITE_TO_FILE(write_to_file)
 {
     FILE *outFile = (FILE *)file.handle;
-    fwrite(data, size, 1, outFile);
+    fwrite(data, 1, size, outFile);
 }
 
 internal WRITE_VFMT_TO_FILE(write_vfmt_to_file)

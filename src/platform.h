@@ -66,7 +66,7 @@ typedef struct Keyboard
 {
     Interns interns; // Storage for all the small strings
     
-     Key keys[256];
+    Key keys[256];
     u32 modifiers;
     String lastInput;
 } Keyboard;
@@ -81,8 +81,10 @@ typedef WRITE_ENTIRE_FILE(WriteEntireFile);
 #define OPEN_FILE(name) ApiFile name(char *filename, u32 flags)
 typedef OPEN_FILE(OpenFile);
 
-// TODO(michiel): Should we return something instead of filling the buffer?
-#define READ_FROM_FILE(name) void name(ApiFile file, umm size, void *buffer)
+#define GET_FILE_SIZE(name) umm name(ApiFile file)
+typedef GET_FILE_SIZE(GetFileSize);
+
+#define READ_FROM_FILE(name) umm name(ApiFile file, umm size, void *buffer)
 typedef READ_FROM_FILE(ReadFromFile);
 
 #define WRITE_TO_FILE(name) void name(ApiFile file, umm size, void *data)
@@ -102,6 +104,7 @@ typedef struct FileAPI
     ReadEntireFile *read_entire_file;
     WriteEntireFile *write_entire_file;
     OpenFile *open_file;
+    GetFileSize *get_file_size;
     ReadFromFile *read_from_file;
     WriteToFile *write_to_file;
     WriteFmtToFile *write_fmt_to_file;
