@@ -87,6 +87,9 @@ typedef GET_FILE_SIZE(GetFileSize);
 #define READ_FROM_FILE(name) umm name(ApiFile file, umm size, void *buffer)
 typedef READ_FROM_FILE(ReadFromFile);
 
+#define READ_FROM_FILE_OFFSET(name) umm name(ApiFile file, umm offset, umm size, void *buffer)
+typedef READ_FROM_FILE_OFFSET(ReadFromFileOffset);
+
 #define WRITE_TO_FILE(name) void name(ApiFile file, umm size, void *data)
 typedef WRITE_TO_FILE(WriteToFile);
 
@@ -106,6 +109,7 @@ typedef struct FileAPI
     OpenFile *open_file;
     GetFileSize *get_file_size;
     ReadFromFile *read_from_file;
+    ReadFromFileOffset *read_from_file_offset;
     WriteToFile *write_to_file;
     WriteFmtToFile *write_fmt_to_file;
     WriteVFmtToFile *write_vfmt_to_file;

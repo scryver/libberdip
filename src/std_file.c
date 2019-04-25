@@ -74,6 +74,15 @@ internal READ_FROM_FILE(read_from_file)
     return result;
 }
 
+internal READ_FROM_FILE_OFFSET(read_from_file_offset)
+{
+    umm result = 0;
+    FILE *inFile = (FILE *)file.handle;
+    fseek(inFile, offset, SEEK_SET);
+    result = fread(buffer, 1, size, inFile);
+    return result;
+}
+
 internal WRITE_TO_FILE(write_to_file)
 {
     FILE *outFile = (FILE *)file.handle;
