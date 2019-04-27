@@ -134,6 +134,16 @@ allocate_rand_list(u32 count)
     return result;
 }
 
+internal inline RandomList
+arena_allocate_rand_list(Arena *arena, u32 count)
+{
+    RandomList result = {};
+    result.entryCount = count;
+    result.entries = arena_allocate_array(arena, RandomListEntry, count);
+    
+    return result;
+}
+
 #define init_rand_list(s, l, w, d) init_rand_list_(s, l, w, sizeof(*d), d)
 internal void
 init_rand_list_(RandomSeriesPCG *series, RandomList *list, 
@@ -166,7 +176,7 @@ random_entry(RandomList *list)
     {
         RandomListEntry *entry = list->entries + entryIdx;
         curWeight += entry->weight;
-        if (val < curWeight)
+         if (val < curWeight)
         {
             result.weight = entry->weight;
             result.data = entry->data;

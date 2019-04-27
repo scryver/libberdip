@@ -19,7 +19,7 @@ typedef struct ApiFile
 
 typedef struct FileStream
 {
-    b32 verbose;
+    u32 verbose;
     u32 indent;
     ApiFile file;
 } FileStream;

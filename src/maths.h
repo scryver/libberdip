@@ -4,7 +4,6 @@
 #include <math.h>
 #define sin  sinf
 #define cos  cosf
-#define sqrt sqrtf
 //#define exp  expf
 #define exp  fast_expf
 #define log  logf
@@ -13,7 +12,6 @@
 
 #define sin  __builtin_sinf
 #define cos  __builtin_cosf
-#define sqrt __builtin_sqrtf
 //#define exp  __builtin_expf
 #define exp  fast_expf
 #define log     __builtin_logf
@@ -95,3 +93,86 @@ map(v2 value, v2 fromMin, v2 fromMax, v2 toMin, v2 toMax)
 }
 
 #endif
+
+internal f32
+square(f32 f)
+{
+    f32 result = f * f;
+    return result;
+}
+
+internal f32
+square_root(f32 f)
+{
+    f32 result = 0.0f;
+#if (!__has_builtin(__builtin_sqrtf))
+    result = sqrtf(f);
+#else
+    result = __builtin_sqrtf(f);
+#endif
+    return result;
+}
+
+internal v4
+sRGB_linearize(v4 c)
+{
+    v4 result;
+    
+    result.r = square(c.r);
+    result.g = square(c.g);
+    result.b = square(c.b);
+    result.a = c.a;
+    
+    return result;
+}
+
+internal v4
+sRGB_linearize(f32 r, f32 g, f32 b, f32 a)
+{
+    v4 input = {r, g, b, a};
+    v4 result = sRGB_linearize(input);
+    return result;
+}
+
+internal v4
+sRGB_from_linear(v4 c)
+{
+    v4 result;
+    
+    result.r = square_root(c.r);
+    result.g = square_root(c.g);
+    result.b = square_root(c.b);
+    result.a = c.a;
+    
+    return result;
+}
+
+internal v4
+linear1_from_sRGB255(v4 c)
+{
+    v4 result;
+    
+    f32 inv255 = 1.0f / 255.0f;
+    
+    result.r = square(inv255*c.r);
+    result.g = square(inv255*c.g);
+    result.b = square(inv255*c.b);
+    result.a = inv255*c.a;
+    
+    return result;
+}
+
+internal v4
+sRGB255_from_linear1(v4 c)
+{
+    v4 result;
+    
+    f32 one255 = 255.0f;
+    
+    result.r = one255*square_root(c.r);
+    result.g = one255*square_root(c.g);
+    result.b = one255*square_root(c.b);
+    result.a = one255*c.a;
+    
+    return result;
+}

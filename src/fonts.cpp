@@ -6,7 +6,7 @@
 
 #define STBTT_ifloor(x)  ((int)__builtin_floor(x))
 #define STBTT_iceil(x)   ((int)__builtin_ceil(x))
-#define STBTT_sqrt(x)    sqrt(x)
+#define STBTT_sqrt(x)    square_root(x)
 #define STBTT_pow(x, y)  __builtin_powf(x, y)
 #define STBTT_fmod(x, y) __builtin_fmodf(x, y)
 #define STBTT_cos(x)     __builtin_cosf(x)
@@ -47,7 +47,7 @@ print_usage(char *progName)
 internal Image
 load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32 glyphIndex, s32 *xOffset, s32 *yOffset)
 {
-     Image result = {};
+    Image result = {};
     
     s32 width, height;
     f32 scale = stbtt_ScaleForPixelHeight(fontInfo, font->info.pixelHeight);
@@ -71,8 +71,16 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
         u32 *dest = (u32 *)destRow;
         for (s32 x = 0; x < width; ++x)
         {
-            u32 alpha = (u32)(*source++) & 0xFF;
-            *dest++ = (alpha << 24) | 0xFFFFFF;
+            f32 gray = (f32)(*source++ & 0xFF);
+            v4 texel = {255.0f, 255.0f, 255.0f, gray};
+            texel = linear1_from_sRGB255(texel);
+            texel.rgb *= texel.a;
+            texel = sRGB255_from_linear1(texel);
+            
+            *dest++ = (((u32)(texel.a + 0.5f) << 24) |
+                       ((u32)(texel.r + 0.5f) << 16) |
+                       ((u32)(texel.g + 0.5f) << 8) |
+                       ((u32)(texel.b + 0.5f) << 0));
         }
         
         //destRow -= pitch;
@@ -83,8 +91,8 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
     s32 advance, lsb;
     stbtt_GetCodepointHMetrics(fontInfo, (s32)codePoint, &advance, &lsb);
     f32 charAdvance = (f32)advance * scale;
-
-f32 kerningChange = (f32)lsb * scale;
+    
+    f32 kerningChange = (f32)lsb * scale;
     for (u32 otherGlyphIndex = 0; otherGlyphIndex < font->maxGlyphCount; ++otherGlyphIndex)
     {
         font->horizontalAdvance[glyphIndex * font->maxGlyphCount + otherGlyphIndex] += charAdvance - kerningChange;
@@ -93,7 +101,7 @@ f32 kerningChange = (f32)lsb * scale;
             font->horizontalAdvance[otherGlyphIndex * font->maxGlyphCount + glyphIndex] += kerningChange;
         }
     }
-
+    
     stbtt_FreeBitmap(monoBitmap, 0);
     
     return result;
@@ -137,9 +145,9 @@ int main(int argc, char **argv)
             if (stbtt_InitFont(&fontInfo, inFile.content.data,
                                stbtt_GetFontOffsetForIndex(inFile.content.data, 0)))
             {
-            ApiFile outFile = open_file(outputFilename, FileOpen_Write);
-            
-            fprintf(stdout, "Converting '%s' to '%s'...\n", inputFilename, outputFilename);
+                ApiFile outFile = open_file(outputFilename, FileOpen_Write);
+                
+                fprintf(stdout, "Converting '%s' to '%s'...\n", inputFilename, outputFilename);
                 
                 FontLoader makeFont = {};
                 makeFont.info.pixelHeight = pixelHeight;
@@ -174,7 +182,7 @@ int main(int argc, char **argv)
                 add_character(&fontInfo, &makeFont, ' ');
                 // TODO(michiel): For now it includes UTF-8 latin and greek
                 //for (u32 character = '!'; character <= '~'; ++character)
-                    for (u32 character = '!'; character < 0x400; ++character)
+                for (u32 character = '!'; character < 0x400; ++character)
                 {
                     add_character(&fontInfo, &makeFont, character);
                 }
@@ -221,14 +229,14 @@ int main(int argc, char **argv)
                     horizontalAdvance += sizeof(f32) * makeFont.maxGlyphCount;
                 }
                 
-            close_file(&outFile);
-        close_file(&inFile);
+                close_file(&outFile);
+                close_file(&inFile);
             }
             else
             {
                 fprintf(stderr, "Failed to initialize stb truetype\n");
             }
-            }
+        }
         else
         {
             fprintf(stderr, "Unable to open '%s'\n", inputFilename);

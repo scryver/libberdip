@@ -164,7 +164,6 @@ typedef size_t   umm;
 
 // TODO(michiel): Type checkable versions?
 #define absolute(a)             (((a) < 0) ? -(a) : (a))
-#define square(a)               ((a) * (a))
 #define lerp(a, t, b)           ((a) + (t) * ((b) - (a)))
 
 #define kilobytes(kB)           ((kB) * 1024LL)
@@ -521,6 +520,9 @@ hash_bytes(void *ptr, umm len) {
     return x;
 }
 
+#include "vector_types.h"
+
 #ifdef __cplusplus
 #include "./common_cpp.h" // Overloaded functions and such things c won't handle
 #endif
+
