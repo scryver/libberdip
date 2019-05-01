@@ -97,7 +97,7 @@ slow_gaussian(RandomSeriesPCG *series)
         f2 = random_bilateral(series);
         s = f1 * f1 + f2 * f2;
     }
-    s = sqrt((-2.0f * log(s)) / s);
+    s = square_root((-2.0f * log(s)) / s);
     return f1 * s;
 }
 
@@ -115,7 +115,7 @@ random_gaussian(RandomSeriesPCG *series, f32 mean = 0.0f, f32 stdDeviation = 1.0
         f2 = random_bilateral(series);
         s = f1 * f1 + f2 * f2;
     }
-    s = sqrt((-2.0f * log(s)) / s);
+    s = square_root((-2.0f * log(s)) / s);
     return (f1 * s) - mean;
 }
 #endif
