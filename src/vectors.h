@@ -4,7 +4,7 @@
 // NOTE(michiel): V2U
 //
 
-internal inline v2u
+internal v2u
 V2U(u32 x, u32 y)
 {
     v2u result;
@@ -15,7 +15,7 @@ V2U(u32 x, u32 y)
     return result;
 }
 
-internal inline v2u
+internal v2u
 operator -(v2u a)
 {
     v2u result;
@@ -24,7 +24,7 @@ operator -(v2u a)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator +=(v2u &a, v2u b)
 {
     a.x += b.x;
@@ -32,7 +32,7 @@ operator +=(v2u &a, v2u b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator +(v2u a, v2u b)
 {
     v2u result = a;
@@ -40,7 +40,7 @@ operator +(v2u a, v2u b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator -=(v2u &a, v2u b)
 {
     a.x -= b.x;
@@ -48,7 +48,7 @@ operator -=(v2u &a, v2u b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator -(v2u a, v2u b)
 {
     v2u result = a;
@@ -56,7 +56,7 @@ operator -(v2u a, v2u b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator &=(v2u &a, u32 b)
 {
     a.x &= b;
@@ -64,7 +64,7 @@ operator &=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator &(v2u a, u32 b)
 {
     v2u result = a;
@@ -72,7 +72,7 @@ operator &(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator |=(v2u &a, u32 b)
 {
     a.x |= b;
@@ -80,7 +80,7 @@ operator |=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator |(v2u a, u32 b)
 {
     v2u result = a;
@@ -88,7 +88,7 @@ operator |(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator ^=(v2u &a, u32 b)
 {
     a.x ^= b;
@@ -96,7 +96,7 @@ operator ^=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator ^(v2u a, u32 b)
 {
     v2u result = a;
@@ -104,7 +104,7 @@ operator ^(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator +=(v2u &a, u32 b)
 {
     a.x += b;
@@ -112,7 +112,7 @@ operator +=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator +(v2u a, u32 b)
 {
     v2u result = a;
@@ -120,7 +120,7 @@ operator +(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator -=(v2u &a, u32 b)
 {
     a.x -= b;
@@ -128,7 +128,7 @@ operator -=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator -(v2u a, u32 b)
 {
     v2u result = a;
@@ -136,7 +136,7 @@ operator -(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u &
+internal v2u &
 operator *=(v2u &a, u32 b)
 {
     a.x *= b;
@@ -144,7 +144,7 @@ operator *=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator *(v2u a, u32 b)
 {
     v2u result = a;
@@ -152,13 +152,13 @@ operator *(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u
+internal v2u
 operator *(u32 a, v2u b)
 {
     return b * a;
 }
 
-internal inline v2u &
+internal v2u &
 operator /=(v2u &a, u32 b)
 {
     a.x /= b;
@@ -166,7 +166,7 @@ operator /=(v2u &a, u32 b)
     return a;
 }
 
-internal inline v2u
+internal v2u
 operator /(v2u a, u32 b)
 {
     v2u result = a;
@@ -174,7 +174,7 @@ operator /(v2u a, u32 b)
     return result;
 }
 
-internal inline v2u
+internal v2u
 operator /(u32 a, v2u b)
 {
     v2u result;
@@ -183,11 +183,27 @@ operator /(u32 a, v2u b)
     return result;
 }
 
+internal b32
+operator ==(v2u a, v2u b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y);
+    return result;
+}
+
+internal b32
+operator !=(v2u a, v2u b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y);
+    return result;
+}
+
 //
 // NOTE(michiel): V2S
 //
 
-internal inline v2s
+internal v2s
 V2S(s32 x, s32 y)
 {
     v2s result;
@@ -198,7 +214,7 @@ V2S(s32 x, s32 y)
     return result;
 }
 
-internal inline v2s
+internal v2s
 V2S(v2u u)
 {
     v2s result;
@@ -207,7 +223,7 @@ V2S(v2u u)
     return result;
 }
 
-internal inline v2s
+internal v2s
 operator -(v2s a)
 {
     v2s result;
@@ -216,7 +232,7 @@ operator -(v2s a)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator +=(v2s &a, v2s b)
 {
     a.x += b.x;
@@ -224,7 +240,7 @@ operator +=(v2s &a, v2s b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator +(v2s a, v2s b)
 {
     v2s result = a;
@@ -232,7 +248,7 @@ operator +(v2s a, v2s b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator -=(v2s &a, v2s b)
 {
     a.x -= b.x;
@@ -240,7 +256,7 @@ operator -=(v2s &a, v2s b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator -(v2s a, v2s b)
 {
     v2s result = a;
@@ -248,7 +264,7 @@ operator -(v2s a, v2s b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator &=(v2s &a, u32 b)
 {
     a.x &= b;
@@ -256,7 +272,7 @@ operator &=(v2s &a, u32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator &(v2s a, u32 b)
 {
     v2s result = a;
@@ -264,7 +280,7 @@ operator &(v2s a, u32 b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator |=(v2s &a, u32 b)
 {
     a.x |= b;
@@ -272,7 +288,7 @@ operator |=(v2s &a, u32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator |(v2s a, u32 b)
 {
     v2s result = a;
@@ -280,7 +296,7 @@ operator |(v2s a, u32 b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator ^=(v2s &a, u32 b)
 {
     a.x ^= b;
@@ -288,7 +304,7 @@ operator ^=(v2s &a, u32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator ^(v2s a, u32 b)
 {
     v2s result = a;
@@ -296,7 +312,7 @@ operator ^(v2s a, u32 b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator +=(v2s &a, s32 b)
 {
     a.x += b;
@@ -304,7 +320,7 @@ operator +=(v2s &a, s32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator +(v2s a, s32 b)
 {
     v2s result = a;
@@ -312,7 +328,7 @@ operator +(v2s a, s32 b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator -=(v2s &a, s32 b)
 {
     a.x -= b;
@@ -320,7 +336,7 @@ operator -=(v2s &a, s32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator -(v2s a, s32 b)
 {
     v2s result = a;
@@ -328,7 +344,7 @@ operator -(v2s a, s32 b)
     return result;
 }
 
-internal inline v2s &
+internal v2s &
 operator *=(v2s &a, s32 b)
 {
     a.x *= b;
@@ -336,7 +352,7 @@ operator *=(v2s &a, s32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator *(v2s a, s32 b)
 {
     v2s result = a;
@@ -344,13 +360,13 @@ operator *(v2s a, s32 b)
     return result;
 }
 
-internal inline v2s
+internal v2s
 operator *(s32 a, v2s b)
 {
     return b * a;
 }
 
-internal inline v2s &
+internal v2s &
 operator /=(v2s &a, s32 b)
 {
     a.x /= b;
@@ -358,7 +374,7 @@ operator /=(v2s &a, s32 b)
     return a;
 }
 
-internal inline v2s
+internal v2s
 operator /(v2s a, s32 b)
 {
     v2s result = a;
@@ -366,7 +382,7 @@ operator /(v2s a, s32 b)
     return result;
 }
 
-internal inline v2s
+internal v2s
 operator /(s32 a, v2s b)
 {
     v2s result;
@@ -375,11 +391,27 @@ operator /(s32 a, v2s b)
     return result;
 }
 
+internal b32
+operator ==(v2s a, v2s b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y);
+    return result;
+}
+
+internal b32
+operator !=(v2s a, v2s b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y);
+    return result;
+}
+
 //
 // NOTE(michiel): V2
 //
 
-internal inline v2
+internal v2
 V2(f32 x, f32 y)
 {
     v2 result;
@@ -390,7 +422,7 @@ V2(f32 x, f32 y)
     return result;
 }
 
-internal inline v2
+internal v2
 V2(v2s v)
 {
     v2 result;
@@ -399,7 +431,7 @@ V2(v2s v)
     return result;
 }
 
-internal inline v2
+internal v2
 V2(v2u v)
 {
     v2 result;
@@ -408,7 +440,7 @@ V2(v2u v)
     return result;
 }
 
-internal inline v2
+internal v2
 polar_to_cartesian(f32 r, f32 theta)
 {
     v2 result;
@@ -417,7 +449,7 @@ polar_to_cartesian(f32 r, f32 theta)
     return result;
 }
 
-internal inline v2
+internal v2
 operator -(v2 a)
 {
     v2 result;
@@ -426,7 +458,7 @@ operator -(v2 a)
     return result;
 }
 
-internal inline v2 &
+internal v2 &
 operator +=(v2 &a, v2 b)
 {
     a.x += b.x;
@@ -434,7 +466,7 @@ operator +=(v2 &a, v2 b)
     return a;
 }
 
-internal inline v2
+internal v2
 operator +(v2 a, v2 b)
 {
     v2 result = a;
@@ -442,7 +474,7 @@ operator +(v2 a, v2 b)
     return result;
 }
 
-internal inline v2 &
+internal v2 &
 operator -=(v2 &a, v2 b)
 {
     a.x -= b.x;
@@ -450,7 +482,7 @@ operator -=(v2 &a, v2 b)
     return a;
 }
 
-internal inline v2
+internal v2
 operator -(v2 a, v2 b)
 {
     v2 result = a;
@@ -458,7 +490,7 @@ operator -(v2 a, v2 b)
     return result;
 }
 
-internal inline v2 &
+internal v2 &
 operator +=(v2 &a, f32 b)
 {
     a.x += b;
@@ -466,7 +498,7 @@ operator +=(v2 &a, f32 b)
     return a;
 }
 
-internal inline v2
+internal v2
 operator +(v2 a, f32 b)
 {
     v2 result = a;
@@ -474,7 +506,7 @@ operator +(v2 a, f32 b)
     return result;
 }
 
-internal inline v2 &
+internal v2 &
 operator -=(v2 &a, f32 b)
 {
     a.x -= b;
@@ -482,7 +514,7 @@ operator -=(v2 &a, f32 b)
     return a;
 }
 
-internal inline v2
+internal v2
 operator -(v2 a, f32 b)
 {
     v2 result = a;
@@ -490,7 +522,7 @@ operator -(v2 a, f32 b)
     return result;
 }
 
-internal inline v2 &
+internal v2 &
 operator *=(v2 &a, f32 b)
 {
     a.x *= b;
@@ -498,7 +530,7 @@ operator *=(v2 &a, f32 b)
     return a;
 }
 
-internal inline v2
+internal v2
 operator *(v2 a, f32 b)
 {
     v2 result = a;
@@ -506,20 +538,20 @@ operator *(v2 a, f32 b)
     return result;
 }
 
-internal inline v2
+internal v2
 operator *(f32 a, v2 b)
 {
     return b * a;
 }
 
-internal inline v2 &
+internal v2 &
 operator /=(v2 &a, f32 b)
 {
     a *= 1.0f / b;
     return a;
 }
 
-internal inline v2
+internal v2
 operator /(v2 a, f32 b)
 {
     v2 result = a;
@@ -527,7 +559,7 @@ operator /(v2 a, f32 b)
     return result;
 }
 
-internal inline v2
+internal v2
 operator /(f32 a, v2 b)
 {
     v2 result;
@@ -536,7 +568,23 @@ operator /(f32 a, v2 b)
     return result;
 }
 
-internal inline v2
+internal b32
+operator ==(v2 a, v2 b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y);
+    return result;
+}
+
+internal b32
+operator !=(v2 a, v2 b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y);
+    return result;
+}
+
+internal v2
 clamp01(v2 a)
 {
     v2 result;
@@ -545,7 +593,7 @@ clamp01(v2 a)
     return result;
 }
 
-internal inline v2
+internal v2
 hadamard(v2 a, v2 b)
 {
     v2 result;
@@ -554,7 +602,7 @@ hadamard(v2 a, v2 b)
     return result;
 }
 
-internal inline f32
+internal f32
 dot(v2 a, v2 b)
 {
     f32 result;
@@ -562,14 +610,14 @@ dot(v2 a, v2 b)
     return result;
 }
 
-internal inline f32
+internal f32
 length_squared(v2 a)
 {
     f32 result = dot(a, a);
     return result;
 }
 
-internal inline f32
+internal f32
 length(v2 a)
 {
     f32 result = length_squared(a);
@@ -577,7 +625,7 @@ length(v2 a)
     return result;
 }
 
-internal inline v2
+internal v2
 normalize_len(v2 a, f32 len)
 {
     v2 result = {};
@@ -588,14 +636,14 @@ normalize_len(v2 a, f32 len)
     return result;
 }
 
-internal inline v2
+internal v2
 normalize(v2 a)
 {
     v2 result = normalize_len(a, length(a));
     return result;
 }
 
-internal inline v2
+internal v2
 set_length(v2 a, f32 length)
 {
     v2 result = normalize(a);
@@ -603,21 +651,21 @@ set_length(v2 a, f32 length)
     return result;
 }
 
-internal inline v2
+internal v2
 direction(v2 from, v2 to)
 {
     v2 result = to - from;
     return result;
 }
 
-internal inline v2
+internal v2
 direction_unit(v2 from, v2 to)
 {
     v2 result = normalize(to - from);
     return result;
 }
 
-internal inline v2
+internal v2
 rotate(v2 a, v2 rotation)
 {
     v2 result = {};
@@ -632,7 +680,7 @@ rotate(v2 a, v2 rotation)
 // NOTE(michiel): V3U
 //
 
-internal inline v3u
+internal v3u
 V3U(u32 x, u32 y, u32 z)
 {
     v3u result;
@@ -644,7 +692,7 @@ V3U(u32 x, u32 y, u32 z)
     return result;
 }
 
-internal inline v3u
+internal v3u
 operator -(v3u a)
 {
     v3u result;
@@ -654,7 +702,7 @@ operator -(v3u a)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator +=(v3u &a, v3u b)
 {
     a.x += b.x;
@@ -663,7 +711,7 @@ operator +=(v3u &a, v3u b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator +(v3u a, v3u b)
 {
     v3u result = a;
@@ -671,7 +719,7 @@ operator +(v3u a, v3u b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator -=(v3u &a, v3u b)
 {
     a.x -= b.x;
@@ -680,7 +728,7 @@ operator -=(v3u &a, v3u b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator -(v3u a, v3u b)
 {
     v3u result = a;
@@ -688,7 +736,7 @@ operator -(v3u a, v3u b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator &=(v3u &a, u32 b)
 {
     a.x &= b;
@@ -697,7 +745,7 @@ operator &=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator &(v3u a, u32 b)
 {
     v3u result = a;
@@ -705,7 +753,7 @@ operator &(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator |=(v3u &a, u32 b)
 {
     a.x |= b;
@@ -714,7 +762,7 @@ operator |=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator |(v3u a, u32 b)
 {
     v3u result = a;
@@ -722,7 +770,7 @@ operator |(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator ^=(v3u &a, u32 b)
 {
     a.x ^= b;
@@ -731,7 +779,7 @@ operator ^=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator ^(v3u a, u32 b)
 {
     v3u result = a;
@@ -739,7 +787,7 @@ operator ^(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator +=(v3u &a, u32 b)
 {
     a.x += b;
@@ -748,7 +796,7 @@ operator +=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator +(v3u a, u32 b)
 {
     v3u result = a;
@@ -756,7 +804,7 @@ operator +(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator -=(v3u &a, u32 b)
 {
     a.x -= b;
@@ -765,7 +813,7 @@ operator -=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator -(v3u a, u32 b)
 {
     v3u result = a;
@@ -773,7 +821,7 @@ operator -(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u &
+internal v3u &
 operator *=(v3u &a, u32 b)
 {
     a.x *= b;
@@ -782,7 +830,7 @@ operator *=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator *(v3u a, u32 b)
 {
     v3u result = a;
@@ -790,13 +838,13 @@ operator *(v3u a, u32 b)
     return result;
 }
 
-internal inline v3u
+internal v3u
 operator *(u32 a, v3u b)
 {
     return b * a;
 }
 
-internal inline v3u &
+internal v3u &
 operator /=(v3u &a, u32 b)
 {
     a.x /= b;
@@ -805,7 +853,7 @@ operator /=(v3u &a, u32 b)
     return a;
 }
 
-internal inline v3u
+internal v3u
 operator /(v3u a, u32 b)
 {
     v3u result = a;
@@ -813,11 +861,27 @@ operator /(v3u a, u32 b)
     return result;
 }
 
+internal b32
+operator ==(v3u a, v3u b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+    return result;
+}
+
+internal b32
+operator !=(v3u a, v3u b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y) || (a.z != b.z);
+    return result;
+}
+
 //
 // NOTE(michiel): V3
 //
 
-internal inline v3
+internal v3
 V3(f32 x, f32 y, f32 z)
 {
     v3 result;
@@ -827,7 +891,7 @@ V3(f32 x, f32 y, f32 z)
     return result;
 }
 
-internal inline v3
+internal v3
 operator -(v3 a)
 {
     v3 result;
@@ -837,7 +901,7 @@ operator -(v3 a)
     return result;
 }
 
-internal inline v3 &
+internal v3 &
 operator +=(v3 &a, v3 b)
 {
     a.x += b.x;
@@ -846,7 +910,7 @@ operator +=(v3 &a, v3 b)
     return a;
 }
 
-internal inline v3
+internal v3
 operator +(v3 a, v3 b)
 {
     v3 result = a;
@@ -854,7 +918,7 @@ operator +(v3 a, v3 b)
     return result;
 }
 
-internal inline v3 &
+internal v3 &
 operator -=(v3 &a, v3 b)
 {
     a.x -= b.x;
@@ -863,7 +927,7 @@ operator -=(v3 &a, v3 b)
     return a;
 }
 
-internal inline v3
+internal v3
 operator -(v3 a, v3 b)
 {
     v3 result = a;
@@ -871,7 +935,7 @@ operator -(v3 a, v3 b)
     return result;
 }
 
-internal inline v3 &
+internal v3 &
 operator +=(v3 &a, f32 b)
 {
     a.x += b;
@@ -880,7 +944,7 @@ operator +=(v3 &a, f32 b)
     return a;
 }
 
-internal inline v3
+internal v3
 operator +(v3 a, f32 b)
 {
     v3 result = a;
@@ -888,7 +952,7 @@ operator +(v3 a, f32 b)
     return result;
 }
 
-internal inline v3 &
+internal v3 &
 operator -=(v3 &a, f32 b)
 {
     a.x -= b;
@@ -897,7 +961,7 @@ operator -=(v3 &a, f32 b)
     return a;
 }
 
-internal inline v3
+internal v3
 operator -(v3 a, f32 b)
 {
     v3 result = a;
@@ -905,7 +969,7 @@ operator -(v3 a, f32 b)
     return result;
 }
 
-internal inline v3 &
+internal v3 &
 operator *=(v3 &a, f32 b)
 {
     a.x *= b;
@@ -914,7 +978,7 @@ operator *=(v3 &a, f32 b)
     return a;
 }
 
-internal inline v3
+internal v3
 operator *(v3 a, f32 b)
 {
     v3 result = a;
@@ -922,20 +986,20 @@ operator *(v3 a, f32 b)
     return result;
 }
 
-internal inline v3
+internal v3
 operator *(f32 a, v3 b)
 {
     return b * a;
 }
 
-internal inline v3 &
+internal v3 &
 operator /=(v3 &a, f32 b)
 {
     a *= 1.0f / b;
     return a;
 }
 
-internal inline v3
+internal v3
 operator /(v3 a, f32 b)
 {
     v3 result = a;
@@ -943,7 +1007,23 @@ operator /(v3 a, f32 b)
     return result;
 }
 
-internal inline f32
+internal b32
+operator ==(v3 a, v3 b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+    return result;
+}
+
+internal b32
+operator !=(v3 a, v3 b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y) || (a.z != b.z);
+    return result;
+}
+
+internal f32
 dot(v3 a, v3 b)
 {
     f32 result;
@@ -951,14 +1031,14 @@ dot(v3 a, v3 b)
     return result;
 }
 
-internal inline f32
+internal f32
 length_squared(v3 a)
 {
     f32 result = dot(a, a);
     return result;
 }
 
-internal inline f32
+internal f32
 length(v3 a)
 {
     f32 result = length_squared(a);
@@ -966,7 +1046,7 @@ length(v3 a)
     return result;
 }
 
-internal inline v3
+internal v3
 normalize(v3 a, f32 len)
 {
     v3 result = {};
@@ -977,14 +1057,14 @@ normalize(v3 a, f32 len)
     return result;
 }
 
-internal inline v3
+internal v3
 normalize(v3 a)
 {
     v3 result = normalize(a, length(a));
     return result;
 }
 
-internal inline v3
+internal v3
 clamp01(v3 a)
 {
     v3 result;
@@ -998,7 +1078,7 @@ clamp01(v3 a)
 // NOTE(michiel): V4
 //
 
-internal inline v4
+internal v4
 V4(f32 x, f32 y, f32 z, f32 w)
 {
     v4 result;
@@ -1011,7 +1091,7 @@ V4(f32 x, f32 y, f32 z, f32 w)
     return result;
 }
 
-internal inline v4
+internal v4
 operator -(v4 a)
 {
     v4 result;
@@ -1022,7 +1102,7 @@ operator -(v4 a)
     return result;
 }
 
-internal inline v4 &
+internal v4 &
 operator +=(v4 &a, v4 b)
 {
     a.x += b.x;
@@ -1032,7 +1112,7 @@ operator +=(v4 &a, v4 b)
     return a;
 }
 
-internal inline v4
+internal v4
 operator +(v4 a, v4 b)
 {
     v4 result = a;
@@ -1040,7 +1120,7 @@ operator +(v4 a, v4 b)
     return result;
 }
 
-internal inline v4 &
+internal v4 &
 operator -=(v4 &a, v4 b)
 {
     a.x -= b.x;
@@ -1050,7 +1130,7 @@ operator -=(v4 &a, v4 b)
     return a;
 }
 
-internal inline v4
+internal v4
 operator -(v4 a, v4 b)
 {
     v4 result = a;
@@ -1058,7 +1138,7 @@ operator -(v4 a, v4 b)
     return result;
 }
 
-internal inline v4 &
+internal v4 &
 operator +=(v4 &a, f32 b)
 {
     a.x += b;
@@ -1068,7 +1148,7 @@ operator +=(v4 &a, f32 b)
     return a;
 }
 
-internal inline v4
+internal v4
 operator +(v4 a, f32 b)
 {
     v4 result = a;
@@ -1076,7 +1156,7 @@ operator +(v4 a, f32 b)
     return result;
 }
 
-internal inline v4 &
+internal v4 &
 operator -=(v4 &a, f32 b)
 {
     a.x -= b;
@@ -1086,7 +1166,7 @@ operator -=(v4 &a, f32 b)
     return a;
 }
 
-internal inline v4
+internal v4
 operator -(v4 a, f32 b)
 {
     v4 result = a;
@@ -1094,7 +1174,7 @@ operator -(v4 a, f32 b)
     return result;
 }
 
-internal inline v4 &
+internal v4 &
 operator *=(v4 &a, f32 b)
 {
     a.x *= b;
@@ -1104,7 +1184,7 @@ operator *=(v4 &a, f32 b)
     return a;
 }
 
-internal inline v4
+internal v4
 operator *(v4 a, f32 b)
 {
     v4 result = a;
@@ -1112,20 +1192,20 @@ operator *(v4 a, f32 b)
     return result;
 }
 
-internal inline v4
+internal v4
 operator *(f32 a, v4 b)
 {
     return b * a;
 }
 
-internal inline v4 &
+internal v4 &
 operator /=(v4 &a, f32 b)
 {
     a *= 1.0f / b;
     return a;
 }
 
-internal inline v4
+internal v4
 operator /(v4 a, f32 b)
 {
     v4 result = a;
@@ -1133,7 +1213,23 @@ operator /(v4 a, f32 b)
     return result;
 }
 
-internal inline f32
+internal b32
+operator ==(v4 a, v4 b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y) && (a.z == b.z) && (a.w == b.w);
+    return result;
+}
+
+internal b32
+operator !=(v4 a, v4 b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y) || (a.z != b.z) || (a.w != b.w);
+    return result;
+}
+
+internal f32
 dot(v4 a, v4 b)
 {
     f32 result;
@@ -1141,14 +1237,14 @@ dot(v4 a, v4 b)
     return result;
 }
 
-internal inline f32
+internal f32
 length_squared(v4 a)
 {
     f32 result = dot(a, a);
     return result;
 }
 
-internal inline f32
+internal f32
 length(v4 a)
 {
     f32 result = length_squared(a);
@@ -1156,7 +1252,7 @@ length(v4 a)
     return result;
 }
 
-internal inline v4
+internal v4
 normalize(v4 a, f32 len)
 {
     v4 result = {};
@@ -1167,14 +1263,14 @@ normalize(v4 a, f32 len)
     return result;
 }
 
-internal inline v4
+internal v4
 normalize(v4 a)
 {
     v4 result = normalize(a, length(a));
     return result;
 }
 
-internal inline v4
+internal v4
 clamp01(v4 a)
 {
     v4 result;
@@ -1189,7 +1285,7 @@ clamp01(v4 a)
 // NOTE(michiel): Rectangle2u
 //
 
-internal inline Rectangle2u
+internal Rectangle2u
 rect_from_dim(u32 x, u32 y, u32 w, u32 h)
 {
     Rectangle2u result = {0};
@@ -1200,7 +1296,7 @@ rect_from_dim(u32 x, u32 y, u32 w, u32 h)
     return result;
 }
 
-internal inline v2u
+internal v2u
 get_dim(Rectangle2u rect)
 {
     v2u result = rect.max - rect.min;
@@ -1211,7 +1307,7 @@ get_dim(Rectangle2u rect)
 // NOTE(michiel): Rectangle2s
 //
 
-internal inline Rectangle2s
+internal Rectangle2s
 rect_from_dim(s32 x, s32 y, s32 w, s32 h)
 {
     Rectangle2s result = {0};
@@ -1222,7 +1318,7 @@ rect_from_dim(s32 x, s32 y, s32 w, s32 h)
     return result;
 }
 
-internal inline v2s
+internal v2s
 get_dim(Rectangle2s rect)
 {
     v2s result = rect.max - rect.min;

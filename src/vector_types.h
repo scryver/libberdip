@@ -3,6 +3,10 @@ typedef union v2 {
         f32 x;
         f32 y;
     };
+    struct {
+        f32 width;
+        f32 height;
+    };
     f32 e[2];
 } v2;
 
@@ -11,6 +15,10 @@ typedef union v2s {
         s32 x;
         s32 y;
     };
+    struct {
+        s32 width;
+        s32 height;
+    };
     s32 e[2];
 } v2s;
 
@@ -18,6 +26,10 @@ typedef union v2u {
     struct {
         u32 x;
         u32 y;
+    };
+    struct {
+        u32 width;
+        u32 height;
     };
     u32 e[2];
 } v2u;
