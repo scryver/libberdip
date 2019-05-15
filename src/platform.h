@@ -1,4 +1,5 @@
 #include "./common.h"
+#include "./intrinsics.h"
 #include "./maps.h"
 #include "./strings.h"
 #include "./maths.h"

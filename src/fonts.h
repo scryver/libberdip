@@ -59,13 +59,13 @@ unpack_font(u8 *fontData, BitmapFont *result)
 // NOTE(michiel): UTF-8 support
 //
 #define adv(s, c) *c = (*c << 6) | ((*s++) & ~0xC0)
-internal inline u32
+internal u32
 get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
 {
     // NOTE(michiel): Returns amounts of bytes to skip, 0 on malformed encoding.
     u8 *source = startOfUtf8;
     u32 bytes = 0;
-     *codePoint = (u32)(*source);
+    *codePoint = (u32)(*source);
     if ((*codePoint & 0xF8) == 0xF0) {
         // NOTE(michiel): 4-bytes
         *codePoint = (*codePoint & ~0xF8);
@@ -81,7 +81,7 @@ get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
             }
         }
     } else if ((*codePoint & 0xF0) == 0xE0) {
-// NOTE(michiel): 3-bytes
+        // NOTE(michiel): 3-bytes
         *codePoint = (*codePoint & ~0xF0);
         ++source;
         if (*source && ((*source & 0xC0) == 0x80)) {
@@ -112,14 +112,19 @@ get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
 // NOTE(michiel): Font drawing
 //
 
-internal inline u32
+internal u32
 get_glyph_from_code_point(BitmapFont *font, u32 codePoint)
 {
     u32 result = 0;
-    if (codePoint < font->info.onePastHighestCodePoint)
+    if (codePoint >= font->info.onePastHighestCodePoint)
     {
-        result = font->unicodeMap[codePoint];
-        i_expect(result < font->info.glyphCount);
+        codePoint = (u32)(u8)'?';
+    }
+    result = font->unicodeMap[codePoint];
+    if (result >= font->info.glyphCount)
+    {
+        // TODO(michiel): Add bug report
+        result = 0;
     }
     return result;
 }
@@ -127,8 +132,6 @@ get_glyph_from_code_point(BitmapFont *font, u32 codePoint)
 internal f32
 get_horizontal_advance_for_pair(BitmapFont *font, u32 prevPoint, u32 codePoint)
 {
-    i_expect(prevPoint < font->info.onePastHighestCodePoint);
-    i_expect(codePoint < font->info.onePastHighestCodePoint);
     u32 prevGlyph = get_glyph_from_code_point(font, prevPoint);
     u32 glyph = get_glyph_from_code_point(font, codePoint);
     
