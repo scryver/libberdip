@@ -39,16 +39,14 @@ get_pixel_pointer(Image *image, u32 x, u32 y)
 }
 
 internal Image
-load_bitmap(API *api, char *filename)
+load_bitmap(Buffer data, b32 preMultiplyAlpha = false)
 {
     Image result = {};
     
-    ApiFile readResult = api->file.read_entire_file(filename);
-    
-    if (readResult.content.size != 0)
+    if (data.size != 0)
     {
-        BitmapHeader *header = (BitmapHeader *)readResult.content.data;
-        u32 *pixels = (u32 *)(readResult.content.data + header->bitmapOffset);
+        BitmapHeader *header = (BitmapHeader *)data.data;
+        u32 *pixels = (u32 *)(data.data + header->bitmapOffset);
         result.pixels = pixels;
         result.width = header->width;
         result.height = header->height;
@@ -85,16 +83,45 @@ load_bitmap(API *api, char *filename)
         s32 alphaShiftDown = (s32)alphaScan.index;
         
         u32 *dest = pixels;
-        for(s32 y = 0; y < header->height; ++y)
+        if (preMultiplyAlpha)
         {
-            for(s32 x = 0; x < header->width; ++x)
+            for(s32 y = 0; y < header->height; ++y)
             {
-                u32 c = *dest;
-                
-                *dest++ = ((((c & alphaMask) >> alphaShiftDown) << 24) |
-                           (((c & blueMask) >> blueShiftDown)   << 16) |
-                           (((c & greenMask) >> greenShiftDown) <<  8) |
-                           (((c & redMask) >> redShiftDown)     <<  0));
+                for(s32 x = 0; x < header->width; ++x)
+                {
+                    u32 c = *dest;
+                    
+                    v4 texel = {
+                        (f32)((c & redMask) >> redShiftDown),
+                        (f32)((c & greenMask) >> greenShiftDown),
+                        (f32)((c & blueMask) >> blueShiftDown),
+                        (f32)((c & alphaMask) >> alphaShiftDown)
+                    };
+                    
+                    texel = linear1_from_sRGB255(texel);
+                    texel.rgb *= texel.a;
+                    texel = sRGB255_from_linear1(texel);
+                    
+                    *dest++ = ((u32_from_f32_round(texel.a) << 24) |
+                               (u32_from_f32_round(texel.r) << 16) |
+                               (u32_from_f32_round(texel.g) <<  8) |
+                               (u32_from_f32_round(texel.b) <<  0));
+                }
+            }
+        }
+        else
+        {
+            for(s32 y = 0; y < header->height; ++y)
+            {
+                for(s32 x = 0; x < header->width; ++x)
+                {
+                    u32 c = *dest;
+                    
+                    *dest++ = ((((c & alphaMask) >> alphaShiftDown) << 24) |
+                               (((c & blueMask) >> blueShiftDown)   << 16) |
+                               (((c & greenMask) >> greenShiftDown) <<  8) |
+                               (((c & redMask) >> redShiftDown)     <<  0));
+                }
             }
         }
     }
@@ -102,8 +129,17 @@ load_bitmap(API *api, char *filename)
     return result;
 }
 
+internal Image
+load_bitmap(FileAPI *api, char *filename, b32 preMultiplyAlpha = false)
+{
+    Image result = {};
+    ApiFile readResult = api->read_entire_file(filename);
+    result = load_bitmap(readResult.content, preMultiplyAlpha);
+    return result;
+}
+
 internal void
-write_bitmap(API *api, Image *image, char *outputFilename)
+write_bitmap(FileAPI *api, Image *image, char *outputFilename)
 {
     u32 outputPixelSize = get_total_pixel_size(image);
     
@@ -123,11 +159,11 @@ write_bitmap(API *api, Image *image, char *outputFilename)
     header.coloursUsed = 0;
     header.coloursImportant = 0;
     
-    ApiFile file = api->file.open_file(outputFilename, FileOpen_Write);
+    ApiFile file = api->open_file(outputFilename, FileOpen_Write);
     if (file.handle)
     {
-        api->file.write_to_file(file, sizeof(header), &header);
-        api->file.write_to_file(file, outputPixelSize, image->pixels);
-        api->file.close_file(&file);
+        api->write_to_file(file, sizeof(header), &header);
+        api->write_to_file(file, outputPixelSize, image->pixels);
+        api->close_file(&file);
     }
 }

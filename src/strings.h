@@ -2,6 +2,10 @@
 // NOTE(michiel): Strings and string interning
 //
 
+global const char gDecimalChars[]  = "0123456789";
+global const char gLowerHexChars[] = "0123456789abcdef";
+global const char gUpperHexChars[] = "0123456789ABCDEF";
+
 internal inline u32
 string_length(const char *cString)
 {
@@ -70,9 +74,9 @@ is_end_of_line(char s)
 }
 
 internal inline b32
-is_space(char s)
+is_whitespace(char s)
 {
-    return ((s == ' ') || (s == '\t') || (s == '\v') ||
+    return ((s == ' ') || (s == '\t') || (s == '\v') || (s == '\f') ||
             is_end_of_line(s));
 }
 
@@ -327,6 +331,18 @@ strings_are_equal(String a, const char *b)
 }
 
 internal inline b32
+strings_are_equal(umm size, const char *a, const char *b)
+{
+    return string(size, a) == string(string_length(b), b);
+}
+
+internal inline b32
+strings_are_equal(const char *a, const char *b)
+{
+    return string(string_length(a), a) == string(string_length(b), b);
+}
+
+internal inline b32
 string_contains(String str, String subStr)
 {
     b32 result = (subStr.size <= str.size);
@@ -437,6 +453,27 @@ get_extension(String name)
     if (dotPos >= 0) {
         result.size = name.size - dotPos - 1;
         result.data = name.data + dotPos + 1;
+    }
+    return result;
+}
+
+// NOTE(michiel): Yes, destSize sounds better than sizeDest... or aSize, bSize
+internal String
+string_concat(String a, String b, umm destSize, char *dest)
+{
+    String result = {0, (u8 *)dest};
+    while ((result.size < a.size) && (result.size < destSize))
+    {
+        result.data[result.size] = a.data[result.size];
+        ++result.size;
+    }
+    for (u32 j = 0; (j < b.size) && (result.size < destSize); ++j)
+    {
+        result.data[result.size++] = b.data[j];
+    }
+    if (result.size < destSize)
+    {
+        result.data[result.size] = 0;
     }
     return result;
 }
@@ -654,6 +691,26 @@ string_to_number(String s)
     return result;
 }
 
+internal u32
+parse_half_hex_byte(char c)
+{
+    i_expect(is_hex_digit(c));
+    u32 result = 0;
+    if (is_digit(c))
+    {
+        result = c - '0';
+    }
+    else if (c >= 'a')
+    {
+        result = c - 'a' + 10;
+    }
+    else
+    {
+        result = c - 'A' + 10;
+    }
+    return result;
+}
+
 internal u64
 string_to_hex(String s)
 {
@@ -661,24 +718,140 @@ string_to_hex(String s)
     for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
     {
         result *= 16;
-        s64 adding = 0;
-        if (('0' <= s.data[sIdx]) &&
-            (s.data[sIdx] <= '9'))
-        {
-            adding = s.data[sIdx] - '0';
-        }
-        else if (('a' <= s.data[sIdx]) && (s.data[sIdx] <= 'f'))
-        {
-            adding = (s.data[sIdx] - 'a') + 10;
-        }
-        else 
-        {
-            i_expect(('A' <= s.data[sIdx]) && (s.data[sIdx] <= 'F'));
-            adding = (s.data[sIdx] - 'A') + 10;
-        }
-        i_expect(adding >= 0);
+        u64 adding = parse_half_hex_byte(s.data[sIdx]);
         i_expect(adding < 16);
         result += adding;
     }
     return result;
+}
+
+internal char
+hex_from_u4(u8 data)
+{
+    i_expect((data & 0xF) == data);
+    char result = gLowerHexChars[data];
+    return result;
+}
+
+internal u8
+u8_from_hex(char *hex)
+{
+    u32 result = 0;
+    
+    result = parse_half_hex_byte(*hex++) << 4;
+    result |= parse_half_hex_byte(*hex);
+    
+    return result;
+}
+
+internal inline u16
+u16_from_hex(char *hex)
+{
+    u16 result = 0;
+    
+    result = u8_from_hex(hex) << 8;
+    result |= u8_from_hex(hex + 2);
+    
+    return result;
+}
+
+internal inline u32
+u32_from_hex(char *hex)
+{
+    u32 result = 0;
+    
+    result = u16_from_hex(hex) << 16;
+    result |= u16_from_hex(hex + 4);
+    
+    return result;
+}
+
+internal Buffer
+hex_to_bytes(String hex, umm destLength, u8 *dest)
+{
+    i_expect((hex.size & ~1) == hex.size);
+    i_expect((hex.size >> 1) < destLength);
+    Buffer result = {0, dest};
+    for (umm hIndex = 0; hIndex < hex.size; hIndex += 2)
+    {
+        result.data[result.size++] = u8_from_hex((char *)(hex.data + hIndex));
+    }
+    
+    i_expect(result.size < destLength);
+    return result;
+}
+
+internal String
+bytes_to_hex(Buffer bytes, umm destLength, u8 *dest)
+{
+    i_expect((bytes.size << 1) < destLength);
+    String result = {0, dest};
+    for (umm bIndex = 0; bIndex < bytes.size; ++bIndex)
+    {
+        result.data[result.size++] = hex_from_u4(bytes.data[bIndex] >> 4);
+        result.data[result.size++] = hex_from_u4(bytes.data[bIndex] & 0xF);
+    }
+    
+    i_expect(result.size < destLength);
+    result.data[result.size] = 0;
+    return result;
+}
+
+enum PatternMatchFlag
+{
+    PatternMatchFlag_None      = 0x00,
+    PatternMatchFlag_MaySkip   = 0x01,
+    PatternMatchFlag_Restarted = 0x02,
+};
+
+// NOTE(michiel): Very simple regex matcher
+// Only * as wildcard supported
+internal b32
+match_pattern(char *pattern, char *string)
+{
+    b32 result = false;
+    u32 flags = PatternMatchFlag_None;
+    char *p = pattern;
+    char *s = string;
+    while (*s)
+    {
+        if (*p == '*')
+        {
+            flags = PatternMatchFlag_MaySkip;
+            ++p;
+        }
+        else if (flags == PatternMatchFlag_MaySkip)
+        {
+            result = true;
+            if (*s == *p)
+            {
+                flags = PatternMatchFlag_None;
+                ++p;
+                ++s;
+            }
+            else
+            {
+                flags = PatternMatchFlag_MaySkip;
+                ++s;
+            }
+        }
+        else if (*s != *p)
+        {
+            if (flags == PatternMatchFlag_Restarted)
+            {
+                break;
+            }
+            result = false;
+            flags = PatternMatchFlag_Restarted;
+            p = pattern;
+        }
+        else
+        {
+            result = true;
+            flags = PatternMatchFlag_None;
+            ++p;
+            ++s;
+        }
+    }
+    return result && (*p == 0);
 }

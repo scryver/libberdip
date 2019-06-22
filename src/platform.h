@@ -7,6 +7,33 @@
 #include "./keys.h"
 #include "./fonts.h"
 
+//
+// NOTE(michiel): Threading
+//
+
+struct TicketMutex
+{
+    u64 volatile ticket;
+    u64 volatile serving;
+};
+
+struct WorkQueue;
+#define WORK_QUEUE_CALLBACK(name)      void name(WorkQueue *queue, void *data)
+typedef WORK_QUEUE_CALLBACK(WorkQueueCallback);
+
+#define ADD_WORK_ENTRY(name)           void name(WorkQueue *queue, \
+WorkQueueCallback *callback, \
+void *data)
+typedef ADD_WORK_ENTRY(AddWorkEntry);
+
+#define COMPLETE_ALL_WORK(name)        void name(WorkQueue *queue)
+typedef COMPLETE_ALL_WORK(CompleteAllWork);
+
+
+//
+// NOTE(michiel): Files
+//
+
 typedef enum FileOpenType
 {
     FileOpen_Read = 0x1,
