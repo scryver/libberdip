@@ -693,6 +693,17 @@ V3U(u32 x, u32 y, u32 z)
 }
 
 internal v3u
+V3U(v2u xy, u32 z)
+{
+    v3u result;
+    
+    result.xy = xy;
+    result.z = z;
+    
+    return result;
+}
+
+internal v3u
 operator -(v3u a)
 {
     v3u result;
@@ -892,6 +903,17 @@ V3(f32 x, f32 y, f32 z)
 }
 
 internal v3
+V3(v2 xy, f32 z)
+{
+    v3 result;
+    
+    result.xy = xy;
+    result.z = z;
+    
+    return result;
+}
+
+internal v3
 operator -(v3 a)
 {
     v3 result;
@@ -1023,6 +1045,26 @@ operator !=(v3 a, v3 b)
     return result;
 }
 
+internal v3
+hadamard(v3 a, v3 b)
+{
+    v3 result;
+    result.x = a.x * b.x;
+    result.y = a.y * b.y;
+    result.z = a.z * b.z;
+    return result;
+}
+
+internal v3
+cross(v3 a, v3 b)
+{
+    v3 result;
+    result.x = a.y * b.z - a.z * b.y;
+    result.y = a.z * b.x - a.x * b.z;
+    result.z = a.x * b.y - a.y * b.x;
+    return result;
+}
+
 internal f32
 dot(v3 a, v3 b)
 {
@@ -1047,20 +1089,20 @@ length(v3 a)
 }
 
 internal v3
-normalize(v3 a, f32 len)
+normalize_or_zero(v3 a, f32 lengthSquared)
 {
     v3 result = {};
-    if (len != 0.0f)
+    if (lengthSquared > square(0.0001f))
     {
-        result = a / len;
+        result = a * (1.0f / square_root(lengthSquared));
     }
     return result;
 }
 
 internal v3
-normalize(v3 a)
+normalize_or_zero(v3 a)
 {
-    v3 result = normalize(a, length(a));
+    v3 result = normalize_or_zero(a, length_squared(a));
     return result;
 }
 
@@ -1086,6 +1128,40 @@ V4(f32 x, f32 y, f32 z, f32 w)
     result.x = x;
     result.y = y;
     result.z = z;
+    result.w = w;
+    
+    return result;
+}
+
+internal v4
+V4(v2 xy, f32 z, f32 w)
+{
+    v4 result;
+    
+    result.xy = xy;
+    result.z = z;
+    result.w = w;
+    
+    return result;
+}
+
+internal v4
+V4(v2 xy, v2 zw)
+{
+    v4 result;
+    
+    result.xy = xy;
+    result.zw = zw;
+    
+    return result;
+}
+
+internal v4
+V4(v3 xyz, f32 w)
+{
+    v4 result;
+    
+    result.xyz = xyz;
     result.w = w;
     
     return result;
@@ -1307,21 +1383,162 @@ get_dim(Rectangle2u rect)
 // NOTE(michiel): Rectangle2s
 //
 
-internal Rectangle2s
-rect_from_dim(s32 x, s32 y, s32 w, s32 h)
+inline Rectangle2s
+rect_min_dim(s32 minX, s32 minY, s32 dimX, s32 dimY)
 {
-    Rectangle2s result = {0};
-    result.min.x = x;
-    result.min.y = y;
-    result.max.x = x + w;
-    result.max.y = y + h;
+    Rectangle2s result;
+    
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = minX + dimX;
+    result.max.y = minY + dimY;
+    
     return result;
 }
+
+inline Rectangle2s
+rect_min_max(s32 minX, s32 minY, s32 maxX, s32 maxY)
+{
+    Rectangle2s result;
+    
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = maxX;
+    result.max.y = maxY;
+    
+    return result;
+}
+
+#if 0
+inline Rectangle2s
+rect_center_dim(v2s center, v2s dim)
+{
+    Rectangle2s result;
+    
+    result.min = center - dim / 2;
+    result.max = center + dim / 2;
+    
+    return result;
+}
+#endif
 
 internal v2s
 get_dim(Rectangle2s rect)
 {
     v2s result = rect.max - rect.min;
+    return result;
+}
+
+internal s32
+get_width(Rectangle2s a)
+{
+    s32 result = a.max.x - a.min.x;
+    return result;
+}
+
+internal s32
+get_height(Rectangle2s a)
+{
+    s32 result = a.max.y - a.min.y;
+    return result;
+}
+
+//
+// NOTE(michiel): Rectangle2
+//
+
+inline Rectangle2
+inverted_infinity_rectangle2(void)
+{
+    Rectangle2 result;
+    
+    result.min.x = F32_MAX;
+    result.min.y = F32_MAX;
+    result.max.x = F32_MIN;
+    result.max.y = F32_MIN;
+    
+    return result;
+}
+
+inline Rectangle2
+rect_min_dim(f32 minX, f32 minY, f32 dimX, f32 dimY)
+{
+    Rectangle2 result;
+    
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = minX + dimX;
+    result.max.y = minY + dimY;
+    
+    return result;
+}
+
+inline Rectangle2
+rect_min_dim(v2 min, v2 dim)
+{
+    Rectangle2 result;
+    
+    result.min = min;
+    result.max = min + dim;
+    
+    return result;
+}
+
+inline Rectangle2
+rect_center_dim(v2 center, v2 dim)
+{
+    Rectangle2 result;
+    
+    result.min = center - 0.5f * dim;
+    result.max = center + 0.5f * dim;
+    
+    return result;
+}
+
+inline f32
+get_width(Rectangle2 a)
+{
+    f32 result = a.max.x - a.min.x;
+    return result;
+}
+
+inline f32
+get_height(Rectangle2 a)
+{
+    f32 result = a.max.y - a.min.y;
+    return result;
+}
+
+inline v2
+get_dim(Rectangle2 a)
+{
+    v2 result = a.max - a.min;
+    return result;
+}
+
+inline Rectangle2
+rect_grow(Rectangle2 a, v2 border)
+{
+    Rectangle2 result;
+    
+    result.min.x = a.min.x - border.x;
+    result.max.x = a.max.x + border.x;
+    result.min.y = a.min.y - border.y;
+    result.max.y = a.max.y + border.y;
+    
+    return result;
+}
+
+inline Rectangle2
+rect_union(Rectangle2 a, Rectangle2 b)
+{
+    Rectangle2 result;
+    
+    result.min.x = minimum(a.min.x, b.min.x);
+    result.min.y = minimum(a.min.y, b.min.y);
+    result.max.x = maximum(a.max.x, b.max.x);
+    result.max.y = maximum(a.max.y, b.max.y);
+    
     return result;
 }
 

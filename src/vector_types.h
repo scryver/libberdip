@@ -76,33 +76,31 @@ typedef union v3u {
     u32 e[3];
 } v3u;
 
+// TODO(michiel): Should we do it this way?
 typedef union v4 {
     struct {
-        union {
-            struct {
-                union {
-                    struct {
-                        f32 x;
-                        f32 y;
-                    };
-                    v2 xy;
-                };
-                f32 z;
-            };
-            v3 xyz;
-        };
+        f32 x;
+        f32 y;
+        f32 z;
         f32 w;
     };
     struct {
-        union {
-            struct {
-                f32 r;
-                f32 g;
-                f32 b;
-            };
-            v3 rgb;
-        };
+        v2 xy;
+        v2 zw;
+    };
+    struct {
+        v3 xyz;
+        f32 pad1;
+    };
+    struct {
+        f32 r;
+        f32 g;
+        f32 b;
         f32 a;
+    };
+    struct {
+        v3 rgb;
+        f32 pad2;
     };
     f32 e[4];
 } v4;

@@ -24,30 +24,6 @@ struct BitmapHeader
 };
 #pragma pack(pop)
 
-struct BitScanResult
-{
-    b32 found;
-    u32 index;
-};
-
-inline BitScanResult
-find_least_significant_set_bit(u32 value)
-{
-    BitScanResult result = {};
-    
-    for (s32 test = 0; test < 32; ++test)
-    {
-        if (value & (1 << test))
-        {
-            result.index = test;
-            result.found = true;
-            break;
-        }
-    }
-
-    return result;
-}
-
 internal u32
 get_total_pixel_size(Image *image)
 {
@@ -67,7 +43,7 @@ load_bitmap(API *api, char *filename)
 {
     Image result = {};
     
-     ApiFile readResult = api->file.read_entire_file(filename);
+    ApiFile readResult = api->file.read_entire_file(filename);
     
     if (readResult.content.size != 0)
     {
@@ -150,8 +126,8 @@ write_bitmap(API *api, Image *image, char *outputFilename)
     ApiFile file = api->file.open_file(outputFilename, FileOpen_Write);
     if (file.handle)
     {
-    api->file.write_to_file(file, sizeof(header), &header);
+        api->file.write_to_file(file, sizeof(header), &header);
         api->file.write_to_file(file, outputPixelSize, image->pixels);
         api->file.close_file(&file);
     }
-    }
+}

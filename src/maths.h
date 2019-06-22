@@ -1,28 +1,6 @@
-#if (!__has_builtin(__builtin_sinf) || !__has_builtin(__builtin_cosf) || !__has_builtin(__builtin_sqrtf))
-
+#if NO_INTRINSICS
 // TODO(michiel): Remove dependency
 #include <math.h>
-#define sin  sinf
-#define cos  cosf
-//#define exp  expf
-#define exp  fast_expf
-#define log  logf
-
-#else
-
-#define sin  __builtin_sinf
-#define cos  __builtin_cosf
-//#define exp  __builtin_expf
-#define exp  fast_expf
-#define log     __builtin_logf
-#define floor(f)                __builtin_floorf(f)
-#define round(f)                ((s32)((f) + ((f) < 0.0f ? -0.5f : 0.5f)))
-//#define round                   __builtin_roundf
-#define trunc(f)                ((s32)(f))
-#define fabs(f)                 __builtin_fabsf(f)
-
-#define powd  __builtin_pow
-
 #endif
 
 internal inline f32
@@ -101,15 +79,369 @@ square(f32 f)
     return result;
 }
 
-internal f32
-square_root(f32 f)
+internal s32
+floor(s32 value)
 {
-    f32 result = 0.0f;
-#if (!__has_builtin(__builtin_sqrtf))
-    result = sqrtf(f);
+    s32 result;
+#if NO_INTRINSICS
+    result = (s32)floor(value);
+#elif __has_builtin(__builtin_floorl)
+    result = (s32)__builtin_floorl(value);
 #else
-    result = __builtin_sqrtf(f);
+#error No floorl builtin!
 #endif
+    return result;
+}
+
+internal f32
+floor(f32 value)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)floorf(value);
+#elif __has_builtin(__builtin_floorf)
+    result = (f32)__builtin_floorf(value);
+#else
+#error No floorf builtin!
+#endif
+    return result;
+}
+
+internal s32
+ceil(s32 value)
+{
+    s32 result;
+#if NO_INTRINSICS
+    result = (s32)ceill(value);
+#elif __has_builtin(__builtin_ceill)
+    result = (s32)__builtin_ceill(value);
+#else
+#error No ceill builtin!
+#endif
+    return result;
+}
+
+internal f32
+ceil(f32 value)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)ceilf(value);
+#elif __has_builtin(__builtin_ceilf)
+    result = (f32)__builtin_ceilf(value);
+#else
+#error No ceilf builtin!
+#endif
+    return result;
+}
+
+internal f32
+round(f32 value)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)roundf(value);
+#elif __has_builtin(__builtin_roundf)
+    result = (f32)__builtin_roundf(value);
+#else
+#error No roundf builtin!
+#endif
+    return result;
+}
+
+internal s32
+absolute(s32 value)
+{
+    s32 result = (value < 0) ? -value : value;
+    return result;
+}
+
+internal f32
+absolute(f32 value)
+{
+    f32 result = (value < 0.0f) ? -value : value;
+    return result;
+}
+
+internal f32
+modulus(f32 x, f32 y)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)fmod(x, y);
+#elif __has_builtin(__builtin_fmod)
+    result = (f32)__builtin_fmod(x, y);
+#else
+#error No fmod builtin!
+#endif
+    return result;
+}
+
+internal s32
+square_root(s32 value)
+{
+    s32 result;
+#if NO_INTRINSICS
+    result = (s32)sqrtl(value);
+#elif __has_builtin(__builtin_sqrtl)
+    result = (s32)__builtin_sqrtl(value);
+#else
+#error No sqrtl builtin!
+#endif
+    return result;
+}
+
+internal f32
+square_root(f32 value)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)sqrtf(value);
+#elif __has_builtin(__builtin_sqrtf)
+    result = (f32)__builtin_sqrtf(value);
+#else
+#error No sqrtf builtin!
+#endif
+    return result;
+}
+
+internal s32
+pow(s32 x, s32 y)
+{
+    s32 result;
+#if NO_INTRINSICS
+    result = (s32)powl(x, y);
+#elif __has_builtin(__builtin_powl)
+    result = (s32)__builtin_powl(x, y);
+#else
+#error No powl builtin!
+#endif
+    return result;
+}
+
+internal f32
+pow(f32 x, f32 y)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)powf(x, y);
+#elif __has_builtin(__builtin_powf)
+    result = (f32)__builtin_powf(x, y);
+#else
+#error No powf builtin!
+#endif
+    return result;
+}
+
+internal f32
+sin(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)sinf(angle);
+#elif __has_builtin(__builtin_sinf)
+    result = (f32)__builtin_sinf(angle);
+#else
+    // TODO(michiel): implement sinf
+#error No sinf builtin!
+#endif
+    return result;
+}
+
+internal f32
+cos(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)cosf(angle);
+#elif __has_builtin(__builtin_cosf)
+    result = (f32)__builtin_cosf(angle);
+#else
+#error No cosf builtin!
+#endif
+    return result;
+}
+
+internal f32
+asin(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)asinf(angle);
+#elif __has_builtin(__builtin_asinf)
+    result = (f32)__builtin_asinf(angle);
+#else
+#error No asinf builtin!
+#endif
+    return result;
+}
+
+internal f32
+acos(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)acosf(angle);
+#elif __has_builtin(__builtin_acosf)
+    result = (f32)__builtin_acosf(angle);
+#else
+#error No acosf builtin!
+#endif
+    return result;
+}
+
+internal f32
+atan2(f32 y, f32 x)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)atan2f(y, x);
+#elif __has_builtin(__builtin_atan2f)
+    result = (f32)__builtin_atan2f(y, x);
+#else
+#error No atan2f builtin!
+#endif
+    return result;
+}
+
+internal s32
+sign_of(s32 value)
+{
+    s32 result = (value >= 0) ? 1 : -1;
+    return result;
+}
+
+internal f32
+sign_of(f32 value)
+{
+    f32 result = (value >= 0.0f) ? 1.0f : -1.0f;
+    return result;
+}
+
+internal u32
+rotate_left(u32 value, s32 amount)
+{
+#if COMPILER_MSVC
+    u32 result = _rotl(value, amount);
+#else
+    amount &= 31;
+    u32 result = (value << amount) | (value >> (32 - amount));
+#endif
+    return result;
+}
+
+internal u32
+rotate_right(u32 value, s32 amount)
+{
+#if COMPILER_MSVC
+    u32 result = _rotl(value, amount);
+#else
+    amount &= 31;
+    u32 result = (value >> amount) | (value << (32 - amount));
+#endif
+    return result;
+}
+
+internal s32
+s32_from_f32_round(f32 number)
+{
+    s32 result = (s32)round(number);
+    return result;
+}
+
+internal u32
+u32_from_f32_round(f32 number)
+{
+    u32 result = (u32)round(number);
+    return result;
+}
+
+internal s32
+s32_from_f32_floor(f32 number)
+{
+    s32 result = (s32)floor(number);
+    return result;
+}
+
+internal u32
+u32_from_f32_floor(f32 number)
+{
+    u32 result = (u32)floor(number);
+    return result;
+}
+
+internal s32
+s32_from_f32_ceil(f32 number)
+{
+    s32 result = (s32)ceil(number);
+    return result;
+}
+
+internal u32
+u32_from_f32_ceil(f32 number)
+{
+    u32 result = (u32)ceil(number);
+    return result;
+}
+
+internal s32 
+s32_from_f32_truncate(f32 number)
+{
+    return (s32)number;
+}
+
+internal u32
+u32_from_f32_truncate(f32 number)
+{
+    return (u32)number;
+}
+
+struct BitScanResult
+{
+    b32 found;
+    u32 index;
+};
+internal BitScanResult
+find_least_significant_set_bit(u32 value)
+{
+    BitScanResult result = {};
+    
+#if COMPILER_MSVC
+    result.found = _BitScanForward((unsigned long *)&result.index, value);
+#else
+    for(s32 test = 0; test < 32; ++test)
+    {
+        if(value & (1 << test))
+        {
+            result.index = test;
+            result.found = true;
+            break;
+        }
+    }
+#endif
+    
+    return result;
+}
+
+internal BitScanResult
+find_most_significant_set_bit(u32 value)
+{
+    BitScanResult result = {};
+    
+#if COMPILER_MSVC
+    result.found = _BitScanReverse((unsigned long *)&result.index, value);
+#else
+    for(s32 test = 32; test > 0; --test)
+    {
+        if(value & (1 << (test - 1)))
+        {
+            result.index = test - 1;
+            result.found = true;
+            break;
+        }
+    }
+#endif
+    
     return result;
 }
 

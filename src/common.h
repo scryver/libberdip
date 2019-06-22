@@ -12,6 +12,10 @@
 #define LIBBERDIP_EXPECT 1
 #endif
 
+#if !defined(NO_INTRINSICS)
+#define NO_INTRINSICS 0
+#endif
+
 #if !defined(COMPILER_MSVC)
 #define COMPILER_MSVC 0
 #endif
@@ -53,13 +57,14 @@
 #define true     1
 #endif
 
+// TODO(michiel): @Remove printf
 #if LIBBERDIP_EXPECT
 #if __has_builtin(__builtin_trap)
 #define i_expect_simple(expr)   ((expr) ? (void)0 : __builtin_trap())
 #define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); __builtin_trap(); }
 #else
-#define i_expect_simple(expr)   ((expr) ? (void)0 : (*(int *)0 = 0))
-#define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); *(int *)0 = 0; }
+#define i_expect_simple(expr)   ((expr) ? (void)0 : (*(volatile int *)0 = 0))
+#define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); *(volatile int *)0 = 0; }
 #endif
 #else  // LIBBERDIP_EXPECT
 #define i_expect_simple(expr)
@@ -95,6 +100,7 @@ typedef float    f32;
 typedef double   f64;
 
 typedef size_t   umm;
+typedef ssize_t  smm;
 
 #define U8_MAX   0xFF
 #define U16_MAX  0xFFFF
@@ -152,8 +158,8 @@ typedef size_t   umm;
 #define align_ptr_down(p, a)    ((void *)align_down((umm)(p), (a)))
 #define align_ptr_up(p, a)      ((void *)align_up((umm)(p), (a)))
 
-#define u64_from_ptr(p)         ((u64)(umm)p)
-#define ptr_from_u64(u)         ((void *)(umm)u)
+#define u64_from_ptr(p)         ((u64)(umm)(p))
+#define ptr_from_u64(u)         ((void *)(umm)(u))
 
 #define rad2deg(angle)          (((angle) / LONG_PI) * 180)
 #define deg2rad(angle)          (((angle) / 180) * LONG_PI)
@@ -163,7 +169,6 @@ typedef size_t   umm;
 #define clamp(min, x, max)      (maximum(min, minimum(max, x)))
 
 // TODO(michiel): Type checkable versions?
-#define absolute(a)             (((a) < 0) ? -(a) : (a))
 #define lerp(a, t, b)           ((a) + (t) * ((b) - (a)))
 
 #define kilobytes(kB)           ((kB) * 1024LL)
@@ -171,12 +176,12 @@ typedef size_t   umm;
 #define gigabytes(GB)           (megabytes(GB) * 1024LL)
 #define terabytes(TB)           (gigabytes(TB) * 1024LL)
 
-internal inline u32 safe_truncate_to_u32(u64 value) { i_expect(value <= U32_MAX); return (u32)(value & U32_MAX); }
-internal inline u16 safe_truncate_to_u16(u64 value) { i_expect(value <= U16_MAX); return (u16)(value & U16_MAX); }
-internal inline u8  safe_truncate_to_u8(u64 value)  { i_expect(value <= U8_MAX);  return (u8)(value & U8_MAX); }
-internal inline s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32_MAX); i_expect(value >= (s64)S32_MIN); return (s32)value; }
-internal inline s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
-internal inline s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
+internal u32 safe_truncate_to_u32(u64 value) { i_expect(value <= U32_MAX); return (u32)(value & U32_MAX); }
+internal u16 safe_truncate_to_u16(u64 value) { i_expect(value <= U16_MAX); return (u16)(value & U16_MAX); }
+internal u8  safe_truncate_to_u8(u64 value)  { i_expect(value <= U8_MAX);  return (u8)(value & U8_MAX); }
+internal s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32_MAX); i_expect(value >= (s64)S32_MIN); return (s32)value; }
+internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
+internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
 
 internal umm
 copy(umm size, const void *src, void *dst)
@@ -219,9 +224,8 @@ copy_single(umm size, u32 value, void *dst)
 internal inline f32 
 clamp01(f32 value)
 {
-    if (value < 0.0f) { value = 0.0f; }
-    if (value > 1.0f) { value = 1.0f; }
-    return value;
+    f32 result = clamp(0.0f, value, 1.0f);
+    return result;
 }
 
 // NOTE(michiel): Generic buffer (memory data and a size)
