@@ -2,17 +2,17 @@
 // NOTE(michiel): Colour mix helpers
 //
 
-internal inline v4 
+internal inline v4
 unpack_colour(u32 colour)
 {
     v4 result = {};
     f32 oneOver255 = 1.0f / 255.0f;
-    
+
     result.r = (f32)((colour >>  0) & 0xFF) * oneOver255;
     result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
     result.b = (f32)((colour >> 16) & 0xFF) * oneOver255;
     result.a = (f32)((colour >> 24) & 0xFF) * oneOver255;
-    
+
     return result;
 }
 
@@ -20,12 +20,12 @@ internal inline u32
 pack_colour(v4 colour)
 {
     u32 result = 0;
-    
+
     result = ((((u32)(clamp01(colour.a) * 255.0f) & 0xFF) << 24) |
               (((u32)(clamp01(colour.b) * 255.0f) & 0xFF) << 16) |
               (((u32)(clamp01(colour.g) * 255.0f) & 0xFF) <<  8) |
               (((u32)(clamp01(colour.r) * 255.0f) & 0xFF) <<  0));
-    
+
     return result;
 }
 
@@ -37,16 +37,16 @@ internal inline void
 draw_pixel(Image *image, u32 x, u32 y, v4 colour)
 {
     v4 source = unpack_colour(image->pixels[y * image->width + x]);
-    
+
     colour.r *= colour.a;
     colour.g *= colour.a;
     colour.b *= colour.a;
-    
+
     source.r = source.r * (1.0f - colour.a) + colour.r;
     source.g = source.g * (1.0f - colour.a) + colour.g;
     source.b = source.b * (1.0f - colour.a) + colour.b;
     source.a = colour.a;
-    
+
     image->pixels[y * image->width + x] = pack_colour(source);
 }
 
@@ -67,12 +67,12 @@ draw_line(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colour)
     startY = minimum(image->height - 1, maximum(0, startY));
     endX = minimum(image->width - 1, maximum(0, endX));
     endY = minimum(image->height - 1, maximum(0, endY));
-    
+
     b32 yGreaterThanX = false;
-    
+
     s32 absDx = absolute(endX - startX);
     s32 absDy = absolute(endY - startY);
-    
+
     if (absDx < absDy)
     {
         s32 tempS = startX;
@@ -83,7 +83,7 @@ draw_line(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colour)
         endY = tempE;
         yGreaterThanX = true;
     }
-    
+
     if (startX > endX)
     {
         s32 tempX = startX;
@@ -93,13 +93,13 @@ draw_line(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colour)
         endX = tempX;
         endY = tempY;
     }
-    
+
     s32 dx = endX - startX;
     s32 dy = endY - startY;
     s32 derror2 = 2 * absolute(dy);
     s32 error2 = 0;
     s32 y = startY;
-    
+
     for (s32 x = startX; x < endX; ++x)
     {
         if (yGreaterThanX)
@@ -132,7 +132,7 @@ draw_line_slow(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colo
     startY = minimum(image->height - 1, maximum(0, startY));
     endX = minimum(image->width - 1, maximum(0, endX));
     endY = minimum(image->height - 1, maximum(0, endY));
-    
+
     if (startX > endX)
     {
         s32 tempX = startX;
@@ -142,30 +142,30 @@ draw_line_slow(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colo
         endX = tempX;
         endY = tempY;
     }
-    
+
     s32 dx = endX - startX;
     s32 dy = endY - startY;
-    
+
     s32 absDx = dx;
     if (absDx < 0)
     {
         absDx = -absDx;
     }
-    
+
     s32 absDy = dy;
     if (absDy < 0)
     {
         absDy = -absDy;
     }
-    
+
     s32 steps = maximum(absDx, absDy);
-    
+
     f32 x = startX;
     f32 y = startY;
-    
+
     f32 xInc = (f32)dx / (f32)steps;
     f32 yInc = (f32)dy / (f32)steps;
-    
+
     for (u32 step = 0; step < steps; ++step)
     {
         x += xInc;
@@ -265,14 +265,14 @@ outline_circle(Image *image, s32 xStart, s32 yStart, u32 radius, f32 thickness =
                v4 colour = V4(1, 1, 1, 1))
 {
     s32 size = 2 * radius;
-    
+
     f32 r = (s32)radius;
     f32 maxDistSqr = r * r;
     f32 minDistSqr = (r - thickness) * (r - thickness);
-    
+
     xStart = xStart - (s32)radius + 1;
     yStart = yStart - (s32)radius + 1;
-    
+
     for (s32 y = yStart; y < yStart + size; ++y)
     {
         f32 fY = (f32)(y - yStart) - r + 0.5f;
@@ -327,7 +327,7 @@ fill_rectangle(Image *image, s32 xStart, s32 yStart, u32 width, u32 height, v4 c
         }
         width = newWidth;
     }
-    
+
     if (yStart < 0)
     {
         s32 diff = -yStart;
@@ -349,7 +349,7 @@ fill_rectangle(Image *image, s32 xStart, s32 yStart, u32 width, u32 height, v4 c
         }
         height = newHeight;
     }
-    
+
     for (u32 y = yStart; y < (yStart + height); ++y)
     {
         for (u32 x = xStart; x < (xStart + width); ++x)
@@ -379,44 +379,44 @@ fill_triangle(Image *image, v2s a, v2s b, v2s c, v4 colour)
     s32 minY = minimum(a.y, minimum(b.y, c.y));
     s32 maxX = maximum(a.x, maximum(b.x, c.x));
     s32 maxY = maximum(a.y, maximum(b.y, c.y));
-    
+
     minX = maximum(minX, 0);
     minY = maximum(minY, 0);
     maxX = minimum(maxX, image->width - 1);
     maxY = minimum(maxY, image->height - 1);
-    
+
     s32 A01 = a.y - b.y;
     s32 A12 = b.y - c.y;
     s32 A20 = c.y - a.y;
-    
+
     s32 B01 = b.x - a.x;
     s32 B12 = c.x - b.x;
     s32 B20 = a.x - c.x;
-    
+
     v2s p = V2S(minX, minY);
-    
+
     s32 w0_row = orient2d(b, c, p);
     s32 w1_row = orient2d(c, a, p);
     s32 w2_row = orient2d(a, b, p);
-    
+
     for (p.y = minY; p.y <= maxY; ++p.y)
     {
         s32 w0 = w0_row;
         s32 w1 = w1_row;
         s32 w2 = w2_row;
-        
+
         for (p.x = minX; p.x <= maxX; ++p.x)
         {
             if ((w0 | w1 | w2) >= 0)
             {
                 draw_pixel(image, p.x, p.y, colour);
             }
-            
+
             w0 += A12;
             w1 += A20;
             w2 += A01;
         }
-        
+
         w0_row += B12;
         w1_row += B20;
         w2_row += B01;
@@ -450,13 +450,13 @@ internal void
 fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, v4 colour)
 {
     s32 size = 2 * radius;
-    
+
     f32 r = (s32)radius;
     f32 maxDistSqr = r * r;
-    
+
     xStart = xStart - (s32)radius + 1;
     yStart = yStart - (s32)radius + 1;
-    
+
     for (s32 y = yStart; y < yStart + size; ++y)
     {
             f32 fY = (f32)(y - yStart) - r + 0.5f;
@@ -474,7 +474,7 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, v4 colour)
                 }
             }
         }
-    
+
 internal void
 fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 {
@@ -513,7 +513,7 @@ draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
 {
     f32 x = xStart;
     f32 y = yStart + get_starting_baseline_y(&font->info);
-    
+
     u32 prevPoint = 0;
     u8 *source = (u8 *)text;
     while (*source)
@@ -526,9 +526,9 @@ draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
             ++source;
             continue;
         }
-        
+
         f32 advance = 0.0f;
-        
+
         if (codePoint == (u32)'\n')
         {
             x = xStart;
@@ -539,18 +539,18 @@ draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
             advance = get_horizontal_advance_for_pair(font, prevPoint, codePoint);
             x += advance;
         }
-        
+
         if (codePoint != ' ')
         {
             u32 glyphIndex = get_glyph_from_code_point(font, codePoint);
-            
+
             if (glyphIndex)
             {
                 FontGlyph *glyph = font->glyphs + glyphIndex;
                 draw_image(image, x, y + glyph->yOffset, &glyph->bitmap, colour);
             }
         }
-        
+
         prevPoint = codePoint;
         source += skip;
     }

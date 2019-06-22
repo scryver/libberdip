@@ -8,10 +8,10 @@ internal v2u
 V2U(u32 x, u32 y)
 {
     v2u result;
-    
+
     result.x = x;
     result.y = y;
-    
+
     return result;
 }
 
@@ -207,10 +207,10 @@ internal v2s
 V2S(s32 x, s32 y)
 {
     v2s result;
-    
+
     result.x = x;
     result.y = y;
-    
+
     return result;
 }
 
@@ -415,10 +415,10 @@ internal v2
 V2(f32 x, f32 y)
 {
     v2 result;
-    
+
     result.x = x;
     result.y = y;
-    
+
     return result;
 }
 
@@ -669,10 +669,10 @@ internal v2
 rotate(v2 a, v2 rotation)
 {
     v2 result = {};
-    
+
     result.x = a.x * rotation.x - a.y * rotation.y;
     result.y = a.x * rotation.y + a.y * rotation.x;
-    
+
     return result;
 }
 
@@ -684,11 +684,11 @@ internal v3u
 V3U(u32 x, u32 y, u32 z)
 {
     v3u result;
-    
+
     result.x = x;
     result.y = y;
     result.z = z;
-    
+
     return result;
 }
 
@@ -696,10 +696,10 @@ internal v3u
 V3U(v2u xy, u32 z)
 {
     v3u result;
-    
+
     result.xy = xy;
     result.z = z;
-    
+
     return result;
 }
 
@@ -906,10 +906,10 @@ internal v3
 V3(v2 xy, f32 z)
 {
     v3 result;
-    
+
     result.xy = xy;
     result.z = z;
-    
+
     return result;
 }
 
@@ -1124,12 +1124,12 @@ internal v4
 V4(f32 x, f32 y, f32 z, f32 w)
 {
     v4 result;
-    
+
     result.x = x;
     result.y = y;
     result.z = z;
     result.w = w;
-    
+
     return result;
 }
 
@@ -1137,11 +1137,11 @@ internal v4
 V4(v2 xy, f32 z, f32 w)
 {
     v4 result;
-    
+
     result.xy = xy;
     result.z = z;
     result.w = w;
-    
+
     return result;
 }
 
@@ -1149,10 +1149,10 @@ internal v4
 V4(v2 xy, v2 zw)
 {
     v4 result;
-    
+
     result.xy = xy;
     result.zw = zw;
-    
+
     return result;
 }
 
@@ -1160,10 +1160,10 @@ internal v4
 V4(v3 xyz, f32 w)
 {
     v4 result;
-    
+
     result.xyz = xyz;
     result.w = w;
-    
+
     return result;
 }
 
@@ -1387,12 +1387,12 @@ inline Rectangle2s
 rect_min_dim(s32 minX, s32 minY, s32 dimX, s32 dimY)
 {
     Rectangle2s result;
-    
+
     result.min.x = minX;
     result.min.y = minY;
     result.max.x = minX + dimX;
     result.max.y = minY + dimY;
-    
+
     return result;
 }
 
@@ -1400,12 +1400,12 @@ inline Rectangle2s
 rect_min_max(s32 minX, s32 minY, s32 maxX, s32 maxY)
 {
     Rectangle2s result;
-    
+
     result.min.x = minX;
     result.min.y = minY;
     result.max.x = maxX;
     result.max.y = maxY;
-    
+
     return result;
 }
 
@@ -1414,10 +1414,10 @@ inline Rectangle2s
 rect_center_dim(v2s center, v2s dim)
 {
     Rectangle2s result;
-    
+
     result.min = center - dim / 2;
     result.max = center + dim / 2;
-    
+
     return result;
 }
 #endif
@@ -1451,12 +1451,12 @@ inline Rectangle2
 inverted_infinity_rectangle2(void)
 {
     Rectangle2 result;
-    
+
     result.min.x = F32_MAX;
     result.min.y = F32_MAX;
     result.max.x = F32_MIN;
     result.max.y = F32_MIN;
-    
+
     return result;
 }
 
@@ -1464,12 +1464,12 @@ inline Rectangle2
 rect_min_dim(f32 minX, f32 minY, f32 dimX, f32 dimY)
 {
     Rectangle2 result;
-    
+
     result.min.x = minX;
     result.min.y = minY;
     result.max.x = minX + dimX;
     result.max.y = minY + dimY;
-    
+
     return result;
 }
 
@@ -1477,10 +1477,10 @@ inline Rectangle2
 rect_min_dim(v2 min, v2 dim)
 {
     Rectangle2 result;
-    
+
     result.min = min;
     result.max = min + dim;
-    
+
     return result;
 }
 
@@ -1488,10 +1488,10 @@ inline Rectangle2
 rect_center_dim(v2 center, v2 dim)
 {
     Rectangle2 result;
-    
+
     result.min = center - 0.5f * dim;
     result.max = center + 0.5f * dim;
-    
+
     return result;
 }
 
@@ -1520,12 +1520,12 @@ inline Rectangle2
 rect_grow(Rectangle2 a, v2 border)
 {
     Rectangle2 result;
-    
+
     result.min.x = a.min.x - border.x;
     result.max.x = a.max.x + border.x;
     result.min.y = a.min.y - border.y;
     result.max.y = a.max.y + border.y;
-    
+
     return result;
 }
 
@@ -1533,12 +1533,12 @@ inline Rectangle2
 rect_union(Rectangle2 a, Rectangle2 b)
 {
     Rectangle2 result;
-    
+
     result.min.x = minimum(a.min.x, b.min.x);
     result.min.y = minimum(a.min.y, b.min.y);
     result.max.x = maximum(a.max.x, b.max.x);
     result.max.y = maximum(a.max.y, b.max.y);
-    
+
     return result;
 }
 

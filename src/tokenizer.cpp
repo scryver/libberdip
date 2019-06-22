@@ -49,7 +49,7 @@ global String gTokenKindName[TokenCount] =
     [Token_MulAssign]    = static_string("multiply assign"),
     [Token_DivAssign]    = static_string("divide assign"),
     [Token_ModAssign]    = static_string("modulo assign"),
-    
+
     [Token_EOF]          = static_string("end of file"),
 };
 
@@ -62,7 +62,7 @@ tokenize_error(Tokenizer *tokenizer, char *fmt, va_list args)
             tokenizer->origin.column);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
-    
+
     tokenizer->error = true;
 }
 
@@ -155,31 +155,31 @@ internal Token
 get_token(Tokenizer *tokenizer)
 {
     Token result = {Token_None};
-    
+
     repeat:
     result.origin = tokenizer->origin;
-    
+
     if (!tokenizer->scanner.data[0] ||
         (tokenizer->scanner.size == 0) ||
         ((char)tokenizer->scanner.data[0] == EOF)) {
         result.kind = Token_EOF;
         return result;
     }
-    
-    switch (tokenizer->scanner.data[0]) 
+
+    switch (tokenizer->scanner.data[0])
     {
         case ' ': {
             ++result.indent;
             advance_scanner(tokenizer);
             goto repeat;
         } break;
-        
+
         case '\r': {
             result.indent = 0;
             advance_scanner(tokenizer);
             goto repeat;
         } break;
-        
+
         case '\t':
         case '\v': {
             result.indent += 4; // TODO(michiel): Maybe only for \t?
@@ -187,7 +187,7 @@ get_token(Tokenizer *tokenizer)
             goto repeat;
             // tokenize_error(tokenizer, "Only spaces are supported for alignment, no tabs please.");
         } break;
-        
+
         CASE1('.',  Token_Dot);
         CASE1(',',  Token_Comma);
         CASE1(':',  Token_Colon);
@@ -199,23 +199,23 @@ get_token(Tokenizer *tokenizer)
         CASE1('}',  Token_BraceClose);
         CASE1('[',  Token_BracketOpen);
         CASE1(']',  Token_BracketClose);
-        
+
         CASE2B('|', Token_Or, '|', Token_LogicalOr, '=', Token_OrAssign);
         CASE2B('&', Token_And, '&', Token_LogicalAnd, '=', Token_AndAssign);
         CASE2('^',  Token_Xor, '=', Token_XorAssign);
         CASE2('~',  Token_Invert, '=', Token_InvAssign);
-        
+
         CASE2('=',  Token_Assign, '=', Token_Eq);
         CASE2('!',  Token_Not, '=', Token_Neq);
-        
+
         CASE2B('+', Token_Add, '+', Token_Increment, '=', Token_AddAssign);
         CASE2B('-', Token_Subtract, '-', Token_Decrement, '=', Token_SubAssign);
         CASE2('*',  Token_Multiply, '=', Token_MulAssign);
         CASE2('%',  Token_Modulus, '=', Token_ModAssign);
-        
+
         CASE3B('<', Token_Lt, '=', Token_LtEq, '<', Token_ShiftLeft, '=', Token_SlAssign);
         CASE3B('>', Token_Gt, '=', Token_GtEq, '>', Token_ShiftRight, '=', Token_SrAssign);
-        
+
         case '/': {
             result.kind = Token_Divide;
             result.value = string(1, tokenizer->scanner.data);
@@ -229,7 +229,7 @@ get_token(Tokenizer *tokenizer)
                     advance_scanner(tokenizer);
                 } while (tokenizer->scanner.data[0] &&
                          (tokenizer->scanner.data[0] != '\n'));
-                
+
                 if (tokenizer->scanner.data[0] == '\n') {
                     advance_scanner(tokenizer);
                 }
@@ -237,13 +237,13 @@ get_token(Tokenizer *tokenizer)
                 goto repeat;
             }
         } break;
-        
+
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9': {
             result.kind = Token_Integer;
             result.value = string(1, tokenizer->scanner.data);
             advance_scanner(tokenizer);
-            
+
             b32 parseHex = false;
             if (tokenizer->scanner.data[0] == '0') {
                 if ((to_lower_case(tokenizer->scanner.data[0]) == 'x') ||
@@ -253,7 +253,7 @@ get_token(Tokenizer *tokenizer)
                     advance_scanner(tokenizer);
                 }
             }
-            
+
             if (parseHex) {
                 while (is_hex_digit(tokenizer->scanner.data[0])) {
                     ++result.value.size;
@@ -265,37 +265,37 @@ get_token(Tokenizer *tokenizer)
                     advance_scanner(tokenizer);
                 }
             }
-            
+
             if (tokenizer->scanner.data[0] == '.') {
                 i_expect(parseHex == false);
                 ++result.value.size;
                 advance_scanner(tokenizer);
-                
+
                 while (is_digit(tokenizer->scanner.data[0])) {
                     ++result.value.size;
                     advance_scanner(tokenizer);
                 }
             }
-            
+
             if ((tokenizer->scanner.data[0] == 'E') ||
                 (tokenizer->scanner.data[0] == 'e')) {
                 ++result.value.size;
                 advance_scanner(tokenizer);
-                
+
                 if ((tokenizer->scanner.data[0] == '+') ||
                     (tokenizer->scanner.data[0] == '-')) {
                     ++result.value.size;
                     advance_scanner(tokenizer);
                 }
-                
+
                 while (is_digit(tokenizer->scanner.data[0])) {
                     ++result.value.size;
                     advance_scanner(tokenizer);
                 }
             }
         } break;
-        
-        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': 
+
+        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
         case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
         case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
         case 'y': case 'z':
@@ -308,14 +308,14 @@ get_token(Tokenizer *tokenizer)
             result.kind = Token_Name;
             result.value = string(1, tokenizer->scanner.data);
             advance_scanner(tokenizer);
-            
+
             while (is_alnum(tokenizer->scanner.data[0]) ||
                    (tokenizer->scanner.data[0] == '_')) {
                 ++result.value.size;
                 advance_scanner(tokenizer);
             }
         } break;
-        
+
         case '"': {
             result.kind = Token_String;
             advance_scanner(tokenizer);
@@ -323,7 +323,7 @@ get_token(Tokenizer *tokenizer)
             if (tokenizer->scanner.data[0] == '"') {
                 tokenize_error(tokenizer, "Constant string cannot be empty.");
             }
-            
+
             while (tokenizer->scanner.data[0] &&
                    (tokenizer->scanner.data[0] != '"') &&
                    (tokenizer->scanner.data[0] != '\n')) {
@@ -335,7 +335,7 @@ get_token(Tokenizer *tokenizer)
             }
             advance_scanner(tokenizer);
         } break;
-        
+
         default: {
             if (is_printable(tokenizer->scanner.data[0])) {
                 tokenize_error(tokenizer, "Unexpected character encountered '%c'.",
@@ -347,7 +347,7 @@ get_token(Tokenizer *tokenizer)
             advance_scanner(tokenizer);
         } break;
     }
-    
+
     return result;
 }
 

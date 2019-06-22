@@ -26,9 +26,9 @@ base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
             u32 octetA = srcIndex < sourceLength ? source[srcIndex++] : 0;
             u32 octetB = srcIndex < sourceLength ? source[srcIndex++] : 0;
             u32 octetC = srcIndex < sourceLength ? source[srcIndex++] : 0;
-            
+
             u32 triplet = (octetA << 16) | (octetB << 8) | octetC;
-            
+
             i_expect(destIndex < destLength);
             dest[destIndex++] = gBase64Map[(triplet >> (3 * 6)) & 0x3F];
             i_expect(destIndex < destLength);
@@ -38,13 +38,13 @@ base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
             i_expect(destIndex < destLength);
             dest[destIndex++] = gBase64Map[(triplet >> (0 * 6)) & 0x3F];
         }
-        
+
         u32 extraEquals = 3 - (sourceLength % 3);
         if (extraEquals == 3)
         {
             extraEquals = 0;
         }
-        
+
         for (u32 destIndex = 0; destIndex < extraEquals; ++destIndex)
         {
             dest[outputLength - destIndex - 1] = '=';
@@ -63,11 +63,11 @@ internal b32
 base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
 {
     b32 error = false;
-    
+
     if (source && dest)
     {
         i_expect((sourceLength & ~0x3) == sourceLength);
-        
+
         u32 dstIndex = 0;
         for (u32 srcIndex = 0; srcIndex < sourceLength; srcIndex += 4)
         {
@@ -75,7 +75,7 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
             u32 index1 = gDecode64Map[(u32)source[srcIndex + 1]];
             u32 index2 = gDecode64Map[(u32)source[srcIndex + 2]];
             u32 index3 = gDecode64Map[(u32)source[srcIndex + 3]];
-            
+
             u32 triplet = ((index3 << (0 * 6)) |
                            (index2 << (1 * 6)) |
                            (index1 << (2 * 6)) |
@@ -83,7 +83,7 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
             u32 octetA = (triplet >> 16) & 0xFF;
             u32 octetB = (triplet >>  8) & 0xFF;
             u32 octetC = (triplet >>  0) & 0xFF;
-            
+
             i_expect((dstIndex + 2) < destLength);
             dest[dstIndex++] = octetA;
             dest[dstIndex++] = octetB;
@@ -96,6 +96,6 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
     {
         error = true;
     }
-    
+
     return error;
 }

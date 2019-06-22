@@ -55,7 +55,7 @@ map_u64_get_u64(Map *map, u64 key)
             ++hash;
         }
     }
-    
+
     return result;
 }
 
@@ -66,14 +66,14 @@ map_grow(Map *map, umm newCap)
 {
     newCap = maximum(newCap, 16);
     i_expect(is_pow2(newCap));
-    
+
     Map newMap = {0};
     newMap.keys = allocate_array(u64, newCap, Alloc_NoClear);
     newMap.values = allocate_array(u64, newCap, Alloc_NoClear);
     newMap.cap = safe_truncate_to_u32(newCap);
     // TODO(michiel): Do something with different copy_single functions for different value lengths
     copy_single(newCap * sizeof(u64), 0xFF, newMap.keys);
-    
+
     // NOTE(michiel): Reissue the insertions into our bigger map
     for (u32 mapIndex = 0; mapIndex < map->cap; ++mapIndex) {
         if (map->keys[mapIndex] < MAP_DELETED_KEY) {
@@ -90,10 +90,10 @@ map_u64_put_u64(Map *map, u64 key, u64 value)
     if ((4 * map->len) >= (3 * map->cap)) {
         map_grow(map, 2 * map->cap);
     }
-    
+
     i_expect((4 * map->len) < (3 * map->cap));
     i_expect(is_pow2(map->cap));
-    
+
     umm hash = (umm)hash_u64(key);
     for (;;) {
         hash &= map->cap - 1;
@@ -115,10 +115,10 @@ map_u64_remove(Map *map, u64 key)
 {
     if (map->len > 0) {
         i_expect(is_pow2(map->cap));
-        
+
         umm hash = (umm)hash_u64(key);
         i_expect(map->len < map->cap);
-        
+
         for (;;) {
             hash &= map->cap - 1;
             if (map->keys[hash] == key) {

@@ -112,7 +112,7 @@ is_snake_case(String name)
     b32 result = true;
     for (u32 i = 0; i < name.size; ++i) {
         if (!is_lower_case(name.data[i]) &&
-            (name.data[i] != '_')) 
+            (name.data[i] != '_'))
         {
             result = false;
             break;
@@ -127,9 +127,9 @@ normalize(String str, u32 maxDestSize, u8 *dest)
     // NOTE(michiel): Remove all non alpha-numeric chars except single spaces,
     //   make sure it doesn't start with a space and lower all letters.
     i_expect(str.size < maxDestSize);
-    
+
     String result = {0, dest};
-    
+
     b32 first = true;
     b32 space = false;
     for (u32 i = 0; i < str.size; ++i) {
@@ -137,7 +137,7 @@ normalize(String str, u32 maxDestSize, u8 *dest)
             space = !first;
             continue;
         }
-        
+
         if (space) {
             result.data[result.size++] = ' ';
             space = false;
@@ -145,7 +145,7 @@ normalize(String str, u32 maxDestSize, u8 *dest)
         result.data[result.size++] = to_lower_case(str.data[i]);
         first = false;
     }
-    
+
     result.data[result.size] = 0;
     return result;
 }
@@ -154,13 +154,13 @@ internal String
 to_lower(String str, u32 maxDestSize, u8 *dest)
 {
     i_expect(str.size < maxDestSize);
-    
+
     String result = {str.size, dest};
-    
+
     for (u32 i = 0; i < str.size; ++i) {
         result.data[i] = to_lower_case(str.data[i]);
     }
-    
+
     result.data[result.size] = 0;
     return result;
 }
@@ -169,13 +169,13 @@ internal String
 to_upper(String str, u32 maxDestSize, u8 *dest)
 {
     i_expect(str.size < maxDestSize);
-    
+
     String result = {str.size, dest};
-    
+
     for (u32 i = 0; i < str.size; ++i) {
         result.data[i] = to_upper_case(str.data[i]);
     }
-    
+
     result.data[result.size] = 0;
     return result;
 }
@@ -183,7 +183,7 @@ to_upper(String str, u32 maxDestSize, u8 *dest)
 internal String
 to_camel(String str, u32 maxDestSize, u8 *dest)
 {
-    // NOTE(michiel): Replace all non alpha-numeric chars with a capital letter for the 
+    // NOTE(michiel): Replace all non alpha-numeric chars with a capital letter for the
     //   next char
     String result = normalize(str, maxDestSize, dest);
     b32 toUpper = true;
@@ -193,11 +193,11 @@ to_camel(String str, u32 maxDestSize, u8 *dest)
             toUpper = true;
             continue;
         }
-        
+
         result.data[index++] = toUpper ? to_upper_case(result.data[i]) : result.data[i];
         toUpper = !is_alpha(result.data[i]);
     }
-    
+
     result.data[index] = 0;
     result.size = index;
     return result;
@@ -221,7 +221,7 @@ titleize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Capitalize the first char
     i_expect(str.size < maxDestSize);
-    
+
     String result = {0, dest};
     if (str.size) {
         copy(str.size, str.data, result.data);
@@ -229,7 +229,7 @@ titleize(String str, u32 maxDestSize, u8 *dest)
         result.data[0] = to_upper_case(result.data[0]);
         result.data[result.size] = 0;
     }
-    
+
     return result;
 }
 
@@ -238,9 +238,9 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Capitalize the next char after a space (and the first char)
     i_expect(str.size < maxDestSize);
-    
+
     String result = {0, dest};
-    
+
     b32 first = true;
     b32 space = false;
     for (u32 i = 0; i < str.size; ++i) {
@@ -249,7 +249,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
             result.data[result.size++] = ' ';
             continue;
         }
-        
+
         result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
         first = false;
         space = !is_alpha(result.data[i]);
@@ -545,7 +545,7 @@ str_intern_(Interns *interns, String str)
         }
         it = it->next;
     }
-    
+
     // NOTE(michiel): No matching string found in the map, so add it
     umm newSize = offset_of(InternedString, data) + str.size + 1; // Add one for the 0-term
     InternedString *newInterned = (InternedString *)arena_allocate(&interns->arena, newSize);
@@ -561,13 +561,13 @@ internal InternedString *
 str_intern_fmt_(Interns *interns, char *fmt, ...)
 {
     static char buffer[4096];
-    
+
     va_list args;
     va_start(args, fmt);
     u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
     va_end(args);
     buffer[total] = 0;
-    
+
     return str_intern_(interns, string(total, buffer));
 }
 
@@ -595,12 +595,12 @@ internal String
 str_intern_fmt(Interns *interns, char *fmt, ...)
 {
     String result = {};
-    
+
     va_list args;
     va_start(args, fmt);
     result = vstr_intern_fmt(interns, fmt, args);
     va_end(args);
-    
+
     return result;
 }
 
@@ -663,7 +663,7 @@ string_to_number(String s)
         --s.size;
         ++s.data;
     }
-    
+
     for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
     {
         result *= base;
@@ -678,7 +678,7 @@ string_to_number(String s)
             i_expect(base == 16);
             adding = (s.data[sIdx] - 'a') + 10;
         }
-        else 
+        else
         {
             i_expect(('A' <= s.data[sIdx]) && (s.data[sIdx] <= 'F'));
             i_expect(base == 16);
@@ -737,10 +737,10 @@ internal u8
 u8_from_hex(char *hex)
 {
     u32 result = 0;
-    
+
     result = parse_half_hex_byte(*hex++) << 4;
     result |= parse_half_hex_byte(*hex);
-    
+
     return result;
 }
 
@@ -748,10 +748,10 @@ internal inline u16
 u16_from_hex(char *hex)
 {
     u16 result = 0;
-    
+
     result = u8_from_hex(hex) << 8;
     result |= u8_from_hex(hex + 2);
-    
+
     return result;
 }
 
@@ -759,10 +759,10 @@ internal inline u32
 u32_from_hex(char *hex)
 {
     u32 result = 0;
-    
+
     result = u16_from_hex(hex) << 16;
     result |= u16_from_hex(hex + 4);
-    
+
     return result;
 }
 
@@ -776,7 +776,7 @@ hex_to_bytes(String hex, umm destLength, u8 *dest)
     {
         result.data[result.size++] = u8_from_hex((char *)(hex.data + hIndex));
     }
-    
+
     i_expect(result.size < destLength);
     return result;
 }
@@ -791,7 +791,7 @@ bytes_to_hex(Buffer bytes, umm destLength, u8 *dest)
         result.data[result.size++] = hex_from_u4(bytes.data[bIndex] >> 4);
         result.data[result.size++] = hex_from_u4(bytes.data[bIndex] & 0xF);
     }
-    
+
     i_expect(result.size < destLength);
     result.data[result.size] = 0;
     return result;

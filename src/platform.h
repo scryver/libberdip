@@ -93,7 +93,7 @@ typedef enum KeyModifiers
 typedef struct Keyboard
 {
     Interns interns; // Storage for all the small strings
-    
+
     Key keys[256];
     u32 modifiers;
     String lastInput;
@@ -147,9 +147,9 @@ typedef struct FileAPI
 struct API
 {
     FileAPI file;
-    
+
     b32 closeProgram;
-    
+
     Mouse mouse;
     Keyboard keyboard;
 };

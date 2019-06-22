@@ -21,13 +21,13 @@ TEST_BEGIN(map)
         i_expect_less(val, size);
         i_expect_equal(val, i);
     }
-    
+
     u64 val = map_u64_get_u64(&map, 12);
     i_expect_equal(val, 12ULL);
     map_u64_remove_u64(&map, 12);
     val = map_u64_get_u64(&map, 12);
     i_expect_equal(val, 0ULL);
-    
+
     map_free(&map);
 }
 TEST_END(map)
@@ -36,12 +36,12 @@ TEST_BEGIN(string_intern)
 {
     Interns interns_ = {0};
     Interns *interns = &interns_;
-    
+
     char *a = "Hallow";
     i_expect(strings_are_equal(a, str_intern(interns, a)));
     i_expect_equal(str_intern(interns, a), str_intern(interns, a));
     i_expect_equal(str_intern(interns, str_intern(interns, a)), str_intern(interns, a));
-    
+
     char b[] = "Hallow";
     i_expect_not_equal(b, a);
     i_expect_equal(string(b), string(a));
@@ -55,7 +55,7 @@ TEST_BEGIN(string_intern)
     i_expect_not_equal(str_intern(interns, e), str_intern(interns, a));
     i_expect_not_equal(str_intern(interns, e), str_intern(interns, c));
     i_expect_not_equal(str_intern(interns, e), str_intern(interns, d));
-    
+
     str_interns_free(interns);
 }
 TEST_END(string_intern)
@@ -71,7 +71,7 @@ TEST_BEGIN(string_funcs)
     String snakeStr = string("testing_something_1230_a_and_more");
     String titleStr = string("Testing sOmething 1230(%@$!*(!#^%a and more");
     String capitStr = string("Testing SOmething 1230(%@$!*(!#^%A And More");
-    
+
     i_expect_equal(normalize(testStr), normalStr);
     i_expect_equal(to_lower(testStr), lowerStr);
     i_expect_equal(to_upper(testStr), upperStr);
@@ -79,7 +79,7 @@ TEST_BEGIN(string_funcs)
     i_expect_equal(to_snake(testStr), snakeStr);
     i_expect_equal(titleize(testStr), titleStr);
     i_expect_equal(capitalize(testStr), capitStr);
-    
+
     /*
     fprintf(stdout, "Base  : %.*s\n", STR_FMT(testStr));
     fprintf(stdout, "Normal: %.*s\n", STR_FMT(normalize(testStr)));
@@ -90,20 +90,20 @@ TEST_BEGIN(string_funcs)
     fprintf(stdout, "Title : %.*s\n", STR_FMT(titleize(testStr)));
     fprintf(stdout, "Caps  : %.*s\n", STR_FMT(capitalize(testStr)));
     */
-    
+
     Interns tests = {0};
     String formatting = str_intern_fmt(&tests, "%.*s_%.*s", STR_FMT(string("one")),
                                        STR_FMT(string("two")));
     i_expect_equal(str_intern(&tests, "one_two"), formatting);
     //fprintf(stdout, "Test str: %.*s\n", STR_FMT(formatting));
     str_interns_free(&tests);
-    
+
     char testBuf[256] = "Onish";
     String testBufStr = string(testBuf);
     testBufStr = append_string(testBufStr, string("_twish"), array_count(testBuf));
     i_expect_equal(testBufStr, static_string("Onish_twish"));
     //fprintf(stdout, "Morish: %.*s\n", STR_FMT(testBufStr));
-    
+
     str_interns_free(&testing);
 }
 TEST_END(string_funcs)
@@ -114,37 +114,37 @@ TEST_BEGIN(get_extension)
     String firstTest = static_string("test.bla");
     String firstExt = str_intern(&testing, "bla");
     i_expect_equal(get_extension(firstTest), firstExt);
-    
+
     String secTest = static_string("testbla");
     String secExt = {0, 0};
     String secExt2 = static_string("");
     i_expect_equal(get_extension(secTest), secExt);
     i_expect_equal(get_extension(secTest), secExt2);
     i_expect_not_equal(get_extension(secTest), firstExt);
-    
+
     String thirdTest = static_string("tes.t.la");
     String thirdExt = static_string("la");
     i_expect_equal(get_extension(thirdTest), thirdExt);
     i_expect_not_equal(get_extension(thirdTest), firstExt);
     i_expect_not_equal(get_extension(thirdTest), secExt);
-    
+
     String fourthTest = static_string(".testbla");
     String fourthExt = static_string("testbla");
     i_expect_equal(get_extension(fourthTest), fourthExt);
     i_expect_not_equal(get_extension(fourthTest), firstExt);
     i_expect_not_equal(get_extension(fourthTest), secExt);
     i_expect_not_equal(get_extension(fourthTest), thirdExt);
-    
+
     String fiveTest = static_string("testbla.");
     i_expect_equal(get_extension(fiveTest), secExt);
     i_expect_not_equal(get_extension(fiveTest), firstExt);
     i_expect_not_equal(get_extension(fiveTest), thirdExt);
     i_expect_not_equal(get_extension(fiveTest), fourthExt);
-    
+
     char testStrange[256] = "../../test.abcdef";
     String strange = string(testStrange);
     i_expect_equal(get_extension(strange), string("abcdef"));
-    
+
     /*
     fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("test.bla"))));
     fprintf(stdout, "Exten : %.*s\n", STR_FMT(get_extension(string("testbla"))));
@@ -156,7 +156,7 @@ TEST_BEGIN(get_extension)
     fprintf(stdout, "Exten : %.*s (%lu)\n", STR_FMT(get_extension(strange)),
             get_extension(strange).size);
             */
-    
+
     str_interns_free(&testing);
 }
 TEST_END(get_extension)

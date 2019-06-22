@@ -384,7 +384,7 @@ u32_from_f32_ceil(f32 number)
     return result;
 }
 
-internal s32 
+internal s32
 s32_from_f32_truncate(f32 number)
 {
     return (s32)number;
@@ -405,7 +405,7 @@ internal BitScanResult
 find_least_significant_set_bit(u32 value)
 {
     BitScanResult result = {};
-    
+
 #if COMPILER_MSVC
     result.found = _BitScanForward((unsigned long *)&result.index, value);
 #else
@@ -419,7 +419,7 @@ find_least_significant_set_bit(u32 value)
         }
     }
 #endif
-    
+
     return result;
 }
 
@@ -427,7 +427,7 @@ internal BitScanResult
 find_most_significant_set_bit(u32 value)
 {
     BitScanResult result = {};
-    
+
 #if COMPILER_MSVC
     result.found = _BitScanReverse((unsigned long *)&result.index, value);
 #else
@@ -441,7 +441,7 @@ find_most_significant_set_bit(u32 value)
         }
     }
 #endif
-    
+
     return result;
 }
 
@@ -449,12 +449,12 @@ internal v4
 sRGB_linearize(v4 c)
 {
     v4 result;
-    
+
     result.r = square(c.r);
     result.g = square(c.g);
     result.b = square(c.b);
     result.a = c.a;
-    
+
     return result;
 }
 
@@ -470,12 +470,12 @@ internal v4
 sRGB_from_linear(v4 c)
 {
     v4 result;
-    
+
     result.r = square_root(c.r);
     result.g = square_root(c.g);
     result.b = square_root(c.b);
     result.a = c.a;
-    
+
     return result;
 }
 
@@ -483,14 +483,14 @@ internal v4
 linear1_from_sRGB255(v4 c)
 {
     v4 result;
-    
+
     f32 inv255 = 1.0f / 255.0f;
-    
+
     result.r = square(inv255*c.r);
     result.g = square(inv255*c.g);
     result.b = square(inv255*c.b);
     result.a = inv255*c.a;
-    
+
     return result;
 }
 
@@ -498,13 +498,13 @@ internal v4
 sRGB255_from_linear1(v4 c)
 {
     v4 result;
-    
+
     f32 one255 = 255.0f;
-    
+
     result.r = one255*square_root(c.r);
     result.g = one255*square_root(c.g);
     result.b = one255*square_root(c.b);
     result.a = one255*c.a;
-    
+
     return result;
 }

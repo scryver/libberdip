@@ -23,12 +23,12 @@
 struct FontLoader
 {
     FontInfo info;
-    
+
     u32 maxGlyphCount;
     FontGlyph *glyphs;
-    
+
     f32 *horizontalAdvance; // NOTE(michiel): Kerning
-    
+
     u32 *unicodeMap;
 };
 
@@ -48,24 +48,24 @@ internal Image
 load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32 glyphIndex, s32 *xOffset, s32 *yOffset)
 {
     Image result = {};
-    
+
     s32 width, height;
     f32 scale = stbtt_ScaleForPixelHeight(fontInfo, font->info.pixelHeight);
     u8 *monoBitmap = stbtt_GetCodepointBitmap(fontInfo, scale, scale, (s32)codePoint,
                                               &width, &height, xOffset, yOffset);
-    
+
     result.width = width;
     result.height = height;
-    
+
     s32 pitch = sizeof(u32) * width;
-    
+
     result.pixels = allocate_array(u32, result.height * result.width, Alloc_NoClear);
-    
+
     // fprintf(stderr, "Bitmap size: %d x %d\n", result.width, result.height);
-    
+
     u8 *source = monoBitmap;
     u8 *destRow = (u8 *)result.pixels; // + (result.height - 1) * pitch;
-    
+
     for (s32 y = 0; y < height; ++y)
     {
         u32 *dest = (u32 *)destRow;
@@ -76,22 +76,22 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
             texel = linear1_from_sRGB255(texel);
             texel.rgb *= texel.a;
             texel = sRGB255_from_linear1(texel);
-            
+
             *dest++ = (((u32)(texel.a + 0.5f) << 24) |
                        ((u32)(texel.r + 0.5f) << 16) |
                        ((u32)(texel.g + 0.5f) << 8) |
                        ((u32)(texel.b + 0.5f) << 0));
         }
-        
+
         //destRow -= pitch;
         destRow += pitch;
     }
-    
-    
+
+
     s32 advance, lsb;
     stbtt_GetCodepointHMetrics(fontInfo, (s32)codePoint, &advance, &lsb);
     f32 charAdvance = (f32)advance * scale;
-    
+
     f32 kerningChange = (f32)lsb * scale;
     for (u32 otherGlyphIndex = 0; otherGlyphIndex < font->maxGlyphCount; ++otherGlyphIndex)
     {
@@ -101,9 +101,9 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
             font->horizontalAdvance[otherGlyphIndex * font->maxGlyphCount + glyphIndex] += kerningChange;
         }
     }
-    
+
     stbtt_FreeBitmap(monoBitmap, 0);
-    
+
     return result;
 }
 
@@ -111,7 +111,7 @@ internal void
 add_character(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint)
 {
     i_expect(font->info.glyphCount < font->maxGlyphCount);
-    
+
     u32 glyphIndex = font->info.glyphCount++;
     FontGlyph *glyph = font->glyphs + glyphIndex;
     glyph->unicodeCodePoint = codePoint;
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
         {
             pixelHeight = string_to_number(string(argv[3]));
         }
-        
+
         ApiFile inFile = read_entire_file(inputFilename);
         if (inFile.content.size != 0)
         {
@@ -146,39 +146,39 @@ int main(int argc, char **argv)
                                stbtt_GetFontOffsetForIndex(inFile.content.data, 0)))
             {
                 ApiFile outFile = open_file(outputFilename, FileOpen_Write);
-                
+
                 fprintf(stdout, "Converting '%s' to '%s'...\n", inputFilename, outputFilename);
-                
+
                 FontLoader makeFont = {};
                 makeFont.info.pixelHeight = pixelHeight;
-                
+
                 s32 ascent, descent, lineGap;
                 //  "*ascent - *descent + *lineGap"
                 stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
-                
+
                 f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, makeFont.info.pixelHeight);
                 fprintf(stdout, "Scaling: %f\n", scale);
-                
+
                 makeFont.info.ascenderHeight = (f32)ascent * scale;
                 makeFont.info.descenderHeight = (f32)-descent * scale;
                 makeFont.info.lineGap = (f32)lineGap * scale;
-                
+
                 makeFont.maxGlyphCount = 4096;
                 makeFont.info.glyphCount = 0;
-                
+
                 makeFont.unicodeMap = allocate_array(u32, ONE_PAST_MAX_FONT_CODEPOINT);
-                
+
                 makeFont.glyphs = allocate_array(FontGlyph, makeFont.maxGlyphCount, Alloc_NoClear);
                 umm horizontalAdvances = makeFont.maxGlyphCount * makeFont.maxGlyphCount;
                 makeFont.horizontalAdvance = allocate_array(f32, horizontalAdvances);
-                
+
                 makeFont.info.onePastHighestCodePoint = 0;
-                
+
                 // NOTE(michiel): The NULL glyph
                 makeFont.info.glyphCount = 1;
                 makeFont.glyphs[0].unicodeCodePoint = 0;
                 makeFont.glyphs[0].bitmap = {};
-                
+
                 add_character(&fontInfo, &makeFont, ' ');
                 // TODO(michiel): For now it includes UTF-8 latin and greek
                 //for (u32 character = '!'; character <= '~'; ++character)
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
                 {
                     add_character(&fontInfo, &makeFont, character);
                 }
-                
+
                 // NOTE(michiel): Finalize font kerning
                 for (u32 a = 0; a < ONE_PAST_MAX_FONT_CODEPOINT; ++a)
                 {
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
                         }
                     }
                 }
-                
+
                 // NOTE(michiel): Write font file
                 write_to_file(outFile, sizeof(FontInfo), &makeFont.info);
                 write_to_file(outFile, sizeof(FontGlyph) * makeFont.info.glyphCount, makeFont.glyphs);
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
                     write_to_file(outFile, horizontalAdvanceSliceSize, horizontalAdvance);
                     horizontalAdvance += sizeof(f32) * makeFont.maxGlyphCount;
                 }
-                
+
                 close_file(&outFile);
                 close_file(&inFile);
             }
@@ -247,6 +247,6 @@ int main(int argc, char **argv)
         fprintf(stderr, "Expected 2 arguments, got %d\n", argc - 1);
         print_usage(argv[0]);
     }
-    
+
     return 0;
 }

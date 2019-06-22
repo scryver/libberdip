@@ -8,11 +8,11 @@ struct FontGlyph
 struct FontInfo
 {
     s32 pixelHeight;
-    
+
     f32 ascenderHeight;
     f32 descenderHeight;
     f32 lineGap;
-    
+
     u32 glyphCount;
     u32 onePastHighestCodePoint;
 };
@@ -20,7 +20,7 @@ struct FontInfo
 struct BitmapFont
 {
     FontInfo info;
-    
+
     FontGlyph *glyphs; // [glyphCount]
     u16 *unicodeMap; // [onePastHighestCodePoint]
     f32 *horizontalAdvance; // [glyphCount * glyphCount]
@@ -35,7 +35,7 @@ unpack_font(u8 *fontData, BitmapFont *result)
     umm offset = sizeof(FontInfo);
     result->glyphs = (FontGlyph *)(fontData + offset);
     offset += sizeof(FontGlyph) * result->info.glyphCount;
-    
+
     for (u32 glyphIndex = 0; glyphIndex < result->info.glyphCount; ++glyphIndex)
     {
         FontGlyph *glyph = result->glyphs + glyphIndex;
@@ -43,9 +43,9 @@ unpack_font(u8 *fontData, BitmapFont *result)
         offset += sizeof(u32) * glyph->bitmap.width * glyph->bitmap.height;
     }
     result->horizontalAdvance = (f32 *)(fontData + offset);
-    
+
     result->unicodeMap = allocate_array(u16, result->info.onePastHighestCodePoint);
-    
+
     for (u32 glyphIndex = 1; glyphIndex < result->info.glyphCount; ++glyphIndex)
     {
         FontGlyph *glyph = result->glyphs + glyphIndex;
@@ -103,7 +103,7 @@ get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
         // NOTE(michiel): Single byte (ansii eqv)
         bytes = 1;
     }
-    
+
     return bytes;
 }
 #undef adv
@@ -134,7 +134,7 @@ get_horizontal_advance_for_pair(BitmapFont *font, u32 prevPoint, u32 codePoint)
 {
     u32 prevGlyph = get_glyph_from_code_point(font, prevPoint);
     u32 glyph = get_glyph_from_code_point(font, codePoint);
-    
+
     f32 result = font->horizontalAdvance[prevGlyph * font->info.glyphCount + glyph];
     return result;
 }

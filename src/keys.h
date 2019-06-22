@@ -88,33 +88,33 @@ typedef enum Keys
     Key_Tilde = '~',
     Key_Delete = 127,
     // NOTE(michiel): Everything from 128 forward is fine for own use
-    
+
     Key_Home = 128,
     Key_End,
     Key_PageUp,
     Key_PageDown,
     Key_Insert,
     Key_CapsLock,
-    
+
     Key_NumLock,
     Key_ScrollLock,
     Key_PrintScreen,
-    
+
     Key_OS,
     Key_Menu,
-    
+
     Key_Up,
     Key_Down,
     Key_Left,
     Key_Right,
-    
+
     Key_GameUp,     // w   - on querty keyboard
     Key_GameDown,   // s
     Key_GameLeft,   // a
     Key_GameRight,  // d
     Key_GameLeftUp, // q
     Key_GameRightUp,// e
-    
+
     Key_F1,
     Key_F2,
     Key_F3,
@@ -127,7 +127,7 @@ typedef enum Keys
     Key_F10,
     Key_F11,
     Key_F12,
-    
+
     Key_Num0,
     Key_Num1,
     Key_Num2,
@@ -144,5 +144,5 @@ typedef enum Keys
     Key_NumSubtract,
     Key_NumDot,
     Key_NumEnter,
-    
+
     } Keys;

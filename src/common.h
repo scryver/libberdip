@@ -186,7 +186,7 @@ internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)
 internal umm
 copy(umm size, const void *src, void *dst)
 {
-    i_expect(((u8 *)dst < ((u8 *)src - 4)) || 
+    i_expect(((u8 *)dst < ((u8 *)src - 4)) ||
              ((u8 *)dst >= ((u8 *)src + size)));
     u32 *src32 = (u32 *)src;
     u32 *dst32 = (u32 *)dst;
@@ -200,7 +200,7 @@ copy(umm size, const void *src, void *dst)
     while (rem--) {
         *d++ = *s++;
     }
-    
+
     return size;
 }
 
@@ -221,7 +221,7 @@ copy_single(umm size, u32 value, void *dst)
     }
 }
 
-internal inline f32 
+internal inline f32
 clamp01(f32 value)
 {
     f32 result = clamp(0.0f, value, 1.0f);
@@ -301,14 +301,14 @@ internal inline void *allocate_size(u32 size, u32 flags)
 {
     void *result = NULL;
     b32 clear = !(flags & Alloc_NoClear);
-    
+
     // TODO(michiel): Platform allocation
     if (clear) {
         result = calloc(size, 1);
     } else {
         result = malloc(size);
     }
-    
+
     return result;
 }
 
@@ -350,13 +350,13 @@ internal void
 arena_grow(Arena *arena, umm newSize)
 {
     ArenaBlock *newBlock = allocate_struct(ArenaBlock, 0);
-    
+
     newBlock->size = align_up(maximum(newSize, ARENA_ALLOC_MIN_SIZE), ARENA_ALIGNMENT);
     arena->at = newBlock->mem = (u8 *)allocate_size(newBlock->size, 0);
-    
+
     i_expect(arena->at == align_ptr_down(arena->at, ARENA_ALIGNMENT));
     arena->end = arena->at + newBlock->size;
-    
+
     newBlock->next = arena->sentinel.next;
     arena->sentinel.next = newBlock;
 }
@@ -370,13 +370,13 @@ arena_allocate(Arena *arena, umm newSize)
         arena_grow(arena, newSize);
     }
     i_expect(newSize <= (umm)(arena->end - arena->at));
-    
+
     void *at = arena->at;
     i_expect(at == align_ptr_down(at, ARENA_ALIGNMENT));
-    
+
     arena->at = (u8 *)align_ptr_up(arena->at + newSize, ARENA_ALIGNMENT);
     i_expect(arena->at <= arena->end);
-    
+
     return at;
 }
 
@@ -483,7 +483,7 @@ buf__printf(void **bufAddr, umm elemSize, const char *fmt, ...)
     umm cap = buf_cap(buf) - buf_len(buf);
     umm n = 1 + vsnprintf(bufEnd, cap, fmt, args);
     va_end(args);
-    
+
     if (n > cap) {
         buf__grow(&buf, n + buf_len(buf), elemSize);
         va_start(args, fmt);
@@ -494,7 +494,7 @@ buf__printf(void **bufAddr, umm elemSize, const char *fmt, ...)
         va_end(args);
     }
     buf__hdr(buf)->len += n - 1;
-    
+
     *bufAddr = buf;
 }
 

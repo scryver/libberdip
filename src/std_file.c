@@ -1,21 +1,21 @@
 internal READ_ENTIRE_FILE(read_entire_file)
 {
     ApiFile result = {0};
-    
+
     FILE *input = fopen(filename, "rb");
     if (input)
     {
         fseek(input, 0, SEEK_END);
         result.content.size = ftell(input);
         fseek(input, 0, SEEK_SET);
-        
+
         result.content.data = (u8 *)allocate_size(result.content.size, 0);
         i_expect(result.content.data);
         // TODO(michiel): Checking read size
         fread(result.content.data, 1, result.content.size, input);
         fclose(input);
     }
-    
+
     return result;
 }
 
@@ -33,7 +33,7 @@ internal WRITE_ENTIRE_FILE(write_entire_file)
 internal OPEN_FILE(open_file)
 {
     ApiFile result = {0};
-    
+
     char *openMode = "rb";
     if (flags & FileOpen_Write)
     {
@@ -46,10 +46,10 @@ internal OPEN_FILE(open_file)
             openMode = "wb";
         }
     }
-    
+
     FILE *f = fopen(filename, openMode);
     result.handle = (u64)f;
-    
+
     return result;
 }
 

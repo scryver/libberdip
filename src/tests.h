@@ -41,7 +41,7 @@ internal void testrun_##name(void) \
 
 #define TEST_END(name) }
 
-#if 0    
+#if 0
 #define TEST_END(name) test_format(#name, "Tests complete."); \
 }
 #endif
@@ -283,7 +283,7 @@ internal void testrun_##name(void) \
 // NOTE(michiel): End of C-test interface
 //
 
-#endif 
+#endif
 
 GEN_TEST_EQUAL(u, 8, u)
 GEN_TEST_EQUAL(u, 16, u)
