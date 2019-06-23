@@ -137,15 +137,15 @@ int main(int argc, char **argv)
             pixelHeight = string_to_number(string(argv[3]));
         }
 
-        ApiFile inFile = read_entire_file(inputFilename);
-        if (inFile.content.size != 0)
+        Buffer inFile = read_entire_file(string(inputFilename));
+        if (inFile.size != 0)
         {
             stbtt_fontinfo fontInfo = {};
-            i_expect(stbtt_GetNumberOfFonts(inFile.content.data) == 1);
-            if (stbtt_InitFont(&fontInfo, inFile.content.data,
-                               stbtt_GetFontOffsetForIndex(inFile.content.data, 0)))
+            i_expect(stbtt_GetNumberOfFonts(inFile.data) == 1);
+            if (stbtt_InitFont(&fontInfo, inFile.data,
+                               stbtt_GetFontOffsetForIndex(inFile.data, 0)))
             {
-                ApiFile outFile = open_file(outputFilename, FileOpen_Write);
+                ApiFile outFile = open_file(string(outputFilename), FileOpen_Write);
 
                 fprintf(stdout, "Converting '%s' to '%s'...\n", inputFilename, outputFilename);
 
@@ -214,23 +214,23 @@ int main(int argc, char **argv)
                 }
 
                 // NOTE(michiel): Write font file
-                write_to_file(outFile, sizeof(FontInfo), &makeFont.info);
-                write_to_file(outFile, sizeof(FontGlyph) * makeFont.info.glyphCount, makeFont.glyphs);
+                write_to_file(&outFile, sizeof(FontInfo), &makeFont.info);
+                write_to_file(&outFile, sizeof(FontGlyph) * makeFont.info.glyphCount, makeFont.glyphs);
                 for (u32 glyphIndex = 0; glyphIndex < makeFont.info.glyphCount; ++glyphIndex)
                 {
                     FontGlyph *glyph = makeFont.glyphs + glyphIndex;
-                    write_to_file(outFile, sizeof(u32) * glyph->bitmap.width * glyph->bitmap.height, glyph->bitmap.pixels);
+                    write_to_file(&outFile, sizeof(u32) * glyph->bitmap.width * glyph->bitmap.height, glyph->bitmap.pixels);
                 }
                 u8 *horizontalAdvance = (u8 *)makeFont.horizontalAdvance;
                 for (u32 glyphIndex = 0; glyphIndex < makeFont.info.glyphCount; ++glyphIndex)
                 {
                     u32 horizontalAdvanceSliceSize = sizeof(f32) * makeFont.info.glyphCount;
-                    write_to_file(outFile, horizontalAdvanceSliceSize, horizontalAdvance);
+                    write_to_file(&outFile, horizontalAdvanceSliceSize, horizontalAdvance);
                     horizontalAdvance += sizeof(f32) * makeFont.maxGlyphCount;
                 }
 
                 close_file(&outFile);
-                close_file(&inFile);
+                deallocate(inFile.data);
             }
             else
             {

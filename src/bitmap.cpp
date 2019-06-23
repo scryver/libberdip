@@ -133,8 +133,8 @@ internal Image
 load_bitmap(FileAPI *api, char *filename, b32 preMultiplyAlpha = false)
 {
     Image result = {};
-    ApiFile readResult = api->read_entire_file(filename);
-    result = load_bitmap(readResult.content, preMultiplyAlpha);
+    Buffer readResult = api->read_entire_file(string(filename));
+    result = load_bitmap(readResult, preMultiplyAlpha);
     return result;
 }
 
@@ -159,11 +159,11 @@ write_bitmap(FileAPI *api, Image *image, char *outputFilename)
     header.coloursUsed = 0;
     header.coloursImportant = 0;
 
-    ApiFile file = api->open_file(outputFilename, FileOpen_Write);
-    if (file.handle)
+    ApiFile file = api->open_file(string(outputFilename), FileOpen_Write);
+    if (no_file_errors(&file))
     {
-        api->write_to_file(file, sizeof(header), &header);
-        api->write_to_file(file, outputPixelSize, image->pixels);
+        api->write_to_file(&file, sizeof(header), &header);
+        api->write_to_file(&file, outputPixelSize, image->pixels);
         api->close_file(&file);
     }
 }

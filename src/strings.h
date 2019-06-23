@@ -807,35 +807,39 @@ enum PatternMatchFlag
 // NOTE(michiel): Very simple regex matcher
 // Only * as wildcard supported
 internal b32
-match_pattern(char *pattern, char *string)
+match_pattern(String pattern, String str)
 {
     b32 result = false;
     u32 flags = PatternMatchFlag_None;
-    char *p = pattern;
-    char *s = string;
-    while (*s)
+    String p = pattern;
+    String s = str;
+    while (s.size)
     {
-        if (*p == '*')
+        if (p.data[0] == '*')
         {
             flags = PatternMatchFlag_MaySkip;
-            ++p;
+            ++p.data;
+            --p.size;
         }
         else if (flags == PatternMatchFlag_MaySkip)
         {
             result = true;
-            if (*s == *p)
+            if (s.data[0] == p.data[0])
             {
                 flags = PatternMatchFlag_None;
-                ++p;
-                ++s;
+                ++p.data;
+                --p.size;
+                ++s.data;
+                --s.size;
             }
             else
             {
                 flags = PatternMatchFlag_MaySkip;
-                ++s;
+                ++s.data;
+                --s.size;
             }
         }
-        else if (*s != *p)
+        else if (s.data[0] != p.data[0])
         {
             if (flags == PatternMatchFlag_Restarted)
             {
@@ -849,9 +853,20 @@ match_pattern(char *pattern, char *string)
         {
             result = true;
             flags = PatternMatchFlag_None;
-            ++p;
-            ++s;
+            ++p.data;
+            --p.size;
+            ++s.data;
+            --s.size;
         }
     }
-    return result && (*p == 0);
+    return result && (p.data[0] == 0);
+}
+
+internal b32
+match_pattern(char *pattern, char *str)
+{
+    b32 result = false;
+    result = match_pattern(string(pattern),
+                           string(str));
+    return result;
 }
