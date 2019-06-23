@@ -52,11 +52,11 @@ typedef enum Keys
     /* 65 - 90 (A-Z) */
     Key_LeftBracket = '[',  // 91
     Key_BackSlash = '\\',   // 92
-        Key_RightBracket = ']', // 93
+    Key_RightBracket = ']', // 93
     Key_RoofIcon = '^',     // :) Call it what you like
     Key_Underscore = '_',
     Key_Grave = '`',        // 96
-        Key_A = 'a',            // 97
+    Key_A = 'a',            // 97
     Key_B = 'b',            // 98
     Key_C = 'c',            // 99
     Key_D = 'd',            // 100
@@ -99,6 +99,7 @@ typedef enum Keys
     Key_NumLock,
     Key_ScrollLock,
     Key_PrintScreen,
+    Key_Break,
 
     Key_OS,
     Key_Menu,
@@ -145,4 +146,15 @@ typedef enum Keys
     Key_NumDot,
     Key_NumEnter,
 
-    } Keys;
+    // NOTE(michiel): Leave the modifiers at the end of this enum
+    Key_LeftCtrl,
+    Key_RightCtrl,
+    Key_LeftShift,
+    Key_RightShift,
+    Key_LeftAlt,
+    Key_RightAlt,
+
+    KeyCount
+} Keys;
+
+

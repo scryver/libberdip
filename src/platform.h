@@ -65,7 +65,7 @@ typedef enum MouseButtons
 } MouseButtons;
 typedef struct Mouse
 {
-    v2s pixelPosition;
+    v2  pixelPosition;
     v2  relativePosition; // NOTE(michiel): 0, 0 is is topleft (or should it be 0, 1)
     s32 scroll; // NOTE(michiel): + for scroll up, - for down
     u32 mouseDowns;
@@ -80,6 +80,7 @@ typedef struct Key
 } Key;
 typedef enum KeyModifiers
 {
+    KeyMod_None = 0x00,
     KeyMod_LeftCtrl = 0x01,
     KeyMod_RightCtrl = 0x02,
     KeyMod_Ctrl = 0x03,
@@ -92,12 +93,19 @@ typedef enum KeyModifiers
 } KeyModifiers;
 typedef struct Keyboard
 {
-    Interns interns; // Storage for all the small strings
-
+    u8 lastInputData[128];
     Key keys[256];
     u32 modifiers;
     String lastInput;
 } Keyboard;
+
+internal b32
+is_down(Keyboard *keyboard, Keys key, b32 shouldBeFocused = true)
+{
+    i_expect(keyboard);
+    b32 result = keyboard->keys[key].isDown;
+    return result;
+}
 
 // TODO(michiel): Use String
 #define READ_ENTIRE_FILE(name) ApiFile name(char *filename)
