@@ -4,7 +4,7 @@
 #endif
 
 internal inline f32
-fast_expf_(f32 x, u32 approx)
+fast_exp_(f32 x, u32 approx)
 {
     f32 result = 1.0f;
     result += x / (f32)(1 << approx);
@@ -25,9 +25,9 @@ fast_expf_(f32 x, u32 approx)
 }
 
 internal inline f32
-fast_expf(f32 x)
+fast_exp(f32 x)
 {
-    return fast_expf_(x, 12);
+    return fast_exp_(x, 12);
 }
 
 internal inline u32

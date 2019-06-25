@@ -40,18 +40,20 @@ internal f32
 perlin_noise(PerlinNoise *perlin, v3 p)
 {
     p += PERLIN_N;
-    v3u b0 = V3U(trunc(p.x), trunc(p.y), trunc(p.z));
+    v3u b0 = V3U(u32_from_f32_truncate(p.x),
+                 u32_from_f32_truncate(p.y),
+                 u32_from_f32_truncate(p.z));
     b0 &= PERLIN_DEPTH_MASK;
 
     v3 r0 = p;
-    r0.x -= (f32)trunc(r0.x);
-    r0.y -= (f32)trunc(r0.y);
-    r0.z -= (f32)trunc(r0.z);
+    r0.x -= (f32)s32_from_f32_truncate(r0.x);
+    r0.y -= (f32)s32_from_f32_truncate(r0.y);
+    r0.z -= (f32)s32_from_f32_truncate(r0.z);
     v3 r1 = r0 - 1.0f;
 
     f32 sx = s_curve(r0.x);
     f32 sy = s_curve(r0.y);
-f32 sz = s_curve(r0.z);
+    f32 sz = s_curve(r0.z);
 
     u32 i = perlin->permutations[b0.x] + b0.y;
     u32 j = perlin->permutations[b0.x + 1] + b0.y;
@@ -89,12 +91,12 @@ internal inline f32
 perlin_noise(PerlinNoise *perlin, v2 p)
 {
     p += PERLIN_N;
-    v2u b0 = V2U(trunc(p.x), trunc(p.y));
+    v2u b0 = V2U(u32_from_f32_truncate(p.x), u32_from_f32_truncate(p.y));
     b0 &= PERLIN_DEPTH_MASK;
 
     v2 r0 = p;
-    r0.x -= (f32)trunc(r0.x);
-    r0.y -= (f32)trunc(r0.y);
+    r0.x -= (f32)s32_from_f32_truncate(r0.x);
+    r0.y -= (f32)s32_from_f32_truncate(r0.y);
     v2 r1 = r0 - 1.0f;
 
     f32 sx = s_curve(r0.x);
@@ -124,16 +126,16 @@ internal inline f32
 perlin_noise(PerlinNoise *perlin, f32 p)
 {
     p += PERLIN_N;
-    u32 b0 = trunc(p);
+    u32 b0 = u32_from_f32_truncate(p);
     b0 &= PERLIN_DEPTH_MASK;
     u32 b1 = b0 + 1;
     b1 &= PERLIN_DEPTH_MASK;
 
     f32 r0 = p;
-    r0 -= trunc(r0);
+    r0 -= s32_from_f32_truncate(r0);
     f32 r1 = r0 - 1.0f;
 
-     f32 sx = s_curve(r0);
+    f32 sx = s_curve(r0);
 
     u32 i = perlin->permutations[b0] & PERLIN_DEPTH_MASK;
     u32 j = perlin->permutations[b1] & PERLIN_DEPTH_MASK;
@@ -179,7 +181,7 @@ init_perlin_noise(PerlinNoiseOld *noise, RandomSeriesPCG *random)
 
         v3 grad3 = V3(random_bilateral(random), random_bilateral(random),
                       random_bilateral(random));
-        noise->gradients3[i] = normalize(grad3);
+        noise->gradients3[i] = normalize_or_zero(grad3);
     }
 
     while (--i)
@@ -202,9 +204,9 @@ init_perlin_noise(PerlinNoiseOld *noise, RandomSeriesPCG *random)
 #define s_curve(t) (t * t * (3.0f - 2.0f * t))
 #define setup(i, t, b0, b1, r0, r1) \
 t = vec[i] + PERLIN_N; \
-b0 = trunc(t) & PERLIN_DEPTH_MASK; \
+b0 = s32_from_f32_truncate(t) & PERLIN_DEPTH_MASK; \
 b1 = (b0 + 1) & PERLIN_DEPTH_MASK; \
-r0 = t - trunc(t); \
+r0 = t - (f32)s32_from_f32_truncate(t); \
 r1 = r0 - 1.0f
 
 internal inline f32
@@ -263,15 +265,15 @@ perlin_noise(PerlinNoiseOld *perlin, v2 p)
     return lerp(a, sy, b);
 #else
     v2 offsetter = p + PERLIN_N;
-    v2u b0 = V2U(trunc(offsetter.x), trunc(offsetter.y));
-    b0.x = trunc(b0.x) & PERLIN_DEPTH_MASK;
-    b0.y = trunc(b0.y) & PERLIN_DEPTH_MASK;
+    v2u b0 = V2U(u32_from_f32_truncate(offsetter.x), u32_from_f32_truncate(offsetter.y));
+    b0.x = u32_from_f32_truncate(b0.x) & PERLIN_DEPTH_MASK;
+    b0.y = u32_from_f32_truncate(b0.y) & PERLIN_DEPTH_MASK;
     v2u b1 = b0 + 1;
     b1 &= PERLIN_DEPTH_MASK;
 
     v2 r0 = p + PERLIN_N;
-    r0.x -= trunc(r0.x);
-    r0.y -= trunc(r0.y);
+    r0.x -= s32_from_f32_truncate(r0.x);
+    r0.y -= s32_from_f32_truncate(r0.y);
     v2 r1 = r0 - V2(1, 1);
 
     u8 i = perlin->permutations[b0.x];
@@ -355,10 +357,11 @@ perlin_noise(PerlinNoiseOld *perlin, v3 p)
     return lerp(c, sz, d);
 #else
     v3 offsetter = p + PERLIN_N;
-    v3u b0 = V3U(trunc(offsetter.x), trunc(offsetter.y), trunc(offsetter.z));
-    b0.x = trunc(b0.x) & PERLIN_DEPTH_MASK;
-    b0.y = trunc(b0.y) & PERLIN_DEPTH_MASK;
-    b0.z = trunc(b0.z) & PERLIN_DEPTH_MASK;
+    v3u b0 = V3U(u32_from_f32_truncate(offsetter.x), u32_from_f32_truncate(offsetter.y),
+                 u32_from_f32_truncate(offsetter.z));
+    b0.x = u32_from_f32_truncate(b0.x) & PERLIN_DEPTH_MASK;
+    b0.y = u32_from_f32_truncate(b0.y) & PERLIN_DEPTH_MASK;
+    b0.z = u32_from_f32_truncate(b0.z) & PERLIN_DEPTH_MASK;
     v3u b1 = b0 + 1;
     b1 &= PERLIN_DEPTH_MASK;
 

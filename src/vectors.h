@@ -1383,6 +1383,17 @@ get_dim(Rectangle2u rect)
 // NOTE(michiel): Rectangle2s
 //
 
+internal Rectangle2s
+rect_from_dim(s32 x, s32 y, s32 w, s32 h)
+{
+    Rectangle2s result = {0};
+    result.min.x = x;
+    result.min.y = y;
+    result.max.x = x + w;
+    result.max.y = y + h;
+    return result;
+}
+
 inline Rectangle2s
 rect_min_dim(s32 minX, s32 minY, s32 dimX, s32 dimY)
 {

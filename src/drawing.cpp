@@ -138,9 +138,9 @@ draw_line2(Image *image, s32 startX, s32 startY, s32 endX, int endY, v4 colour)
     s32 y = dxabs >> 1;
     s32 px = startX;
     s32 py = startY;
-    
+
     draw_pixel(image, px, py, colour);
-    
+
     if (dxabs >= dyabs) /* the line is more horizontal than vertical */
     {
         for (s32 i = 0; i < dxabs; ++i)
