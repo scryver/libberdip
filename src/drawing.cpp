@@ -126,6 +126,52 @@ draw_line(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, u32 colour)
 }
 
 internal void
+draw_line2(Image *image, s32 startX, s32 startY, s32 endX, int endY, v4 colour)
+{
+    s32 dx = endX - startX;      /* the horizontal distance of the line */
+    s32 dy = endY - startY;      /* the vertical distance of the line */
+    s32 dxabs = absolute(dx);
+    s32 dyabs = absolute(dy);
+    s32 sdx = (dx < 0) ? -1 : 1;
+    s32 sdy = (dy < 0) ? -1 : 1;
+    s32 x = dyabs >> 1;
+    s32 y = dxabs >> 1;
+    s32 px = startX;
+    s32 py = startY;
+    
+    draw_pixel(image, px, py, colour);
+    
+    if (dxabs >= dyabs) /* the line is more horizontal than vertical */
+    {
+        for (s32 i = 0; i < dxabs; ++i)
+        {
+            y += dyabs;
+            if (y >= dxabs)
+            {
+                y -= dxabs;
+                py += sdy;
+            }
+            px += sdx;
+            draw_pixel(image, px, py, colour);
+        }
+    }
+    else /* the line is more vertical than horizontal */
+    {
+        for (s32 i = 0; i < dyabs; ++i)
+        {
+            x += dxabs;
+            if (x >= dyabs)
+            {
+                x -= dyabs;
+                px += sdx;
+            }
+            py += sdy;
+            draw_pixel(image, px, py, colour);
+        }
+    }
+}
+
+internal void
 draw_line_slow(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colour)
 {
     startX = minimum(image->width - 1, maximum(0, startX));
@@ -368,7 +414,7 @@ fill_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, u32 
 internal inline s32
 orient2d(v2s a, v2s b, v2s c)
 {
-     s32 result = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    s32 result = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
     return result;
 }
 
@@ -459,21 +505,21 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, v4 colour)
 
     for (s32 y = yStart; y < yStart + size; ++y)
     {
-            f32 fY = (f32)(y - yStart) - r + 0.5f;
-            f32 fYSqr = fY * fY;
-            for (s32 x = xStart; x < xStart + size; ++x)
-            {
-                    f32 fX = (f32)(x - xStart) - r + 0.5f;
-                    f32 distSqr = fX * fX + fYSqr;
-                    if ((distSqr < maxDistSqr) &&
+        f32 fY = (f32)(y - yStart) - r + 0.5f;
+        f32 fYSqr = fY * fY;
+        for (s32 x = xStart; x < xStart + size; ++x)
+        {
+            f32 fX = (f32)(x - xStart) - r + 0.5f;
+            f32 distSqr = fX * fX + fYSqr;
+            if ((distSqr < maxDistSqr) &&
                 (0 <= x) && (x < image->width) &&
                 (0 <= y) && (y < image->height))
-                    {
-                        draw_pixel(image, x, y, colour);
-                    }
-                }
+            {
+                draw_pixel(image, x, y, colour);
             }
         }
+    }
+}
 
 internal void
 fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
