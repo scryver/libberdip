@@ -304,6 +304,20 @@ atan2(f32 y, f32 x)
     return result;
 }
 
+internal f32
+log(f32 x)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)logf(x);
+#elif __has_builtin(__builtin_logf)
+    result = (f32)__builtin_logf(x);
+#else
+#error No logf builtin!
+#endif
+    return result;
+}
+
 internal s32
 sign_of(s32 value)
 {
@@ -408,6 +422,12 @@ find_least_significant_set_bit(u32 value)
 
 #if COMPILER_MSVC
     result.found = _BitScanForward((unsigned long *)&result.index, value);
+#elif __has_builtin(__builtin_ctz)
+    if (value)
+    {
+        result.index = __builtin_ctz(value);
+        result.found = true;
+    }
 #else
     for(s32 test = 0; test < 32; ++test)
     {
@@ -430,12 +450,18 @@ find_most_significant_set_bit(u32 value)
 
 #if COMPILER_MSVC
     result.found = _BitScanReverse((unsigned long *)&result.index, value);
-#else
-    for(s32 test = 32; test > 0; --test)
+#elif __has_builtin(__builtin_clz)
+    if (value)
     {
-        if(value & (1 << (test - 1)))
+        result.index = 31 - __builtin_clz(value);
+        result.found = true;
+    }
+#else
+    for(s32 test = 31; test >= 0; --test)
+    {
+        if(value & (1 << test))
         {
-            result.index = test - 1;
+            result.index = test;
             result.found = true;
             break;
         }

@@ -1,11 +1,3 @@
-inline u32
-rotate_right(u32 value, s32 amount)
-{
-    amount &= 31;
-    u32 result = ((value >> amount) | (value << (32 - amount)));
-    return result;
-}
-
 struct RandomSeriesPCG
 {
     u64 state;
@@ -27,7 +19,7 @@ struct RandomList
     RandomListEntry *entries;
 };
 
-inline RandomSeriesPCG
+internal RandomSeriesPCG
 random_seed_pcg(u64 state, u64 selector)
 {
     RandomSeriesPCG result;
@@ -38,7 +30,7 @@ random_seed_pcg(u64 state, u64 selector)
     return result;
 }
 
-inline u32
+internal u32
 random_next_u32(RandomSeriesPCG *series)
 {
     u64 state = series->state;
@@ -51,28 +43,28 @@ random_next_u32(RandomSeriesPCG *series)
     return result;
 }
 
-inline u32
+internal u32
 random_choice(RandomSeriesPCG *series, u32 choiceCount)
 {
     u32 result = (random_next_u32(series) % choiceCount);
     return result;
 }
 
-inline f32
+internal f32
 random_unilateral(RandomSeriesPCG *series)
 {
     f32 result = (f32)random_next_u32(series) / (f32)U32_MAX;
     return result;
 }
 
-inline f32
+internal f32
 random_bilateral(RandomSeriesPCG *series)
 {
     f32 result = random_unilateral(series) * 2.0f - 1.0f;
     return result;
 }
 
-inline u32
+internal u32
 slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount = 8)
 {
     u64 sum = 0;
@@ -84,7 +76,7 @@ slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount
     return sum;
 }
 
-inline f32
+internal f32
 slow_gaussian(RandomSeriesPCG *series)
 {
     f32 f1 = random_bilateral(series);
@@ -102,7 +94,7 @@ slow_gaussian(RandomSeriesPCG *series)
 }
 
 #if 0
-inline f32
+internal f32
 random_gaussian(RandomSeriesPCG *series, f32 mean = 0.0f, f32 stdDeviation = 1.0f)
 {
     f32 f1 = random_bilateral(series);
@@ -124,7 +116,7 @@ random_gaussian(RandomSeriesPCG *series, f32 mean = 0.0f, f32 stdDeviation = 1.0
 // NOTE(michiel): Random lists, based on weights
 //
 
-internal inline RandomList
+internal RandomList
 allocate_rand_list(u32 count)
 {
     RandomList result = {};
@@ -134,7 +126,7 @@ allocate_rand_list(u32 count)
     return result;
 }
 
-internal inline RandomList
+internal RandomList
 arena_allocate_rand_list(Arena *arena, u32 count)
 {
     RandomList result = {};
@@ -164,7 +156,7 @@ init_rand_list_(RandomSeriesPCG *series, RandomList *list,
     }
 }
 
-internal inline RandomListEntry
+internal RandomListEntry
 random_entry(RandomList *list)
 {
     RandomListEntry result = {};
@@ -176,7 +168,7 @@ random_entry(RandomList *list)
     {
         RandomListEntry *entry = list->entries + entryIdx;
         curWeight += entry->weight;
-         if (val < curWeight)
+        if (val < curWeight)
         {
             result.weight = entry->weight;
             result.data = entry->data;
