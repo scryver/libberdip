@@ -78,12 +78,17 @@ tokenize_error(Tokenizer *tokenizer, char *fmt, ...)
 internal void
 advance_scanner(Tokenizer *tokenizer)
 {
-    if (tokenizer->scanner.data[0] == '\n') {
+    if ((tokenizer->scanner.data[0] == '\n') ||
+        (tokenizer->scanner.data[0] == '\r'))
+    {
         ++tokenizer->origin.line;
         tokenizer->origin.column = 1;
-    } else {
+    }
+    else
+    {
         ++tokenizer->origin.column;
     }
+
     ++tokenizer->scanner.data;
     --tokenizer->scanner.size;
 }
@@ -174,10 +179,19 @@ get_token(Tokenizer *tokenizer)
             goto repeat;
         } break;
 
-        case '\r': {
-            result.indent = 0;
+        case '\r':
+        case '\n': {
+            u8 prev = tokenizer->scanner.data[0];
+
+            result.kind = Token_Newline;
+            result.value = string(1, "\n");
             advance_scanner(tokenizer);
-            goto repeat;
+            if (((prev == '\r') && (tokenizer->scanner.data[0] == '\n')) ||
+                ((prev == '\n') && (tokenizer->scanner.data[0] == '\r')))
+            {
+                ++tokenizer->scanner.data;
+                --tokenizer->scanner.size;
+            }
         } break;
 
         case '\t':
@@ -192,7 +206,6 @@ get_token(Tokenizer *tokenizer)
         CASE1(',',  Token_Comma);
         CASE1(':',  Token_Colon);
         CASE1(';',  Token_SemiColon);
-        CASE1('\n', Token_Newline);
         CASE1('(',  Token_ParenOpen);
         CASE1(')',  Token_ParenClose);
         CASE1('{',  Token_BraceOpen);
@@ -245,7 +258,7 @@ get_token(Tokenizer *tokenizer)
             advance_scanner(tokenizer);
 
             b32 parseHex = false;
-            if (tokenizer->scanner.data[0] == '0') {
+            if (result.value.data[0] == '0') {
                 if ((to_lower_case(tokenizer->scanner.data[0]) == 'x') ||
                     (to_lower_case(tokenizer->scanner.data[0]) == 'b')) {
                     parseHex = (to_lower_case(tokenizer->scanner.data[0]) == 'x');
@@ -268,6 +281,7 @@ get_token(Tokenizer *tokenizer)
 
             if (tokenizer->scanner.data[0] == '.') {
                 i_expect(parseHex == false);
+                result.kind = Token_Float;
                 ++result.value.size;
                 advance_scanner(tokenizer);
 
@@ -355,6 +369,93 @@ get_token(Tokenizer *tokenizer)
 #undef CASE2B
 #undef CASE2
 #undef CASE1
+
+internal Token
+peek_token(Tokenizer *tokenizer)
+{
+    Token result = {Token_None};
+    Tokenizer temp = *tokenizer;
+    result = get_token(tokenizer);
+    *tokenizer = temp;
+    return result;
+}
+
+internal b32
+is_valid(Token token)
+{
+    b32 result = false;
+    result = ((Token_None < token.kind) && (token.kind < TokenCount));
+    return result;
+}
+
+internal b32
+is_token_kind(Token token, TokenKind tokenKind)
+{
+    return token.kind == tokenKind;
+}
+
+internal b32
+match_token(Tokenizer *tokenizer, TokenKind tokenKind)
+{
+    Token match = peek_token(tokenizer);
+    b32 result = is_token_kind(match, tokenKind);
+    if (result) {
+        get_token(tokenizer);
+    }
+    return result;
+}
+
+internal Token
+expect_token(Tokenizer *tokenizer, TokenKind tokenKind)
+{
+    Token result = get_token(tokenizer);
+    if (!is_token_kind(result, tokenKind))
+    {
+        tokenize_error(tokenizer, "Expected '%.*s', got '%.*s'.",
+                       STR_FMT(gTokenKindName[tokenKind]),
+                       STR_FMT(gTokenKindName[result.kind]));
+    }
+    return result;
+}
+
+internal Token
+expect_name(Tokenizer *tokenizer, String name)
+{
+    Token result = get_token(tokenizer);
+    if (!is_token_kind(result, Token_Name) ||
+        (result.value != name))
+    {
+        tokenize_error(tokenizer, "Expected name '%.*s', got '%.*s'.", STR_FMT(name),
+                       STR_FMT(result.value));
+    }
+    return result;
+}
+
+internal Token
+expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
+{
+    Token result = get_token(tokenizer);
+
+    if (is_token_kind(result, Token_Integer))
+    {
+        result.s32 = string_to_number(result.value);
+        if ((result.s32 >= minValue) &&
+            (result.s32 <= maxValue))
+        {
+            // NOTE(michiel): Everything is fine
+        }
+        else
+        {
+            tokenize_error(tokenizer, "Expected integer in range(%d, %d), got '%d'.", minValue, maxValue, result.s32);
+        }
+    }
+    else
+    {
+        tokenize_error(tokenizer, "Expected integer, got '%.*s'.", STR_FMT(gTokenKindName[result.kind]));
+    }
+
+    return result;
+}
 
 internal void
 print_token(Token token)

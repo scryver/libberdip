@@ -10,7 +10,8 @@ enum TokenKind
     Token_None,
 
     Token_Name,         // a..zA..Z_...
-    Token_Integer,      // 12 0x12 0b10 0.12 0.12f 0.12e10 0.12e+10 0.12e-10 etc
+    Token_Integer,      // 12 0x12 0b10 12e10 12e+10 12e-10 etc
+    Token_Float,        // 0.12 0.12f 0.12e10 0.12e+10 0.12e-10 etc
     Token_String,       // "..."
 
     Token_Dot,          // .
@@ -79,7 +80,12 @@ struct Token
     TokenKind kind;
     SourcePos origin;
     u32 indent;
-    String value;
+    String value; // TODO(michiel): Rename to text
+    union {
+        s32 s32; // TODO(michiel): Implement at get_token level
+        u32 u32;
+        f32 f32;
+    };
 };
 
 struct Tokenizer
@@ -89,3 +95,12 @@ struct Tokenizer
 
     b32 error;
 };
+
+internal Token get_token(Tokenizer *tokenizer);
+internal Token peek_token(Tokenizer *tokenizer);
+internal b32   is_valid(Token token);
+internal b32   match_token(Tokenizer *tokenizer, TokenKind tokenKind);
+internal Token expect_token(Tokenizer *tokenizer, TokenKind tokenKind);
+internal Token expect_name(Tokenizer *tokenizer, String name);
+internal Token expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue);
+internal void  print_token(Token token);
