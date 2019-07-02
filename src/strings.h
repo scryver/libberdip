@@ -634,6 +634,38 @@ str_intern_c(Interns *interns, const char *str)
 
 #endif
 
+internal f64
+float_from_string(String s)
+{
+    // TODO(michiel): Exponent support
+    f64 result = 0.0;
+
+    String scanner = s;
+    while (scanner.size && is_digit(scanner.data[0]))
+    {
+        result *= 10.0;
+        result += (f64)(scanner.data[0] - '0');
+        ++scanner.data;
+        --scanner.size;
+    }
+
+    if (scanner.data[0] == '.') {
+        f64 multiplier = 0.1;
+        ++scanner.data;
+        --scanner.size;
+        while (scanner.size && is_digit(scanner.data[0])) {
+            f64 addend = (f64)(scanner.data[0] - '0');
+            addend *= multiplier;
+            result += addend;
+            multiplier *= 0.1;
+            ++scanner.data;
+            --scanner.size;
+        }
+    }
+
+    return result;
+}
+
 internal s64
 string_to_number(String s)
 {

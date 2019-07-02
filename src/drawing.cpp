@@ -223,6 +223,13 @@ draw_line_slow(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colo
 }
 
 internal void
+draw_line(Image *image, v2 start, v2 end, v4 colour)
+{
+    draw_line(image, s32_from_f32_round(start.x), s32_from_f32_round(start.y),
+              s32_from_f32_round(end.x), s32_from_f32_round(end.y), colour);
+}
+
+internal void
 draw_line_slow(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, u32 colour)
 {
     draw_line_slow(image, startX, startY, endX, endY, unpack_colour(colour));
