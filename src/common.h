@@ -297,7 +297,7 @@ typedef enum AllocateFlags
 
 #define allocate_array(type, count, ...) (type *)allocate_size(sizeof(type)*count, ## __VA_ARGS__)
 #define allocate_struct(type, ...)       (type *)allocate_size(sizeof(type), ## __VA_ARGS__)
-internal inline void *allocate_size(u32 size, u32 flags)
+internal inline void *allocate_size(umm size, u32 flags)
 {
     void *result = NULL;
     b32 clear = !(flags & Alloc_NoClear);
@@ -312,7 +312,7 @@ internal inline void *allocate_size(u32 size, u32 flags)
     return result;
 }
 
-internal inline Buffer allocate_buffer(u32 size, u32 flags)
+internal inline Buffer allocate_buffer(umm size, u32 flags)
 {
     Buffer result = {0};
     result.size = size;
@@ -325,7 +325,7 @@ internal inline Buffer allocate_buffer(u32 size, u32 flags)
 }
 
 internal inline void *
-reallocate_size(void *data, u32 size)
+reallocate_size(void *data, umm size)
 {
     void *result = NULL;
     result = realloc(data, size);

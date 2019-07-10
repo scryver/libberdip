@@ -141,7 +141,9 @@ int main(int argc, char **argv)
         if (inFile.size != 0)
         {
             stbtt_fontinfo fontInfo = {};
-            i_expect(stbtt_GetNumberOfFonts(inFile.data) == 1);
+            fprintf(stdout, "Nr fonts found: %d\n", stbtt_GetNumberOfFonts(inFile.data));
+            //i_expect(stbtt_GetNumberOfFonts(inFile.data) == 1);
+
             if (stbtt_InitFont(&fontInfo, inFile.data,
                                stbtt_GetFontOffsetForIndex(inFile.data, 0)))
             {
@@ -163,7 +165,7 @@ int main(int argc, char **argv)
                 makeFont.info.descenderHeight = (f32)-descent * scale;
                 makeFont.info.lineGap = (f32)lineGap * scale;
 
-                makeFont.maxGlyphCount = 4096;
+                makeFont.maxGlyphCount = 0x4000;
                 makeFont.info.glyphCount = 0;
 
                 makeFont.unicodeMap = allocate_array(u32, ONE_PAST_MAX_FONT_CODEPOINT);
@@ -181,11 +183,20 @@ int main(int argc, char **argv)
 
                 add_character(&fontInfo, &makeFont, ' ');
                 // TODO(michiel): For now it includes UTF-8 latin and greek
+#if 1
                 //for (u32 character = '!'; character <= '~'; ++character)
                 for (u32 character = '!'; character < 0x400; ++character)
                 {
                     add_character(&fontInfo, &makeFont, character);
                 }
+#else
+                // TODO(michiel): CJK support
+                //for (u32 character = 0x4E00; character < 0x9FEF; ++character)
+                for (u32 character = 0x4E00; character < 0x8E00; ++character)
+                {
+                    add_character(&fontInfo, &makeFont, character);
+                }
+#endif
 
                 // NOTE(michiel): Finalize font kerning
                 for (u32 a = 0; a < ONE_PAST_MAX_FONT_CODEPOINT; ++a)
