@@ -34,6 +34,7 @@ struct FontLoader
 
 #include "std_file.c"
 #include "bitmap.cpp"
+#include "fonts_gb2312.cpp"
 
 internal void
 print_usage(char *progName)
@@ -110,18 +111,25 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
 internal void
 add_character(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint)
 {
-    i_expect(font->info.glyphCount < font->maxGlyphCount);
-
-    u32 glyphIndex = font->info.glyphCount++;
-    FontGlyph *glyph = font->glyphs + glyphIndex;
-    glyph->unicodeCodePoint = codePoint;
-    s32 xOffset, yOffset;
-    glyph->bitmap = load_glyph_bitmap(fontInfo, font, codePoint, glyphIndex, &xOffset, &yOffset);
-    glyph->yOffset = yOffset;
-    font->unicodeMap[codePoint] = glyphIndex;
-    if (font->info.onePastHighestCodePoint <= codePoint)
+    if (stbtt_FindGlyphIndex(fontInfo, codePoint))
     {
-        font->info.onePastHighestCodePoint = codePoint + 1;
+        i_expect(font->info.glyphCount < font->maxGlyphCount);
+
+        u32 glyphIndex = font->info.glyphCount++;
+        FontGlyph *glyph = font->glyphs + glyphIndex;
+        glyph->unicodeCodePoint = codePoint;
+        s32 xOffset, yOffset;
+        glyph->bitmap = load_glyph_bitmap(fontInfo, font, codePoint, glyphIndex, &xOffset, &yOffset);
+        glyph->yOffset = yOffset;
+        font->unicodeMap[codePoint] = glyphIndex;
+        if (font->info.onePastHighestCodePoint <= codePoint)
+        {
+            font->info.onePastHighestCodePoint = codePoint + 1;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "Codepoint %u not found!\n", codePoint);
     }
 }
 
@@ -183,7 +191,7 @@ int main(int argc, char **argv)
 
                 add_character(&fontInfo, &makeFont, ' ');
                 // TODO(michiel): For now it includes UTF-8 latin and greek
-#if 1
+#if 0
                 //for (u32 character = '!'; character <= '~'; ++character)
                 for (u32 character = '!'; character < 0x400; ++character)
                 {
@@ -191,11 +199,21 @@ int main(int argc, char **argv)
                 }
 #else
                 // TODO(michiel): CJK support
+                for (u32 character = '!'; character <= '~'; ++character)
+                {
+                    add_character(&fontInfo, &makeFont, character);
+                }
+                for (u32 charIdx = 0; charIdx < array_count(gGB2312CodePoints); ++charIdx)
+                {
+                    add_character(&fontInfo, &makeFont, gGB2312CodePoints[charIdx]);
+                }
+#if 0
                 //for (u32 character = 0x4E00; character < 0x9FEF; ++character)
                 for (u32 character = 0x4E00; character < 0x8E00; ++character)
                 {
                     add_character(&fontInfo, &makeFont, character);
                 }
+#endif
 #endif
 
                 // NOTE(michiel): Finalize font kerning
