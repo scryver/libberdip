@@ -1,6 +1,6 @@
 #define MIN_SUBALLOC_BITS  4
 #define MIN_SUBALLOC_SIZE  (1 << MIN_SUBALLOC_BITS)
-compile_expect(MIN_SUBALLOC_SIZE >= sizeof(BucketList));
+compile_expect(MIN_SUBALLOC_SIZE >= sizeof(SubAllocItem));
 
 #define SUBALLOC_HEADER_OFFSET sizeof(umm)
 
@@ -67,16 +67,16 @@ update_mark(SubAllocator *allocator, u8 *newValue)
 #endif
 
 internal void
-add_to_free_list(SubAllocator *allocator, BucketList *entry, u32 bucket)
+add_to_free_list(SubAllocator *allocator, SubAllocItem *entry, u32 bucket)
 {
     entry->next = allocator->freeLists[bucket];
     allocator->freeLists[bucket] = entry;
 }
 
-internal BucketList *
+internal SubAllocItem *
 remove_first_free(SubAllocator *allocator, u32 bucket)
 {
-    BucketList *result = allocator->freeLists[bucket];
+    SubAllocItem *result = allocator->freeLists[bucket];
 
     if (result) {
         allocator->freeLists[bucket] = result->next;
@@ -88,7 +88,7 @@ remove_first_free(SubAllocator *allocator, u32 bucket)
 
 //#if SUB_ALLOC_DEBUG
 internal b32
-is_right(SubAllocator *allocator, BucketList *entry, u32 size)
+is_right(SubAllocator *allocator, SubAllocItem *entry, u32 size)
 {
     suballoc_expect(is_pow2(size));
     umm offset = ((u8 *)entry - allocator->base);
@@ -96,33 +96,35 @@ is_right(SubAllocator *allocator, BucketList *entry, u32 size)
 }
 //#endif
 
-internal BucketList *
-get_sibling(SubAllocator *allocator, BucketList *entry, u32 size)
+internal SubAllocItem *
+get_sibling(SubAllocator *allocator, SubAllocItem *entry, u32 size)
 {
     suballoc_expect(is_pow2(size));
-    BucketList *result = (BucketList *)(allocator->base + (((u8 *)entry - allocator->base) ^ size));
+    SubAllocItem *result = (SubAllocItem *)(allocator->base + (((u8 *)entry - allocator->base) ^ size));
     return result;
 }
 
-internal void
-coalesce_lists(SubAllocator *allocator)
+internal u32
+sub_coalesce(SubAllocator *allocator)
 {
+    // NOTE(michiel): This returns the number of blocks that got coalesced.
+    u32 result = 0;
     for (u32 bucketIdx = allocator->bucketCount - 1; bucketIdx > 0; --bucketIdx)
     {
-        BucketList *entry = allocator->freeLists[bucketIdx];
+        SubAllocItem *entry = allocator->freeLists[bucketIdx];
         u32 bucketSize = get_bucket_size(allocator, bucketIdx);
 
-        BucketList *prevEntry = 0;
+        SubAllocItem *prevEntry = 0;
         while (entry)
         {
-            BucketList *sibling = get_sibling(allocator, entry, bucketSize);
-            BucketList *nextEntry = entry->next;
-            BucketList *prevSib = 0;
-            BucketList *nextSib = 0;
+            SubAllocItem *sibling = get_sibling(allocator, entry, bucketSize);
+            SubAllocItem *nextEntry = entry->next;
+            SubAllocItem *prevSib = 0;
+            SubAllocItem *nextSib = 0;
             b32 found = false;
 
             if (!sibling->isUsed) {
-                for (BucketList *test = entry->next;
+                for (SubAllocItem *test = entry->next;
                      test;
                      test = test->next)
                 {
@@ -152,12 +154,18 @@ coalesce_lists(SubAllocator *allocator)
 
                 entry->next = 0;
                 add_to_free_list(allocator, (entry < sibling) ? entry : sibling, bucketIdx - 1);
+                ++result;
             } else {
                 prevEntry = entry;
             }
             entry = nextEntry;
         }
     }
+
+#if SUB_ALLOC_DEBUG
+    allocator->coalesceCount += result;
+#endif
+    return result;
 }
 
 internal b32
@@ -182,7 +190,7 @@ init_sub_allocator(SubAllocator *allocator, u32 size, u8 *data)
 
 #if SUB_ALLOC_DEBUG
         allocator->mark = allocator->base;
-        update_mark(allocator, allocator->base + sizeof(BucketList));
+        update_mark(allocator, allocator->base + sizeof(SubAllocItem));
 #endif
 
         u32 bucketCount = (highBit.index - MIN_SUBALLOC_BITS + 1);
@@ -192,12 +200,12 @@ init_sub_allocator(SubAllocator *allocator, u32 size, u8 *data)
 #if 0
         for (u32 bucketIdx = 0; bucketIdx < bucketCount; ++bucketIdx)
         {
-            BucketList *list = allocator->freeLists + bucketIdx;
+            SubAllocItem *list = allocator->freeLists + bucketIdx;
             list->prev = list->next = list;
         }
 #endif
 
-        BucketList *baseBucket = (BucketList *)allocator->base;
+        SubAllocItem *baseBucket = (SubAllocItem *)allocator->base;
         add_to_free_list(allocator, baseBucket, 0);
 
         result = true;
@@ -222,7 +230,7 @@ sub_alloc(SubAllocator *allocator, u32 requestSize)
         u32 bucketSize = get_bucket_size(allocator, bucket);
 
         b32 doSplit = false;
-        BucketList *allocPtr = remove_first_free(allocator, bucket);
+        SubAllocItem *allocPtr = remove_first_free(allocator, bucket);
         while (!allocPtr && bucket) {
             allocPtr = remove_first_free(allocator, --bucket);
             bucketSize <<= 1;
@@ -230,7 +238,7 @@ sub_alloc(SubAllocator *allocator, u32 requestSize)
         }
 
         if (!allocPtr) {
-            coalesce_lists(allocator);
+            sub_coalesce(allocator);
 
             bucket = origBucket;
             bucketSize = get_bucket_size(allocator, bucket);
@@ -252,7 +260,10 @@ sub_alloc(SubAllocator *allocator, u32 requestSize)
                 bucketSize >>= 1;
                 while (bucket <= origBucket)
                 {
-                    BucketList *sibling = (BucketList *)((u8 *)allocPtr + bucketSize);
+#if SUB_ALLOC_DEBUG
+                    ++allocator->splitCount;
+#endif
+                    SubAllocItem *sibling = (SubAllocItem *)((u8 *)allocPtr + bucketSize);
                     suballoc_expect(!sibling->isUsed);
                     suballoc_expect(is_right(allocator, sibling, bucketSize));
                     add_to_free_list(allocator, sibling, bucket);
@@ -275,6 +286,8 @@ sub_alloc(SubAllocator *allocator, u32 requestSize)
         }
     }
 
+    i_expect(result < allocator->end);
+
     return result;
 }
 
@@ -285,7 +298,7 @@ sub_dealloc(SubAllocator *allocator, void *pointer)
 
     if (pointer)
     {
-        BucketList *entry = (BucketList *)((u8 *)pointer - SUBALLOC_HEADER_OFFSET);
+        SubAllocItem *entry = (SubAllocItem *)((u8 *)pointer - SUBALLOC_HEADER_OFFSET);
         suballoc_expect(entry->isUsed);
 #if SUB_ALLOC_DEBUG
         suballoc_expect((u8 *)entry < allocator->mark);
