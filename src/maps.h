@@ -97,7 +97,9 @@ map_u64_put_u64(Map *map, u64 key, u64 value)
     umm hash = (umm)hash_u64(key);
     for (;;) {
         hash &= map->cap - 1;
-        if (map->keys[hash] == MAP_EMPTY_KEY) {
+        if ((map->keys[hash] == MAP_EMPTY_KEY) ||
+            (map->keys[hash] == MAP_DELETED_KEY))
+        {
             ++map->len;
             map->keys[hash] = key;
             map->values[hash] = value;
