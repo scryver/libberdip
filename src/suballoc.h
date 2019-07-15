@@ -1,4 +1,4 @@
-#define SUB_ALLOC_DEBUG 1
+#define SUB_ALLOC_DEBUG 0
 
 union SubAllocItem
 {
