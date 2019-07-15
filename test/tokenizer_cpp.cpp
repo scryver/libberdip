@@ -3,18 +3,18 @@
 
 TEST_BEGIN(tokenizer)
 {
-    ApiFile testFile = read_entire_file("../../src/tokenizer.cpp");
-    i_expect_not_equal(testFile.content.size, 0ULL);
+    Buffer testFile = read_entire_file(string("../../src/tokenizer.cpp"));
+    i_expect_not_equal(testFile.size, 0ULL);
 
     Tokenizer tokenizer = {0};
     tokenizer.origin.filename = string("tokenizer.cpp");
-    tokenizer.scanner = string(testFile.content.size, testFile.content.data);
+    tokenizer.scanner = testFile;
 
     Token token = {Token_None};
     do
     {
         token = get_token(&tokenizer);
-        print_token(token);
+        //print_token(token);
 
     } while (token.kind != Token_EOF);
 }
