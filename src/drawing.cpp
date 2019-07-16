@@ -600,7 +600,7 @@ draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
             if (glyphIndex)
             {
                 FontGlyph *glyph = font->glyphs + glyphIndex;
-                draw_image(image, x, y + glyph->yOffset, &glyph->bitmap, colour);
+                draw_image(image, u32_from_f32_round(x), u32_from_f32_round(y + glyph->yOffset), &glyph->bitmap, colour);
             }
         }
 
