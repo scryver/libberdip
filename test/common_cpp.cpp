@@ -72,13 +72,14 @@ TEST_BEGIN(string_funcs)
     String titleStr = string("Testing sOmething 1230(%@$!*(!#^%a and more");
     String capitStr = string("Testing SOmething 1230(%@$!*(!#^%A And More");
 
-    i_expect_equal(normalize(testStr), normalStr);
-    i_expect_equal(to_lower(testStr), lowerStr);
-    i_expect_equal(to_upper(testStr), upperStr);
-    i_expect_equal(to_camel(testStr), camelStr);
-    i_expect_equal(to_snake(testStr), snakeStr);
-    i_expect_equal(titleize(testStr), titleStr);
-    i_expect_equal(capitalize(testStr), capitStr);
+    u8 tempBuf[128];
+    i_expect_equal(normalize(testStr, array_count(tempBuf), tempBuf), normalStr);
+    i_expect_equal(to_lower(testStr, array_count(tempBuf), tempBuf), lowerStr);
+    i_expect_equal(to_upper(testStr, array_count(tempBuf), tempBuf), upperStr);
+    i_expect_equal(to_camel(testStr, array_count(tempBuf), tempBuf), camelStr);
+    i_expect_equal(to_snake(testStr, array_count(tempBuf), tempBuf), snakeStr);
+    i_expect_equal(titleize(testStr, array_count(tempBuf), tempBuf), titleStr);
+    i_expect_equal(capitalize(testStr, array_count(tempBuf), tempBuf), capitStr);
 
     /*
     fprintf(stdout, "Base  : %.*s\n", STR_FMT(testStr));
@@ -172,4 +173,4 @@ int main(int argc, char **argv)
     testrun_get_extension();
     fprintf(stdout, "\n\n");
 }
-    #endif
+#endif

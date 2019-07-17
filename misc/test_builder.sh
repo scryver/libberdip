@@ -11,7 +11,7 @@ flags="-O0 -g -ggdb -Wall -Werror -pedantic"
 cppFlags="$flags -std=c++11 -Wno-writable-strings"
 cFlags="$flags -std=c99"
 
-exceptions="-Wno-gnu-zero-variadic-macro-arguments -Wno-missing-braces -Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-c99-extensions"
+exceptions="-Wno-gnu-zero-variadic-macro-arguments -Wno-missing-braces -Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-c99-extensions -Wno-c11-extensions -Wno-gnu-empty-initializer"
 devExcept="-Wno-unused-function"
 
 mkdir -p "$buildDir"

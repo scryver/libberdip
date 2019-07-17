@@ -895,10 +895,14 @@ match_pattern(String pattern, String str)
 }
 
 internal b32
+#ifdef __cplusplus
 match_pattern(char *pattern, char *str)
+#else
+match_pattern_c(char *pattern, char *str)
+#endif
 {
     b32 result = false;
-    result = match_pattern(string(pattern),
-                           string(str));
+    result = match_pattern(string(string_length(pattern), pattern),
+                           string(string_length(str), str));
     return result;
 }

@@ -71,7 +71,12 @@
 #define i_expect(expr)
 #endif // LIBBERDIP_EXPECT
 
+#ifdef __cplusplus
 #define compile_expect(expr)    static_assert(expr, "Expectation failed: " #expr)
+#else
+#define compile_expect(expr) _Static_assert(expr, "Expectation failed: " #expr)
+#endif
+
 #if LIBBERDIP_EXPECT
 #define NOT_IMPLEMENTED      i_expect(0 && "Not implemented!")
 #else
@@ -99,8 +104,9 @@ typedef int64_t  b64;
 typedef float    f32;
 typedef double   f64;
 
-typedef size_t   umm;
-typedef ssize_t  smm;
+typedef unsigned long int umm;
+typedef signed long int   smm;
+compile_expect(sizeof(umm) == sizeof(size_t));
 
 #define U8_MAX   0xFF
 #define U16_MAX  0xFFFF
