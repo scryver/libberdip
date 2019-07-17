@@ -16,6 +16,29 @@ V2U(u32 x, u32 y)
 }
 
 internal v2u
+V2U(v2s vs)
+{
+    // TODO(michiel): Maybe some value checking? Or just let that be up to the user?
+    v2u result;
+
+    result.x = (u32)vs.x;
+    result.y = (u32)vs.y;
+
+    return result;
+}
+
+internal v2u
+V2U(v2 vf)
+{
+    v2u result;
+
+    result.x = u32_from_f32_round(vf.x);
+    result.y = u32_from_f32_round(vf.y);
+
+    return result;
+}
+
+internal v2u
 operator -(v2u a)
 {
     v2u result;
@@ -220,6 +243,17 @@ V2S(v2u u)
     v2s result;
     result.x = (u.x < 0x80000000) ? u.x : 0x7FFFFFFF;
     result.y = (u.y < 0x80000000) ? u.y : 0x7FFFFFFF;
+    return result;
+}
+
+internal v2s
+V2S(v2 vf)
+{
+    v2s result;
+
+    result.x = s32_from_f32_round(vf.x);
+    result.y = s32_from_f32_round(vf.y);
+
     return result;
 }
 
@@ -1305,6 +1339,17 @@ operator !=(v4 a, v4 b)
     return result;
 }
 
+internal v4
+hadamard(v4 a, v4 b)
+{
+    v4 result;
+    result.x = a.x * b.x;
+    result.y = a.y * b.y;
+    result.z = a.z * b.z;
+    result.w = a.w * b.w;
+    return result;
+}
+
 internal f32
 dot(v4 a, v4 b)
 {
@@ -1372,10 +1417,61 @@ rect_from_dim(u32 x, u32 y, u32 w, u32 h)
     return result;
 }
 
+internal Rectangle2u
+rect_min_dim(u32 minX, u32 minY, u32 dimX, u32 dimY)
+{
+    Rectangle2u result;
+
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = minX + dimX;
+    result.max.y = minY + dimY;
+
+    return result;
+}
+
+internal Rectangle2u
+rect_min_dim(v2u min, v2u dim)
+{
+    Rectangle2u result = rect_min_dim(min.x, min.y, dim.x, dim.y);
+    return result;
+}
+
+internal Rectangle2u
+rect_min_max(u32 minX, u32 minY, u32 maxX, u32 maxY)
+{
+    Rectangle2u result;
+
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = maxX;
+    result.max.y = maxY;
+
+    return result;
+}
+
+internal Rectangle2u
+rect_min_max(v2u min, v2u max)
+{
+    Rectangle2u result = rect_min_max(min.x, min.y, max.x, max.y);
+    return result;
+}
+
 internal v2u
 get_dim(Rectangle2u rect)
 {
     v2u result = rect.max - rect.min;
+    return result;
+}
+
+internal b32
+in_rectangle(Rectangle2u rect, v2u point)
+{
+    b32 result;
+    result = ((point.x >= rect.min.x) &&
+              (point.y >= rect.min.y) &&
+              (point.x < rect.max.x) &&
+              (point.y < rect.max.y));
     return result;
 }
 

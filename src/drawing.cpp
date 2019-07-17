@@ -2,7 +2,7 @@
 // NOTE(michiel): Colour mix helpers
 //
 
-internal inline v4
+internal v4
 unpack_colour(u32 colour)
 {
     v4 result = {};
@@ -16,7 +16,7 @@ unpack_colour(u32 colour)
     return result;
 }
 
-internal inline u32
+internal u32
 pack_colour(v4 colour)
 {
     u32 result = 0;
@@ -33,7 +33,7 @@ pack_colour(v4 colour)
 // NOTE(michiel): Raw pixel setters
 //
 
-internal inline void
+internal void
 draw_pixel(Image *image, u32 x, u32 y, v4 colour)
 {
     v4 source = unpack_colour(image->pixels[y * image->width + x]);
@@ -50,7 +50,7 @@ draw_pixel(Image *image, u32 x, u32 y, v4 colour)
     image->pixels[y * image->width + x] = pack_colour(source);
 }
 
-internal inline void
+internal void
 draw_pixel(Image *image, u32 x, u32 y, u32 colour)
 {
     draw_pixel(image, x, y, unpack_colour(colour));
@@ -272,7 +272,7 @@ draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1,
 // NOTE(michiel): Outlines
 //
 
-internal inline void
+internal void
 outline_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, v4 colour)
 {
     for (u32 x = xStart; x < (xStart + width); ++x)
@@ -287,13 +287,13 @@ outline_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, v
     }
 }
 
-internal inline void
+internal void
 outline_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, u32 colour)
 {
     outline_rectangle(image, xStart, yStart, width, height, unpack_colour(colour));
 }
 
-internal inline void
+internal void
 outline_rectangle(Image *image, Rectangle2u rect, u32 colour)
 {
     outline_rectangle(image, rect.min.x, rect.min.y, rect.max.x - rect.min.x, rect.max.y - rect.min.y, colour);
@@ -356,7 +356,7 @@ outline_circle(Image *image, s32 xStart, s32 yStart, u32 radius, f32 thickness =
 // NOTE(michiel): Filled shapes, (rect, circle)
 //
 
-internal inline void
+internal void
 fill_rectangle(Image *image, s32 xStart, s32 yStart, u32 width, u32 height, v4 colour)
 {
     if (xStart < 0)
@@ -412,13 +412,13 @@ fill_rectangle(Image *image, s32 xStart, s32 yStart, u32 width, u32 height, v4 c
     }
 }
 
-internal inline void
+internal void
 fill_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, u32 colour)
 {
     fill_rectangle(image, xStart, yStart, width, height, unpack_colour(colour));
 }
 
-internal inline s32
+internal s32
 orient2d(v2s a, v2s b, v2s c)
 {
     s32 result = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
@@ -476,15 +476,13 @@ fill_triangle(Image *image, v2s a, v2s b, v2s c, v4 colour)
     }
 }
 
-#if 0
-internal inline void
+internal void
 fill_triangle(Image *image, v2u a, v2u b, v2u c, v4 colour)
 {
     fill_triangle(image, V2S(a), V2S(b), V2S(c), colour);
 }
-#endif
 
-internal inline void
+internal void
 fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
 {
     v2s au = V2S(round(a.x), round(a.y));
@@ -493,7 +491,7 @@ fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
     fill_triangle(image, au, bu, cu, colour);
 }
 
-internal inline void
+internal void
 fill_triangle(Image *image, v2s a, v2s b, v2s c, u32 colour)
 {
     fill_triangle(image, a, b, c, unpack_colour(colour));
@@ -538,7 +536,7 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 // NOTE(michiel): Image drawing
 //
 
-internal inline void
+internal void
 draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V4(1, 1, 1, 1))
 {
     u32 *imageAt = image->pixels;
@@ -560,7 +558,7 @@ draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V
 // NOTE(michiel): Font drawing
 //
 
-internal inline void
+internal void
 draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
           v4 colour = {1, 1, 1, 1})
 {
@@ -609,7 +607,7 @@ draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, char *text,
     }
 }
 
-internal inline void
+internal void
 draw_text(BitmapFont *font, Image *image, u32 xStart, u32 yStart, String text,
           v4 colour = {1, 1, 1, 1})
 {
