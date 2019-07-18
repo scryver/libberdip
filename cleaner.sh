@@ -12,6 +12,3 @@ grep -r -P '\t' src
 echo ""
 
 set -e
-
-git checkout -- src/stb_truetype.h
-
