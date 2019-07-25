@@ -3,6 +3,20 @@
 //
 
 internal v4
+unpack_colour(u8 colour)
+{
+    v4 result = {};
+    f32 oneOver255 = 1.0f / 255.0f;
+    f32 grey = (f32)colour * oneOver255;
+    result.r = grey;
+    result.g = grey;
+    result.b = grey;
+    result.a = grey;
+
+    return result;
+}
+
+internal v4
 unpack_colour(u32 colour)
 {
     v4 result = {};
@@ -29,6 +43,23 @@ pack_colour(v4 colour)
     return result;
 }
 
+internal v4
+mix_colours(v4 src, v4 overlay)
+{
+    v4 result;
+    result = hadamard(src, overlay);
+    return result;
+}
+
+internal v4
+alpha_blend_colours(v4 src, v4 overlay)
+{
+    v4 result;
+    result.rgb = src.rgb * (1.0f - overlay.a) + overlay.rgb;
+    result.a = overlay.a;
+    return result;
+}
+
 //
 // NOTE(michiel): Raw pixel setters
 //
@@ -37,15 +68,9 @@ internal void
 draw_pixel(Image *image, u32 x, u32 y, v4 colour)
 {
     v4 source = unpack_colour(image->pixels[y * image->width + x]);
+    colour.rgb *= colour.a;
 
-    colour.r *= colour.a;
-    colour.g *= colour.a;
-    colour.b *= colour.a;
-
-    source.r = source.r * (1.0f - colour.a) + colour.r;
-    source.g = source.g * (1.0f - colour.a) + colour.g;
-    source.b = source.b * (1.0f - colour.a) + colour.b;
-    source.a = colour.a;
+    source = alpha_blend_colours(source, colour);
 
     image->pixels[y * image->width + x] = pack_colour(source);
 }
@@ -542,15 +567,31 @@ draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V
     u32 *imageAt = image->pixels;
     for (u32 y = yStart; (y < (yStart + image->height)) && (y < screen->height); ++y)
     {
+        u32 *imageRow = imageAt;
         for (u32 x = xStart; (x < (xStart + image->width)) && (x < screen->width); ++x)
         {
-            v4 pixel = unpack_colour(*imageAt++);
-            pixel.r *= modColour.r;
-            pixel.g *= modColour.g;
-            pixel.b *= modColour.b;
-            pixel.a *= modColour.a;
+            v4 pixel = unpack_colour(*imageRow++);
+            pixel = mix_colours(pixel, modColour);
             draw_pixel(screen, x, y, pixel);
         }
+        imageAt += image->width;
+    }
+}
+
+internal void
+draw_image(Image *screen, u32 xStart, u32 yStart, Image8 *image, v4 modColour = V4(1, 1, 1, 1))
+{
+    u8 *imageAt = image->pixels;
+    for (u32 y = yStart; (y < (yStart + image->height)) && (y < screen->height); ++y)
+    {
+        u8 *imageRow = imageAt;
+        for (u32 x = xStart; (x < (xStart + image->width)) && (x < screen->width); ++x)
+        {
+            v4 pixel = unpack_colour(*imageRow++);
+            pixel = mix_colours(pixel, modColour);
+            draw_pixel(screen, x, y, pixel);
+        }
+        imageAt += image->width;
     }
 }
 

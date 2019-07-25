@@ -65,7 +65,7 @@
 //   1.08 (2015-09-13) document stbtt_Rasterize(); fixes for vertical & horizontal edges
 //   1.07 (2015-08-01) allow PackFontRanges to accept arrays of sparse codepoints;
 //                     variant PackFontRanges to pack and render in separate phases;
-//                     fix stbtt_GetFontOFfsetForIndex (never worked for non-0 input?);
+//                     fix stbtt_GetFontOffsetForIndex (never worked for non-0 input?);
 //                     fixed an assert() bug in the new rasterizer
 //                     replace assert() with STBTT_assert() in new rasterizer
 //
@@ -3119,6 +3119,7 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    stbtt__active_edge *active = NULL;
    int y,j=0, i;
    float scanline_data[129], *scanline, *scanline2;
+   float one_over_255 = 1.0f / 255.0f;
 
    STBTT__NOTUSED(vsubsample);
 
@@ -3184,8 +3185,10 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
          for (i=0; i < result->w; ++i) {
             float k;
             int m;
+            float background = (float)result->pixels[j*result->stride + i] * one_over_255;
             sum += scanline2[i];
             k = scanline[i] + sum;
+            k += background * (1.0f - k);
             k = (float) STBTT_fabs(k)*255 + 0.5f;
             m = (int) k;
             if (m > 255) m = 255;

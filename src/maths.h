@@ -41,6 +41,57 @@ log2_up(u32 value)
     return bitPos;
 }
 
+internal u32
+lerp(u32 min, f32 t, u32 max)
+{
+    u32 result = min;
+    result += (u32)(((f32)max - (f32)min) * t);
+    return result;
+}
+
+internal s32
+lerp(s32 min, f32 t, s32 max)
+{
+    s32 result = min;
+    result += (s32)((f32)(max - min) * t);
+    return result;
+}
+
+internal f32
+lerp(f32 min, f32 t, f32 max)
+{
+    f32 result = min;
+    result += (max - min) * t;
+    return result;
+}
+
+internal v2u
+lerp(v2u min, f32 t, v2u max)
+{
+    v2u result = min;
+    result.x += (u32)(((f32)max.x - (f32)min.x) * t);
+    result.y += (u32)(((f32)max.y - (f32)min.y) * t);
+    return result;
+}
+
+internal v2s
+lerp(v2s min, f32 t, v2s max)
+{
+    v2s result = min;
+    result.x += (s32)((f32)(max.x - min.x) * t);
+    result.y += (s32)((f32)(max.y - min.y) * t);
+    return result;
+}
+
+internal v2
+lerp(v2 min, f32 t, v2 max)
+{
+    v2 result = min;
+    result.x += (max.x - min.x) * t;
+    result.y += (max.y - min.y) * t;
+    return result;
+}
+
 #if 0
 
 internal inline f32
@@ -159,7 +210,9 @@ absolute(s32 value)
 internal f32
 absolute(f32 value)
 {
-    f32 result = (value < 0.0f) ? -value : value;
+    u32 val32 = *(u32 *)&value;
+    val32 &= ~F32_SIGN_MASK;
+    f32 result = *(f32 *)&val32;
     return result;
 }
 

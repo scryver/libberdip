@@ -69,8 +69,24 @@ update_mark(SubAllocator *allocator, u8 *newValue)
 internal void
 add_to_free_list(SubAllocator *allocator, SubAllocItem *entry, u32 bucket)
 {
+#if 0
+    // TODO(michiel): Maybe sort the free list? Always return lowest memory first
+    SubAllocItem *prev = 0;
+    SubAllocItem *item = allocator->freeLists[bucket];
+    while (item && (item < entry)) {
+        prev = item;
+        item = item->next;
+    }
+    entry->next = item;
+    if (prev) {
+        prev->next = entry;
+    } else {
+        allocator->freeLists[bucket] = entry;
+    }
+#else
     entry->next = allocator->freeLists[bucket];
     allocator->freeLists[bucket] = entry;
+#endif
 }
 
 internal SubAllocItem *

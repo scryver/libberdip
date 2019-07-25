@@ -174,9 +174,6 @@ compile_expect(sizeof(umm) == sizeof(size_t));
 #define maximum(a, b)           ((a) > (b) ? (a) : (b))
 #define clamp(min, x, max)      (maximum(min, minimum(max, x)))
 
-// TODO(michiel): Type checkable versions?
-#define lerp(a, t, b)           ((a) + (t) * ((b) - (a)))
-
 #define kilobytes(kB)           ((kB) * 1024LL)
 #define megabytes(MB)           (kilobytes(MB) * 1024LL)
 #define gigabytes(GB)           (megabytes(GB) * 1024LL)
@@ -289,6 +286,14 @@ typedef struct Image
     u32 height;
     u32 *pixels;
 } Image;
+
+// NOTE(michiel): Image buffer (8bit pixels, grey/alpha), as used in some font instances
+typedef struct Image8
+{
+    u32 width;
+    u32 height;
+    u8 *pixels;
+} Image8;
 
 
 
