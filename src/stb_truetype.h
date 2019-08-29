@@ -1,5 +1,5 @@
-// stb_truetype.h - v1.21 - public domain
-// authored from 2009-2016 by Sean Barrett / RAD Game Tools
+// stb_truetype.h - v1.22 - public domain
+// authored from 2009-2019 by Sean Barrett / RAD Game Tools
 //
 //   This library processes TrueType files:
 //        parse files
@@ -46,9 +46,11 @@
 //       Rob Loach                  Cort Stratton
 //       Kenney Phillis Jr.         github:oyvindjam
 //       Brian Costabile            github:vassvik
+//       Ken Voskuil (kaesve)       Ryan Griege
 //
 // VERSION HISTORY
 //
+//   1.22 (2019-08-11) minimize missing-glyph duplication; fix kerning if both 'GPOS' and 'kern' are defined
 //   1.21 (2019-02-25) fix warning
 //   1.20 (2019-02-07) PackFontRange skips missing codepoints; GetScaleFontVMetrics()
 //   1.19 (2018-02-11) GPOS kerning, STBTT_fmod
@@ -65,7 +67,7 @@
 //   1.08 (2015-09-13) document stbtt_Rasterize(); fixes for vertical & horizontal edges
 //   1.07 (2015-08-01) allow PackFontRanges to accept arrays of sparse codepoints;
 //                     variant PackFontRanges to pack and render in separate phases;
-//                     fix stbtt_GetFontOffsetForIndex (never worked for non-0 input?);
+//                     fix stbtt_GetFontOFfsetForIndex (never worked for non-0 input?);
 //                     fixed an assert() bug in the new rasterizer
 //                     replace assert() with STBTT_assert() in new rasterizer
 //
@@ -2540,8 +2542,7 @@ STBTT_DEF int  stbtt_GetGlyphKernAdvance(const stbtt_fontinfo *info, int g1, int
 
    if (info->gpos)
       xAdvance += stbtt__GetGlyphGPOSInfoAdvance(info, g1, g2);
-
-   if (info->kern)
+   else if (info->kern)
       xAdvance += stbtt__GetGlyphKernInfoAdvance(info, g1, g2);
 
    return xAdvance;
@@ -3119,7 +3120,6 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
    stbtt__active_edge *active = NULL;
    int y,j=0, i;
    float scanline_data[129], *scanline, *scanline2;
-   float one_over_255 = 1.0f / 255.0f;
 
    STBTT__NOTUSED(vsubsample);
 
@@ -3185,10 +3185,8 @@ static void stbtt__rasterize_sorted_edges(stbtt__bitmap *result, stbtt__edge *e,
          for (i=0; i < result->w; ++i) {
             float k;
             int m;
-            float background = (float)result->pixels[j*result->stride + i] * one_over_255;
             sum += scanline2[i];
             k = scanline[i] + sum;
-            k += background * (1.0f - k);
             k = (float) STBTT_fabs(k)*255 + 0.5f;
             m = (int) k;
             if (m > 255) m = 255;
@@ -3971,6 +3969,7 @@ static float stbtt__oversample_shift(int oversample)
 STBTT_DEF int stbtt_PackFontRangesGatherRects(stbtt_pack_context *spc, const stbtt_fontinfo *info, stbtt_pack_range *ranges, int num_ranges, stbrp_rect *rects)
 {
    int i,j,k;
+   int missing_glyph_added = 0;
 
    k=0;
    for (i=0; i < num_ranges; ++i) {
@@ -3982,7 +3981,7 @@ STBTT_DEF int stbtt_PackFontRangesGatherRects(stbtt_pack_context *spc, const stb
          int x0,y0,x1,y1;
          int codepoint = ranges[i].array_of_unicode_codepoints == NULL ? ranges[i].first_unicode_codepoint_in_range + j : ranges[i].array_of_unicode_codepoints[j];
          int glyph = stbtt_FindGlyphIndex(info, codepoint);
-         if (glyph == 0 && spc->skip_missing) {
+         if (glyph == 0 && (spc->skip_missing || missing_glyph_added)) {
             rects[k].w = rects[k].h = 0;
          } else {
             stbtt_GetGlyphBitmapBoxSubpixel(info,glyph,
@@ -3992,6 +3991,8 @@ STBTT_DEF int stbtt_PackFontRangesGatherRects(stbtt_pack_context *spc, const stb
                                             &x0,&y0,&x1,&y1);
             rects[k].w = (stbrp_coord) (x1-x0 + spc->padding + spc->h_oversample-1);
             rects[k].h = (stbrp_coord) (y1-y0 + spc->padding + spc->v_oversample-1);
+            if (glyph == 0)
+               missing_glyph_added = 1;
          }
          ++k;
       }
@@ -4026,7 +4027,7 @@ STBTT_DEF void stbtt_MakeGlyphBitmapSubpixelPrefilter(const stbtt_fontinfo *info
 // rects array must be big enough to accommodate all characters in the given ranges
 STBTT_DEF int stbtt_PackFontRangesRenderIntoRects(stbtt_pack_context *spc, const stbtt_fontinfo *info, stbtt_pack_range *ranges, int num_ranges, stbrp_rect *rects)
 {
-   int i,j,k, return_value = 1;
+   int i,j,k, missing_glyph = -1, return_value = 1;
 
    // save current values
    int old_h_over = spc->h_oversample;
@@ -4091,6 +4092,13 @@ STBTT_DEF int stbtt_PackFontRangesRenderIntoRects(stbtt_pack_context *spc, const
             bc->yoff     =       (float)  y0 * recip_v + sub_y;
             bc->xoff2    =                (x0 + r->w) * recip_h + sub_x;
             bc->yoff2    =                (y0 + r->h) * recip_v + sub_y;
+
+            if (glyph == 0)
+               missing_glyph = j;
+         } else if (spc->skip_missing) {
+            return_value = 0;
+         } else if (r->was_packed && r->w == 0 && r->h == 0 && missing_glyph >= 0) {
+            ranges[i].chardata_for_range[j] = ranges[i].chardata_for_range[missing_glyph];
          } else {
             return_value = 0; // if any fail, report failure
          }
@@ -4356,32 +4364,32 @@ static float stbtt__cuberoot( float x )
 // x^3 + c*x^2 + b*x + a = 0
 static int stbtt__solve_cubic(float a, float b, float c, float* r)
 {
-   float s = -a / 3;
-   float p = b - a*a / 3;
-   float q = a * (2*a*a - 9*b) / 27 + c;
+	float s = -a / 3;
+	float p = b - a*a / 3;
+	float q = a * (2*a*a - 9*b) / 27 + c;
    float p3 = p*p*p;
-   float d = q*q + 4*p3 / 27;
-   if (d >= 0) {
-      float z = (float) STBTT_sqrt(d);
-      float u = (-q + z) / 2;
-      float v = (-q - z) / 2;
-      u = stbtt__cuberoot(u);
-      v = stbtt__cuberoot(v);
-      r[0] = s + u + v;
-      return 1;
-   } else {
-      float u = (float) STBTT_sqrt(-p/3);
-      float v = (float) STBTT_acos(-STBTT_sqrt(-27/p3) * q / 2) / 3; // p3 must be negative, since d is negative
-      float m = (float) STBTT_cos(v);
+	float d = q*q + 4*p3 / 27;
+	if (d >= 0) {
+		float z = (float) STBTT_sqrt(d);
+		float u = (-q + z) / 2;
+		float v = (-q - z) / 2;
+		u = stbtt__cuberoot(u);
+		v = stbtt__cuberoot(v);
+		r[0] = s + u + v;
+		return 1;
+	} else {
+	   float u = (float) STBTT_sqrt(-p/3);
+	   float v = (float) STBTT_acos(-STBTT_sqrt(-27/p3) * q / 2) / 3; // p3 must be negative, since d is negative
+	   float m = (float) STBTT_cos(v);
       float n = (float) STBTT_cos(v-3.141592/2)*1.732050808f;
-      r[0] = s + u * 2 * m;
-      r[1] = s - u * (m + n);
-      r[2] = s - u * (m - n);
+	   r[0] = s + u * 2 * m;
+	   r[1] = s - u * (m + n);
+	   r[2] = s - u * (m - n);
 
       //STBTT_assert( STBTT_fabs(((r[0]+a)*r[0]+b)*r[0]+c) < 0.05f);  // these asserts may not be safe at all scales, though they're in bezier t parameter units so maybe?
       //STBTT_assert( STBTT_fabs(((r[1]+a)*r[1]+b)*r[1]+c) < 0.05f);
       //STBTT_assert( STBTT_fabs(((r[2]+a)*r[2]+b)*r[2]+c) < 0.05f);
-      return 3;
+   	return 3;
    }
 }
 
@@ -4392,12 +4400,7 @@ STBTT_DEF unsigned char * stbtt_GetGlyphSDF(const stbtt_fontinfo *info, float sc
    int w,h;
    unsigned char *data;
 
-   // if one scale is 0, use same scale for both
-   if (scale_x == 0) scale_x = scale_y;
-   if (scale_y == 0) {
-      if (scale_x == 0) return NULL;  // if both scales are 0, return NULL
-      scale_y = scale_x;
-   }
+   if (scale == 0) return NULL;
 
    stbtt_GetGlyphBitmapBoxSubpixel(info, glyph, scale, scale, 0.0f,0.0f, &ix0,&iy0,&ix1,&iy1);
 
