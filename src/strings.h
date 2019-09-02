@@ -29,65 +29,65 @@ typedef struct Interns
     Map map;
 } Interns;
 
-internal inline b32
-is_digit(char n)
+internal b32
+is_digit(u32 n)
 {
     return (('0' <= n) && (n <= '9'));
 }
 
-internal inline b32
-is_hex_digit(char n)
+internal b32
+is_hex_digit(u32 n)
 {
     return (is_digit(n) ||
             (('a' <= n) && (n <= 'f')) ||
             (('A' <= n) && (n <= 'F')));
 }
 
-internal inline b32
-is_lower_case(char c)
+internal b32
+is_lower_case(u32 c)
 {
     return (('a' <= c) && (c <= 'z'));
 }
 
-internal inline b32
-is_upper_case(char c)
+internal b32
+is_upper_case(u32 c)
 {
     return (('A' <= c) && (c <= 'Z'));
 }
 
-internal inline b32
-is_alpha(char a)
+internal b32
+is_alpha(u32 a)
 {
     return is_lower_case(a) || is_upper_case(a);
 }
 
-internal inline b32
-is_alnum(char a)
+internal b32
+is_alnum(u32 a)
 {
     return is_digit(a) || is_alpha(a);
 }
 
-internal inline b32
-is_end_of_line(char s)
+internal b32
+is_end_of_line(u32 s)
 {
     return ((s == '\n') || (s == '\r'));
 }
 
-internal inline b32
-is_whitespace(char s)
+internal b32
+is_whitespace(u32 s)
 {
     return ((s == ' ') || (s == '\t') || (s == '\v') || (s == '\f') ||
             is_end_of_line(s));
 }
 
-internal inline b32
-is_printable(char a)
+internal b32
+is_printable(u32 a)
 {
     return (' ' <= a) && (a <= '~');
 }
 
-internal inline char
-to_lower_case(char x)
+internal u32
+to_lower_case(u32 x)
 {
     if (is_upper_case(x)) {
         return x | 0x20;
@@ -96,8 +96,8 @@ to_lower_case(char x)
     }
 }
 
-internal inline char
-to_upper_case(char x)
+internal u32
+to_upper_case(u32 x)
 {
     if (is_lower_case(x)) {
         return x & ~0x20;
@@ -106,7 +106,7 @@ to_upper_case(char x)
     }
 }
 
-internal inline b32
+internal b32
 is_snake_case(String name)
 {
     b32 result = true;
@@ -265,7 +265,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 #define static_string(c) {sizeof(c) - 1, (u8 *)c}
 #define to_cstring(s)    ((char *)s.data)
 
-internal inline String
+internal String
 string(umm size, const void *data)
 {
     String result = {0, 0};
@@ -276,20 +276,20 @@ string(umm size, const void *data)
 
 #ifdef __cplusplus
 
-internal inline String
+internal String
 string(umm size, const char *data)
 {
     // NOTE(michiel): F*ck const ;-)
     return string(size, (void *)data);
 }
 
-internal inline String
+internal String
 string(const char *cString)
 {
     return string(string_length(cString), cString);
 }
 
-internal inline b32
+internal b32
 operator ==(String a, String b)
 {
     b32 result = (a.size == b.size);
@@ -306,43 +306,43 @@ operator ==(String a, String b)
     return result;
 }
 
-internal inline b32
+internal b32
 operator !=(String a, String b)
 {
     return !(a == b);
 }
 
-internal inline b32
+internal b32
 strings_are_equal(umm size, const char *a, String b)
 {
     return string(size, a) == b;
 }
 
-internal inline b32
+internal b32
 strings_are_equal(const char *a, String b)
 {
     return string(string_length(a), a) == b;
 }
 
-internal inline b32
+internal b32
 strings_are_equal(String a, const char *b)
 {
     return a == string(string_length(b), b);
 }
 
-internal inline b32
+internal b32
 strings_are_equal(umm size, const char *a, const char *b)
 {
     return string(size, a) == string(string_length(b), b);
 }
 
-internal inline b32
+internal b32
 strings_are_equal(const char *a, const char *b)
 {
     return string(string_length(a), a) == string(string_length(b), b);
 }
 
-internal inline b32
+internal b32
 string_contains(String str, String subStr)
 {
     b32 result = (subStr.size <= str.size);
@@ -365,13 +365,13 @@ string_contains(String str, String subStr)
     return result;
 }
 
-internal inline b32
+internal b32
 string_contains(const char *str, String subStr)
 {
     return string_contains(string(string_length(str), str), subStr);
 }
 
-internal inline b32
+internal b32
 string_contains(String str, const char *subStr)
 {
     return string_contains(str, string(string_length(subStr), subStr));
@@ -379,13 +379,13 @@ string_contains(String str, const char *subStr)
 
 #else
 
-internal inline String
+internal String
 stringc(const char *cString)
 {
     return string(string_length(cString), cString);
 }
 
-internal inline b32
+internal b32
 strings_are_equal(String a, String b)
 {
     b32 result = (a.size == b.size);
@@ -402,19 +402,19 @@ strings_are_equal(String a, String b)
     return result;
 }
 
-internal inline b32
+internal b32
 strings_are_equal_sc(umm size, const char *a, String b)
 {
     return strings_are_equal(string(size, a), b);
 }
 
-internal inline b32
+internal b32
 strings_are_equal_c(const char *a, String b)
 {
     return strings_are_equal(string(string_length(a), a), b);
 }
 
-internal inline b32
+internal b32
 string_contains(String str, String subStr)
 {
     b32 result = (subStr.size <= str.size);
@@ -776,7 +776,7 @@ u8_from_hex(char *hex)
     return result;
 }
 
-internal inline u16
+internal u16
 u16_from_hex(char *hex)
 {
     u16 result = 0;
@@ -787,7 +787,7 @@ u16_from_hex(char *hex)
     return result;
 }
 
-internal inline u32
+internal u32
 u32_from_hex(char *hex)
 {
     u32 result = 0;
