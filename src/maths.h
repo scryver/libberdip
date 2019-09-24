@@ -130,17 +130,10 @@ square(f32 f)
     return result;
 }
 
-internal s32
-floor(s32 value)
+internal f64
+square(f64 f)
 {
-    s32 result;
-#if NO_INTRINSICS
-    result = (s32)floor(value);
-#elif __has_builtin(__builtin_floorl)
-    result = (s32)__builtin_floorl(value);
-#else
-#error No floorl builtin!
-#endif
+    f64 result = f * f;
     return result;
 }
 
@@ -153,21 +146,23 @@ floor(f32 value)
 #elif __has_builtin(__builtin_floorf)
     result = (f32)__builtin_floorf(value);
 #else
-#error No floorf builtin!
+    // TODO(michiel): Negative to zero?
+    result = (f32)(s32)value;
 #endif
     return result;
 }
 
-internal s32
-ceil(s32 value)
+internal f64
+floor(f64 value)
 {
-    s32 result;
+    f64 result;
 #if NO_INTRINSICS
-    result = (s32)ceill(value);
-#elif __has_builtin(__builtin_ceill)
-    result = (s32)__builtin_ceill(value);
+    result = floorf(value);
+#elif __has_builtin(__builtin_floorf)
+    result = __builtin_floorf(value);
 #else
-#error No ceill builtin!
+    // TODO(michiel): Negative to zero?
+    result = (f64)(s64)value;
 #endif
     return result;
 }
@@ -181,7 +176,23 @@ ceil(f32 value)
 #elif __has_builtin(__builtin_ceilf)
     result = (f32)__builtin_ceilf(value);
 #else
-#error No ceilf builtin!
+    // TODO(michiel): Negative to zero?
+    result = (f32)(s32)(value + 0.9999999999999f);
+#endif
+    return result;
+}
+
+internal f64
+ceil(f64 value)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = ceilf(value);
+#elif __has_builtin(__builtin_ceilf)
+    result = __builtin_ceilf(value);
+#else
+    // TODO(michiel): Negative to zero?
+    result = (f64)(s64)(value + 0.999999999999999);
 #endif
     return result;
 }
@@ -195,7 +206,23 @@ round(f32 value)
 #elif __has_builtin(__builtin_roundf)
     result = (f32)__builtin_roundf(value);
 #else
-#error No roundf builtin!
+    // TODO(michiel): Negative to zero?
+    result = (f32)(s32)(value + 0.5f);
+#endif
+    return result;
+}
+
+internal f64
+round(f64 value)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = roundf(value);
+#elif __has_builtin(__builtin_roundf)
+    result = __builtin_roundf(value);
+#else
+    // TODO(michiel): Negative to zero?
+    result = (f64)(s32)(value + 0.5);
 #endif
     return result;
 }
@@ -203,7 +230,7 @@ round(f32 value)
 internal s32
 absolute(s32 value)
 {
-    s32 result = (value < 0) ? -value : value;
+    s32 result = (value & 0x80000000) ? -value : value;
     return result;
 }
 
@@ -216,31 +243,44 @@ absolute(f32 value)
     return result;
 }
 
+internal f64
+absolute(f64 value)
+{
+    u64 val64 = *(u64 *)&value;
+    val64 &= ~F64_SIGN_MASK;
+    f64 result = *(f64 *)&val64;
+    return result;
+}
+
+internal f32
+modulus01(f32 f)
+{
+    f32 result;
+    result = f - floor(f);
+    return result;
+}
+
+internal f64
+modulus01(f64 f)
+{
+    f64 result;
+    result = f - floor(f);
+    return result;
+}
+
 internal f32
 modulus(f32 x, f32 y)
 {
     f32 result;
-#if NO_INTRINSICS
-    result = (f32)fmod(x, y);
-#elif __has_builtin(__builtin_fmod)
-    result = (f32)__builtin_fmod(x, y);
-#else
-#error No fmod builtin!
-#endif
+    result = x - floor(x / y) * y;
     return result;
 }
 
-internal s32
-square_root(s32 value)
+internal f64
+modulus(f64 x, f64 y)
 {
-    s32 result;
-#if NO_INTRINSICS
-    result = (s32)sqrtl(value);
-#elif __has_builtin(__builtin_sqrtl)
-    result = (s32)__builtin_sqrtl(value);
-#else
-#error No sqrtl builtin!
-#endif
+    f64 result;
+    result = x - floor(x / y) * y;
     return result;
 }
 
@@ -254,20 +294,6 @@ square_root(f32 value)
     result = (f32)__builtin_sqrtf(value);
 #else
 #error No sqrtf builtin!
-#endif
-    return result;
-}
-
-internal s32
-pow(s32 x, s32 y)
-{
-    s32 result;
-#if NO_INTRINSICS
-    result = (s32)powl(x, y);
-#elif __has_builtin(__builtin_powl)
-    result = (s32)__builtin_powl(x, y);
-#else
-#error No powl builtin!
 #endif
     return result;
 }
@@ -287,31 +313,196 @@ pow(f32 x, f32 y)
 }
 
 internal f32
-sin(f32 angle)
+cos_f32_approx8_small(f32 angle)
 {
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)sinf(angle);
-#elif __has_builtin(__builtin_sinf)
-    result = (f32)__builtin_sinf(angle);
-#else
-    // TODO(michiel): implement sinf
-#error No sinf builtin!
-#endif
+    i_expect(-(0.5f + 0.000001f) <= angle);
+    i_expect(angle <= (0.5f + 0.000001f));
+    // cos(x) = 1 - (x^2/2!) + (x^4/4!) - (x^6/6!) + (x^8/8!)
+    // cos(x) = 1 - x^2 (1/2! + x^2 (1/4! - x^2 (1/6! + x^2/8!)))
+
+    f64 piSqOver4  = square(F64_PI) / 4.0;
+    f64 pi4Over16  = square(piSqOver4);
+    f64 pi6Over64  = pi4Over16 * piSqOver4;
+    f64 pi8Over256 = square(pi4Over16);
+
+    f32 c0 = -piSqOver4 / (2.0 * 1.0);
+    f32 c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
+    f32 c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f32 c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+
+    f32 angSq = square(angle);
+    f32 result = 1.0f + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq)));
     return result;
 }
 
 internal f32
-cos(f32 angle)
+sin_f32_approx7_small(f32 angle)
 {
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)cosf(angle);
-#elif __has_builtin(__builtin_cosf)
-    result = (f32)__builtin_cosf(angle);
-#else
-#error No cosf builtin!
-#endif
+    i_expect(-(0.5f + 0.000001f) <= angle);
+    i_expect(angle <= (0.5f + 0.000001f));
+    // sin(x) = x - (x^3/3!) + (x^5/5!) - (x^7/7!) + (x^9/9!)
+    // sin(x) = x (1 - x^2 (1/3! + x^2 (1/5! - x^2 (1/7! + x^2/9!)))
+
+    f64 piSqOver4  = square(F64_PI) / 4.0;
+    f64 pi4Over16  = square(piSqOver4);
+    f64 pi6Over64  = pi4Over16 * piSqOver4;
+    f64 pi8Over256 = square(pi4Over16);
+
+    f32 c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
+    f32 c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f32 c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f32 c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+
+    f32 angSq = square(angle);
+    f32 result = 0.5f * F32_PI * angle * (1.0f + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq))));
+    return result;
+}
+
+internal f64
+cos_f64_approx8_small(f64 angle)
+{
+    i_expect(-(0.5 + 0.00000001) <= angle);
+    i_expect(angle <= (0.5 + 0.00000001));
+
+    f64 piSqOver4  = square(F64_PI) / 4.0;
+    f64 pi4Over16  = square(piSqOver4);
+    f64 pi6Over64  = pi4Over16 * piSqOver4;
+    f64 pi8Over256 = square(pi4Over16);
+
+    f64 c0 = -piSqOver4 / (2.0 * 1.0);
+    f64 c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
+    f64 c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f64 c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+
+    f64 angSq = square(angle);
+    f64 result = 1.0 + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq)));
+    return result;
+}
+
+internal f64
+sin_f64_approx7_small(f64 angle)
+{
+    i_expect(-(0.5 + 0.00000001) <= angle);
+    i_expect(angle <= (0.5 + 0.00000001));
+
+    f64 piSqOver4  = square(F64_PI) / 4.0;
+    f64 pi4Over16  = square(piSqOver4);
+    f64 pi6Over64  = pi4Over16 * piSqOver4;
+    f64 pi8Over256 = square(pi4Over16);
+
+    f64 c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
+    f64 c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f64 c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f64 c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+
+    f64 angSq = square(angle);
+    f64 result = 0.5 * F64_PI * angle * (1.0 + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq))));
+    return result;
+}
+
+internal f32
+cos_f32(f32 angle)
+{
+    f32 result = 0;
+    angle += 0.125f;              // Map [0, 4] to [0.5, 4.5]
+    angle = modulus01(angle);     // Mod to [0, 4]
+    angle -= 0.125f;              // Map [0, 4] to [-0.5, 3.5]
+    angle = absolute(angle * 4.0f);
+
+    if (angle <= 0.5f)
+    {
+        result = cos_f32_approx8_small(angle);
+    }
+    else if (angle <= 1.5f)
+    {
+        result = -sin_f32_approx7_small(angle - 1.0f);
+    }
+    else if (angle <= 2.5f)
+    {
+        result = -cos_f32_approx8_small(angle - 2.0f);
+    }
+    else
+    {
+        i_expect(angle <= 3.5f);
+        result = sin_f32_approx7_small(angle - 3.0f);
+    }
+
+    return result;
+}
+
+internal f32
+sin_f32(f32 angle)
+{
+    f32 result = cos_f32(angle - 0.25f);
+    return result;
+}
+
+internal f64
+cos_f64(f64 angle)
+{
+    f64 result = 0;
+    angle += 0.125;              // Map [0, 4] to [0.5, 4.5]
+    angle = modulus01(angle);     // Mod to [0, 4]
+    angle -= 0.125;              // Map [0, 4] to [-0.5, 3.5]
+    angle = absolute(angle * 4.0);
+
+    if (angle <= 0.5)
+    {
+        result = cos_f64_approx8_small(angle);
+    }
+    else if (angle <= 1.5)
+    {
+        result = -sin_f64_approx7_small(angle - 1.0);
+    }
+    else if (angle <= 2.5)
+    {
+        result = -cos_f64_approx8_small(angle - 2.0);
+    }
+    else
+    {
+        i_expect(angle <= 3.5);
+        result = sin_f64_approx7_small(angle - 3.0);
+    }
+
+    return result;
+}
+
+internal f64
+sin_f64(f64 angle)
+{
+    f64 result = cos_f64(angle - 0.25);
+    return result;
+}
+
+internal f32
+cos(f32 radians)
+{
+    f32 oneOverTau = 1.0f / F32_TAU;
+    f32 result = cos_f32(radians * oneOverTau);
+    return result;
+}
+
+internal f64
+cos(f64 radians)
+{
+    f64 oneOverTau = 1.0 / F64_TAU;
+    f64 result = cos_f64(radians * oneOverTau);
+    return result;
+}
+
+internal f32
+sin(f32 radians)
+{
+    f32 oneOverTau = 1.0f / F32_TAU;
+    f32 result = sin_f32(radians * oneOverTau);
+    return result;
+}
+
+internal f64
+sin(f64 radians)
+{
+    f64 oneOverTau = 1.0 / F64_TAU;
+    f64 result = sin_f64(radians * oneOverTau);
     return result;
 }
 
