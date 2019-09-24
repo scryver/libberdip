@@ -82,6 +82,30 @@ is_down(Keyboard *keyboard, Keys key, b32 shouldBeFocused = true)
     return result;
 }
 
+internal b32
+is_pressed(Keyboard *keyboard, Keys key)
+{
+    i_expect(keyboard);
+    b32 result = keyboard->keys[key].isPressed;
+    return result;
+}
+
+internal b32
+is_released(Keyboard *keyboard, Keys key)
+{
+    i_expect(keyboard);
+    b32 result = keyboard->keys[key].isReleased;
+    return result;
+}
+
+internal b32
+is_modified(Keyboard *keyboard, KeyModifiers mod)
+{
+    i_expect(keyboard);
+    b32 result = keyboard->modifiers & (u32)mod;
+    return result;
+}
+
 struct API
 {
     FileAPI file;

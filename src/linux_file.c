@@ -120,16 +120,15 @@ READ_ENTIRE_FILE(linux_read_entire_file)
         s64 size = linux_file_size(fileHandle);
         if (size > 0)
         {
-            // TODO(michiel): Fix memory
-            PlatformMemoryBlock *allocated = linux_allocate_memory(size, 0);
-            result.data = allocated->base;
+            Buffer allocated = linux_allocate_size(size, Alloc_NoClear);
+            result.data = allocated.data;
             if (result.data)
             {
                 result.size = (umm)size;
                 s64 bytesRead = read(fileHandle, result.data, result.size);
                 if (bytesRead != result.size)
                 {
-                    linux_deallocate_memory(allocated);
+                    linux_deallocate_size(allocated);
                     result.size = 0;
                 }
             }

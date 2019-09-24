@@ -62,7 +62,7 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
 
     result.pixels = allocate_array(u32, result.height * result.width, Alloc_NoClear);
 
-    // fprintf(stderr, "Bitmap size: %d x %d\n", result.width, result.height);
+    fprintf(stderr, "Bitmap '%c' size: %d x %d\n", codePoint, result.width, result.height);
 
     u8 *source = monoBitmap;
     u8 *destRow = (u8 *)result.pixels; // + (result.height - 1) * pitch;
@@ -203,10 +203,14 @@ int main(int argc, char **argv)
                 {
                     add_character(&fontInfo, &makeFont, character);
                 }
+
+#if 0
                 for (u32 charIdx = 0; charIdx < array_count(gGB2312CodePoints); ++charIdx)
                 {
                     add_character(&fontInfo, &makeFont, gGB2312CodePoints[charIdx]);
                 }
+#endif
+
 #if 0
                 //for (u32 character = 0x4E00; character < 0x9FEF; ++character)
                 for (u32 character = 0x4E00; character < 0x8E00; ++character)

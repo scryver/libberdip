@@ -644,7 +644,8 @@ float_from_string(String s)
     while (scanner.size && is_digit(scanner.data[0]))
     {
         result *= 10.0;
-        result += (f64)(scanner.data[0] - '0');
+        //result += (f64)(scanner.data[0] - '0');
+        result += (f64)(scanner.data[0] & 0xF);
         ++scanner.data;
         --scanner.size;
     }
@@ -654,7 +655,7 @@ float_from_string(String s)
         ++scanner.data;
         --scanner.size;
         while (scanner.size && is_digit(scanner.data[0])) {
-            f64 addend = (f64)(scanner.data[0] - '0');
+            f64 addend = (f64)(scanner.data[0] & 0xF);
             addend *= multiplier;
             result += addend;
             multiplier *= 0.1;
@@ -666,8 +667,20 @@ float_from_string(String s)
     return result;
 }
 
+internal u32
+parse_half_hex_byte(char c)
+{
+    i_expect(is_hex_digit(c));
+    u32 result = c & 0xF;
+    if (!is_digit(c))
+    {
+        result += 9;
+    }
+    return result;
+}
+
 internal s64
-string_to_number(String s)
+number_from_string(String s)
 {
     s64 result = 0;
     s64 base = 10;
@@ -699,23 +712,7 @@ string_to_number(String s)
     for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
     {
         result *= base;
-        s64 adding = 0;
-        if (('0' <= s.data[sIdx]) &&
-            (s.data[sIdx] <= '9'))
-        {
-            adding = s.data[sIdx] - '0';
-        }
-        else if (('a' <= s.data[sIdx]) && (s.data[sIdx] <= 'f'))
-        {
-            i_expect(base == 16);
-            adding = (s.data[sIdx] - 'a') + 10;
-        }
-        else
-        {
-            i_expect(('A' <= s.data[sIdx]) && (s.data[sIdx] <= 'F'));
-            i_expect(base == 16);
-            adding = (s.data[sIdx] - 'A') + 10;
-        }
+        s64 adding = parse_half_hex_byte(s.data[sIdx]);
         i_expect(adding >= 0);
         i_expect(adding < base);
         result += adding;
@@ -723,28 +720,8 @@ string_to_number(String s)
     return result;
 }
 
-internal u32
-parse_half_hex_byte(char c)
-{
-    i_expect(is_hex_digit(c));
-    u32 result = 0;
-    if (is_digit(c))
-    {
-        result = c - '0';
-    }
-    else if (c >= 'a')
-    {
-        result = c - 'a' + 10;
-    }
-    else
-    {
-        result = c - 'A' + 10;
-    }
-    return result;
-}
-
 internal u64
-string_to_hex(String s)
+hex_from_string(String s)
 {
     u64 result = 0;
     for (u32 sIdx = 0; sIdx < s.size; ++sIdx)

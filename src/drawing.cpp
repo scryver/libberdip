@@ -274,6 +274,21 @@ draw_lines(Image *image, u32 pointCount, v2 *points, v4 colour)
 }
 
 internal void
+draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v4 colour = V4(1, 1, 1, 1))
+{
+    i_expect(pointCount);
+    v2 prevP = points[0];
+    prevP += offset;
+    for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
+    {
+        v2 P = points[pointIdx];
+        P += offset;
+        draw_line(image, round(prevP.x), round(prevP.y), round(P.x), round(P.y), colour);
+        prevP = P;
+    }
+}
+
+internal void
 draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1, 1),
            v4 colour = V4(1, 1, 1, 1))
 {
@@ -289,6 +304,24 @@ draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1,
         P.y *= scale.y;
         P += offset;
         draw_line(image, round(prevP.x), round(prevP.y), round(P.x), round(P.y), colour);
+        prevP = P;
+    }
+}
+
+internal void
+draw_lines(Image *image, u32 pointCount, v3 *points, v2 offset,
+           v4 colourA = V4(1, 1, 1, 1), v4 colourB = V4(0.7f, 0.7f, 0.7f, 1))
+{
+    i_expect(pointCount);
+    v3 offset3 = V3(offset, offset.y);
+    v3 prevP = points[0];
+    prevP += offset3;
+    for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
+    {
+        v3 P = points[pointIdx];
+        P += offset3;
+        draw_line(image, round(prevP.x), round(prevP.y), round(P.x), round(P.y), colourA);
+        draw_line(image, round(prevP.x), round(prevP.z), round(P.x), round(P.z), colourB);
         prevP = P;
     }
 }
