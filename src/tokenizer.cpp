@@ -381,6 +381,14 @@ peek_token(Tokenizer *tokenizer)
 }
 
 internal b32
+is_parsing(Tokenizer *tokenizer)
+{
+    b32 result;
+    result = !tokenizer->error;
+    return result;
+}
+
+internal b32
 is_valid(Token token)
 {
     b32 result = false;
@@ -438,7 +446,7 @@ expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
 
     if (is_token_kind(result, Token_Integer))
     {
-        result.s32 = string_to_number(result.value);
+        result.s32 = number_from_string(result.value);
         if ((result.s32 >= minValue) &&
             (result.s32 <= maxValue))
         {

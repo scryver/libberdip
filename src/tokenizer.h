@@ -98,6 +98,7 @@ struct Tokenizer
 
 internal Token get_token(Tokenizer *tokenizer);
 internal Token peek_token(Tokenizer *tokenizer);
+internal b32   is_parsing(Tokenizer *tokenizer);
 internal b32   is_valid(Token token);
 internal b32   match_token(Tokenizer *tokenizer, TokenKind tokenKind);
 internal Token expect_token(Tokenizer *tokenizer, TokenKind tokenKind);
