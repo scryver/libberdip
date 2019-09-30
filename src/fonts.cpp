@@ -142,7 +142,7 @@ int main(int argc, char **argv)
         s32 pixelHeight = 32;
         if (argc > 3)
         {
-            pixelHeight = string_to_number(string(argv[3]));
+            pixelHeight = number_from_string(string(argv[3]));
         }
 
         Buffer inFile = read_entire_file(string(inputFilename));

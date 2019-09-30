@@ -1,3 +1,5 @@
+// NOTE(michiel): Uses <fcntl.h> and <dirent.h>, and <mmap.h> but that should go away
+
 typedef struct LinuxFindFile
 {
     DIR *dir;
@@ -295,6 +297,8 @@ CLOSE_FILE(linux_close_file)
 {
     LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
     close(linuxHandle->linuxHandle);
+    munmap(linuxHandle, sizeof(LinuxFileHandle));
+    apiFile->platform = 0;
 }
 
 internal
