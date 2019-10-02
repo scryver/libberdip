@@ -7,11 +7,7 @@
 internal v2u
 V2U(u32 x, u32 y)
 {
-    v2u result;
-
-    result.x = x;
-    result.y = y;
-
+    v2u result = {x, y};
     return result;
 }
 
@@ -19,11 +15,7 @@ internal v2u
 V2U(v2s vs)
 {
     // TODO(michiel): Maybe some value checking? Or just let that be up to the user?
-    v2u result;
-
-    result.x = (u32)vs.x;
-    result.y = (u32)vs.y;
-
+    v2u result = {(u32)vs.x, (u32)vs.y};
     return result;
 }
 
@@ -31,10 +23,8 @@ internal v2u
 V2U(v2 vf)
 {
     v2u result;
-
     result.x = u32_from_f32_round(vf.x);
     result.y = u32_from_f32_round(vf.y);
-
     return result;
 }
 
@@ -229,20 +219,17 @@ operator !=(v2u a, v2u b)
 internal v2s
 V2S(s32 x, s32 y)
 {
-    v2s result;
-
-    result.x = x;
-    result.y = y;
-
+    v2s result = {x, y};
     return result;
 }
 
 internal v2s
 V2S(v2u u)
 {
-    v2s result;
-    result.x = (u.x < 0x80000000) ? u.x : 0x7FFFFFFF;
-    result.y = (u.y < 0x80000000) ? u.y : 0x7FFFFFFF;
+    v2s result = {
+        (s32)((u.x < 0x80000000) ? u.x : 0x7FFFFFFF),
+        (s32)((u.y < 0x80000000) ? u.y : 0x7FFFFFFF),
+    };
     return result;
 }
 
@@ -250,10 +237,8 @@ internal v2s
 V2S(v2 vf)
 {
     v2s result;
-
     result.x = s32_from_f32_round(vf.x);
     result.y = s32_from_f32_round(vf.y);
-
     return result;
 }
 
@@ -448,29 +433,21 @@ operator !=(v2s a, v2s b)
 internal v2
 V2(f32 x, f32 y)
 {
-    v2 result;
-
-    result.x = x;
-    result.y = y;
-
+    v2 result = {x, y};
     return result;
 }
 
 internal v2
 V2(v2s v)
 {
-    v2 result;
-    result.x = (f32)v.x;
-    result.y = (f32)v.y;
+    v2 result = {(f32)v.x, (f32)v.y};
     return result;
 }
 
 internal v2
 V2(v2u v)
 {
-    v2 result;
-    result.x = (f32)v.x;
-    result.y = (f32)v.y;
+    v2 result = {(f32)v.x, (f32)v.y};
     return result;
 }
 
@@ -711,6 +688,34 @@ rotate(v2 a, v2 rotation)
 }
 
 //
+//
+//
+
+internal v2u
+lerp(v2u min, f32 t, v2u max)
+{
+    v2u result;
+    result = min + V2U(t * V2(max - min));
+    return result;
+}
+
+internal v2s
+lerp(v2s min, f32 t, v2s max)
+{
+    v2s result;
+    result = min + V2S(t * V2(max - min));
+    return result;
+}
+
+internal v2
+lerp(v2 min, f32 t, v2 max)
+{
+    v2 result;
+    result = min + t * (max - min);
+    return result;
+}
+
+//
 // NOTE(michiel): V3U
 //
 
@@ -718,11 +723,9 @@ internal v3u
 V3U(u32 x, u32 y, u32 z)
 {
     v3u result;
-
     result.x = x;
     result.y = y;
     result.z = z;
-
     return result;
 }
 
@@ -730,10 +733,28 @@ internal v3u
 V3U(v2u xy, u32 z)
 {
     v3u result;
-
     result.xy = xy;
     result.z = z;
+    return result;
+}
 
+internal v3u
+V3U(v3s vs)
+{
+    v3u result;
+    result.x = vs.x;
+    result.y = vs.y;
+    result.z = vs.z;
+    return result;
+}
+
+internal v3u
+V3U(v3 vf)
+{
+    v3u result;
+    result.x = u32_from_f32_round(vf.x);
+    result.y = u32_from_f32_round(vf.y);
+    result.z = u32_from_f32_round(vf.z);
     return result;
 }
 
@@ -923,6 +944,234 @@ operator !=(v3u a, v3u b)
 }
 
 //
+// NOTE(michiel): V3S
+//
+
+internal v3s
+V3S(s32 x, s32 y, s32 z)
+{
+    v3s result;
+    result.x = x;
+    result.y = y;
+    result.z = z;
+    return result;
+}
+
+internal v3s
+V3S(v2s xy, s32 z)
+{
+    v3s result;
+    result.xy = xy;
+    result.z = z;
+    return result;
+}
+
+internal v3s
+V3S(v3u vu)
+{
+    v3s result;
+    result.x = (vu.x < 0x80000000) ? vu.x : 0x7FFFFFFF;
+    result.y = (vu.y < 0x80000000) ? vu.y : 0x7FFFFFFF;
+    result.z = (vu.z < 0x80000000) ? vu.z : 0x7FFFFFFF;
+    return result;
+}
+
+internal v3s
+V3S(v3 vf)
+{
+    v3s result;
+    result.x = s32_from_f32_round(vf.x);
+    result.y = s32_from_f32_round(vf.y);
+    result.z = s32_from_f32_round(vf.z);
+    return result;
+}
+
+internal v3s
+operator -(v3s a)
+{
+    v3s result;
+    result.x = -a.x;
+    result.y = -a.y;
+    result.z = -a.z;
+    return result;
+}
+
+internal v3s &
+operator +=(v3s &a, v3s b)
+{
+    a.x += b.x;
+    a.y += b.y;
+    a.z += b.z;
+    return a;
+}
+
+internal v3s
+operator +(v3s a, v3s b)
+{
+    v3s result = a;
+    result += b;
+    return result;
+}
+
+internal v3s &
+operator -=(v3s &a, v3s b)
+{
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+    return a;
+}
+
+internal v3s
+operator -(v3s a, v3s b)
+{
+    v3s result = a;
+    result -= b;
+    return result;
+}
+
+internal v3s &
+operator &=(v3s &a, s32 b)
+{
+    a.x &= b;
+    a.y &= b;
+    a.z &= b;
+    return a;
+}
+
+internal v3s
+operator &(v3s a, s32 b)
+{
+    v3s result = a;
+    result &= b;
+    return result;
+}
+
+internal v3s &
+operator |=(v3s &a, s32 b)
+{
+    a.x |= b;
+    a.y |= b;
+    a.z |= b;
+    return a;
+}
+
+internal v3s
+operator |(v3s a, s32 b)
+{
+    v3s result = a;
+    result |= b;
+    return result;
+}
+
+internal v3s &
+operator ^=(v3s &a, s32 b)
+{
+    a.x ^= b;
+    a.y ^= b;
+    a.z ^= b;
+    return a;
+}
+
+internal v3s
+operator ^(v3s a, s32 b)
+{
+    v3s result = a;
+    result ^= b;
+    return result;
+}
+
+internal v3s &
+operator +=(v3s &a, s32 b)
+{
+    a.x += b;
+    a.y += b;
+    a.z += b;
+    return a;
+}
+
+internal v3s
+operator +(v3s a, s32 b)
+{
+    v3s result = a;
+    result += b;
+    return result;
+}
+
+internal v3s &
+operator -=(v3s &a, s32 b)
+{
+    a.x -= b;
+    a.y -= b;
+    a.z -= b;
+    return a;
+}
+
+internal v3s
+operator -(v3s a, s32 b)
+{
+    v3s result = a;
+    result -= b;
+    return result;
+}
+
+internal v3s &
+operator *=(v3s &a, s32 b)
+{
+    a.x *= b;
+    a.y *= b;
+    a.z *= b;
+    return a;
+}
+
+internal v3s
+operator *(v3s a, s32 b)
+{
+    v3s result = a;
+    result *= b;
+    return result;
+}
+
+internal v3s
+operator *(s32 a, v3s b)
+{
+    return b * a;
+}
+
+internal v3s &
+operator /=(v3s &a, s32 b)
+{
+    a.x /= b;
+    a.y /= b;
+    a.z /= b;
+    return a;
+}
+
+internal v3s
+operator /(v3s a, s32 b)
+{
+    v3s result = a;
+    result /= b;
+    return result;
+}
+
+internal b32
+operator ==(v3s a, v3s b)
+{
+    b32 result = false;
+    result = (a.x == b.x) && (a.y == b.y) && (a.z == b.z);
+    return result;
+}
+
+internal b32
+operator !=(v3s a, v3s b)
+{
+    b32 result = false;
+    result = (a.x != b.x) || (a.y != b.y) || (a.z != b.z);
+    return result;
+}
+
+//
 // NOTE(michiel): V3
 //
 
@@ -940,10 +1189,22 @@ internal v3
 V3(v2 xy, f32 z)
 {
     v3 result;
-
     result.xy = xy;
     result.z = z;
+    return result;
+}
 
+internal v3
+V3(v3s v)
+{
+    v3 result = {(f32)v.x, (f32)v.y, (f32)v.z};
+    return result;
+}
+
+internal v3
+V3(v3u v)
+{
+    v3 result = {(f32)v.x, (f32)v.y, (f32)v.z};
     return result;
 }
 
@@ -1151,6 +1412,34 @@ clamp01(v3 a)
 }
 
 //
+//
+//
+
+internal v3u
+lerp(v3u min, f32 t, v3u max)
+{
+    v3u result;
+    result = min + V3U(t * V3(max - min));
+    return result;
+}
+
+internal v3s
+lerp(v3s min, f32 t, v3s max)
+{
+    v3s result;
+    result = min + V3S(t * V3(max - min));
+    return result;
+}
+
+internal v3
+lerp(v3 min, f32 t, v3 max)
+{
+    v3 result;
+    result = min + t * (max - min);
+    return result;
+}
+
+//
 // NOTE(michiel): V4
 //
 
@@ -1158,12 +1447,10 @@ internal v4
 V4(f32 x, f32 y, f32 z, f32 w)
 {
     v4 result;
-
     result.x = x;
     result.y = y;
     result.z = z;
     result.w = w;
-
     return result;
 }
 
@@ -1171,11 +1458,9 @@ internal v4
 V4(v2 xy, f32 z, f32 w)
 {
     v4 result;
-
     result.xy = xy;
     result.z = z;
     result.w = w;
-
     return result;
 }
 
@@ -1183,10 +1468,8 @@ internal v4
 V4(v2 xy, v2 zw)
 {
     v4 result;
-
     result.xy = xy;
     result.zw = zw;
-
     return result;
 }
 
@@ -1194,10 +1477,8 @@ internal v4
 V4(v3 xyz, f32 w)
 {
     v4 result;
-
     result.xyz = xyz;
     result.w = w;
-
     return result;
 }
 
@@ -1399,6 +1680,14 @@ clamp01(v4 a)
     result.y = clamp01(a.y);
     result.z = clamp01(a.z);
     result.w = clamp01(a.w);
+    return result;
+}
+
+internal v4
+lerp(v4 min, f32 t, v4 max)
+{
+    v4 result;
+    result = min + t * (max - min);
     return result;
 }
 
@@ -1649,4 +1938,4 @@ rect_union(Rectangle2 a, Rectangle2 b)
     return result;
 }
 
-#endif
+#endif // __cplusplus

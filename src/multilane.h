@@ -1,7 +1,6 @@
 union f32_4x
 {
     __m128  m;
-    __m128i i;
     f32     e[4];
     u32     u[4];
 };
@@ -25,6 +24,14 @@ F32_4x(f32 f)
 {
     f32_4x result;
     result.m = _mm_set1_ps(f);
+    return result;
+}
+
+internal f32_4x
+F32_4x(u32 u)
+{
+    f32_4x result;
+    result.m = _mm_set1_ps(*(f32 *)&u);
     return result;
 }
 
@@ -151,10 +158,27 @@ operator >=(f32_4x a, f32_4x b)
 }
 
 internal f32_4x
+and_not(f32_4x a, f32_4x b)
+{
+    // NOTE(michiel): Returns a & ~b
+    f32_4x result;
+    result.m = _mm_andnot_ps(b.m, a.m);
+    return result;
+}
+
+internal f32_4x
 square(f32_4x f4)
 {
     f32_4x result;
     result = f4 * f4;
+    return result;
+}
+
+internal f32_4x
+square_root(f32_4x f4)
+{
+    f32_4x result;
+    result.m = _mm_sqrt_ps(f4.m);
     return result;
 }
 
@@ -186,6 +210,22 @@ modulus(f32_4x a, f32_4x b)
     return result;
 }
 
+internal b32
+any(f32_4x f4)
+{
+    b32 result;
+    result = f4.u[0] || f4.u[1] || f4.u[2] || f4.u[3];
+    return result;
+}
+
+internal b32
+all(f32_4x f4)
+{
+    b32 result;
+    result = f4.u[0] && f4.u[1] && f4.u[2] && f4.u[3];
+    return result;
+}
+
 internal f32_4x
 select(f32_4x op0, f32_4x mask, f32_4x op1)
 {
@@ -204,23 +244,25 @@ sincos_f32_4x_approx_small(f32_4x angles)
     f64 piSqOver4  = square(F64_PI) / 4.0;
     f64 pi4Over16  = square(piSqOver4);
     f64 pi6Over64  = pi4Over16 * piSqOver4;
-    f64 pi8Over256 = square(pi4Over16);
-    f64 cos_c0 = -piSqOver4 / (2.0 * 1.0);
-    f64 cos_c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
-    f64 cos_c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f64 cos_c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f64 sin_c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
-    f64 sin_c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f64 sin_c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f64 sin_c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    //f64 pi8Over256 = square(pi4Over16);
+    f32 cos_c0 = -piSqOver4 / (2.0 * 1.0);
+    f32 cos_c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
+    f32 cos_c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    //f32 cos_c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f32 sin_c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
+    f32 sin_c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    f32 sin_c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
+    //f32 sin_c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
 
     f32_4x one_4x = F32_4x(1.0f);
 
     f32_4x angSq_4x = square(angles);
-    result.sin = F32_4x(sin_c3) * angSq_4x;
-    result.cos = F32_4x(cos_c3) * angSq_4x;
-    result.sin = (result.sin + F32_4x(sin_c2)) * angSq_4x;
-    result.cos = (result.cos + F32_4x(cos_c2)) * angSq_4x;
+    //result.sin = F32_4x(sin_c3) * angSq_4x;
+    //result.cos = F32_4x(cos_c3) * angSq_4x;
+    //result.sin = (result.sin + F32_4x(sin_c2)) * angSq_4x;
+    //result.cos = (result.cos + F32_4x(cos_c2)) * angSq_4x;
+    result.sin = F32_4x(sin_c2) * angSq_4x;
+    result.cos = F32_4x(cos_c2) * angSq_4x;
     result.sin = (result.sin + F32_4x(sin_c1)) * angSq_4x;
     result.cos = (result.cos + F32_4x(cos_c1)) * angSq_4x;
     result.sin = (result.sin + F32_4x(sin_c0)) * angSq_4x;
@@ -235,40 +277,26 @@ sincos_f32_4x_approx_small(f32_4x angles)
 internal f32_4x
 cos_f32_4x(f32_4x angles)
 {
-    f32_4x zero_4x  = zero_f32_4x();
     f32_4x eight_4x = F32_4x(0.125f);
-    f32_4x half_4x  = F32_4x(0.5f);
     f32_4x one_4x   = F32_4x(1.0f);
-    f32_4x two_4x   = F32_4x(2.0f);
-    f32_4x four_4x  = F32_4x(4.0f);
 
     angles = angles + eight_4x;
     angles = modulus(angles, one_4x);
     angles = angles - eight_4x;
-    angles = absolute(angles * four_4x);
+    angles = absolute(angles * F32_4x(4.0f));
 
-    f32_4x quadrants = zero_f32_4x();
+    f32_4x quadrant4 = angles > F32_4x(2.5f);
+    f32_4x quadrant3 = angles > F32_4x(1.5f);
+    f32_4x quadrant2 = angles > F32_4x(0.5f);
 
-    f32_4x angleMask = angles > half_4x;
-    angleMask = angleMask & one_4x;
-    angles = (angles - angleMask);
-    quadrants = (quadrants + angleMask);
+    quadrant2 = and_not(quadrant2, quadrant3);
+    quadrant3 = and_not(quadrant3, quadrant4);
 
-    angleMask = angles > half_4x;
-    angleMask = angleMask & one_4x;
-    angles = (angles - angleMask);
-    quadrants = (quadrants + angleMask);
+    f32_4x quadrants = (F32_4x(3.0f) & quadrant4) | (F32_4x(2.0f) & quadrant3) | (one_4x & quadrant2);
+    angles = angles - quadrants;
 
-    angleMask = angles > half_4x;
-    angleMask = angleMask & one_4x;
-    angles = (angles - angleMask);
-    quadrants = (quadrants + angleMask);
-
-    f32_4x do_cos_mask = quadrants == zero_4x;
-    do_cos_mask = do_cos_mask | (quadrants == two_4x);
-
-    f32_4x do_inv_mask = quadrants == one_4x;
-    do_inv_mask = do_inv_mask | (quadrants == two_4x);
+    f32_4x do_cos_mask = quadrant3 | (quadrants == zero_f32_4x());
+    f32_4x do_inv_mask = quadrant2 | quadrant3;
 
     SinCos_4x sincos = sincos_f32_4x_approx_small(angles);
     f32_4x result  = select(sincos.sin, do_cos_mask, sincos.cos);
@@ -282,5 +310,27 @@ sin_f32_4x(f32_4x angles)
 {
     f32_4x quarter_4x = F32_4x(0.25f);
     f32_4x result = cos_f32_4x(angles - quarter_4x);
+    return result;
+}
+
+internal f32_4x
+exp_f32_4x(f32_4x f4)
+{
+    // NOTE(michiel): Change the 12 (and the 12 multiplies) to tune the approximation
+    f32_4x result = F32_4x(1.0f);
+    f32_4x divisor = F32_4x(1.0f / (f32)(1 << 12));
+    result = result + f4 * divisor;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
+    result = result * result;
     return result;
 }

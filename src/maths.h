@@ -65,33 +65,6 @@ lerp(f32 min, f32 t, f32 max)
     return result;
 }
 
-internal v2u
-lerp(v2u min, f32 t, v2u max)
-{
-    v2u result = min;
-    result.x += (u32)(((f32)max.x - (f32)min.x) * t);
-    result.y += (u32)(((f32)max.y - (f32)min.y) * t);
-    return result;
-}
-
-internal v2s
-lerp(v2s min, f32 t, v2s max)
-{
-    v2s result = min;
-    result.x += (s32)((f32)(max.x - min.x) * t);
-    result.y += (s32)((f32)(max.y - min.y) * t);
-    return result;
-}
-
-internal v2
-lerp(v2 min, f32 t, v2 max)
-{
-    v2 result = min;
-    result.x += (max.x - min.x) * t;
-    result.y += (max.y - min.y) * t;
-    return result;
-}
-
 #if 0
 
 internal inline f32
@@ -137,100 +110,17 @@ square(f64 f)
     return result;
 }
 
-internal f32
-floor(f32 value)
-{
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)floorf(value);
-#elif __has_builtin(__builtin_floorf)
-    result = (f32)__builtin_floorf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f32)(s32)value;
-#endif
-    return result;
-}
-
-internal f64
-floor(f64 value)
-{
-    f64 result;
-#if NO_INTRINSICS
-    result = floorf(value);
-#elif __has_builtin(__builtin_floorf)
-    result = __builtin_floorf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f64)(s64)value;
-#endif
-    return result;
-}
-
-internal f32
-ceil(f32 value)
-{
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)ceilf(value);
-#elif __has_builtin(__builtin_ceilf)
-    result = (f32)__builtin_ceilf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f32)(s32)(value + 0.9999999999999f);
-#endif
-    return result;
-}
-
-internal f64
-ceil(f64 value)
-{
-    f64 result;
-#if NO_INTRINSICS
-    result = ceilf(value);
-#elif __has_builtin(__builtin_ceilf)
-    result = __builtin_ceilf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f64)(s64)(value + 0.999999999999999);
-#endif
-    return result;
-}
-
-internal f32
-round(f32 value)
-{
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)roundf(value);
-#elif __has_builtin(__builtin_roundf)
-    result = (f32)__builtin_roundf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f32)(s32)(value + 0.5f);
-#endif
-    return result;
-}
-
-internal f64
-round(f64 value)
-{
-    f64 result;
-#if NO_INTRINSICS
-    result = roundf(value);
-#elif __has_builtin(__builtin_roundf)
-    result = __builtin_roundf(value);
-#else
-    // TODO(michiel): Negative to zero?
-    result = (f64)(s32)(value + 0.5);
-#endif
-    return result;
-}
-
 internal s32
 absolute(s32 value)
 {
     s32 result = (value & 0x80000000) ? -value : value;
+    return result;
+}
+
+internal s64
+absolute(s64 value)
+{
+    s64 result = (value & 0x8000000000000000) ? -value : value;
     return result;
 }
 
@@ -249,6 +139,82 @@ absolute(f64 value)
     u64 val64 = *(u64 *)&value;
     val64 &= ~F64_SIGN_MASK;
     f64 result = *(f64 *)&val64;
+    return result;
+}
+
+internal s32
+sign_of(s32 value)
+{
+    s32 result = (value >= 0) ? 1 : -1;
+    return result;
+}
+
+internal s64
+sign_of(s64 value)
+{
+    s64 result = (value >= 0) ? 1 : -1;
+    return result;
+}
+
+internal f32
+sign_of(f32 value)
+{
+    f32 result = (value >= 0.0f) ? 1.0f : -1.0f;
+    return result;
+}
+
+internal f64
+sign_of(f64 value)
+{
+    f64 result = (value >= 0.0) ? 1.0 : -1.0;
+    return result;
+}
+
+internal f32
+floor(f32 value)
+{
+    f32 result;
+    result = (f32)(s32)(value - (value < 0.0f ? 0.9999999f : 0.0));
+    return result;
+}
+
+internal f64
+floor(f64 value)
+{
+    f64 result;
+    result = (f64)(s64)(value + (value < 0.0 ? -0.999999999999999 : 0.0));
+    return result;
+}
+
+internal f32
+ceil(f32 value)
+{
+    f32 result;
+    result = (f32)(s32)(value + (value < 0.0f ? 0.0f : 0.9999999f));
+    return result;
+}
+
+internal f64
+ceil(f64 value)
+{
+    f64 result;
+    result = (f64)(s64)(value + (value < 0.0 ? 0.0 : 0.999999999999999));
+    return result;
+}
+
+internal f32
+round(f32 value)
+{
+    f32 result;
+    result = (f32)(s32)(value + 0.5f * sign_of(value));
+    return result;
+}
+
+internal f64
+round(f64 value)
+{
+    f64 result;
+    result = (f64)(s64)(value + 0.5 * sign_of(value));
     return result;
 }
 
@@ -285,6 +251,59 @@ modulus(f64 x, f64 y)
 }
 
 internal f32
+exp(f32 f)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)expf(f);
+#elif __has_builtin(__builtin_expf)
+    result = (f32)__builtin_expf(f);
+#else
+#error No expf builtin!
+#endif
+    return result;
+
+#if 0
+    f32 result = 1.0f;
+    f32 x = value;
+    result += ;
+    value *= value;
+    result += value * c0;
+    //value *
+    result += value
+#endif
+}
+
+#if 0
+internal f32
+log(f32 value)
+{
+
+}
+
+internal f32
+log10(f32 value)
+{
+
+}
+#endif
+
+internal f32
+pow(f32 x, f32 y)
+{
+    // TODO(michiel): pow(x, y) = e^(y * ln(x))
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)powf(x, y);
+#elif __has_builtin(__builtin_powf)
+    result = (f32)__builtin_powf(x, y);
+#else
+#error No powf builtin!
+#endif
+    return result;
+}
+
+internal f32
 square_root(f32 value)
 {
     f32 result;
@@ -294,20 +313,6 @@ square_root(f32 value)
     result = (f32)__builtin_sqrtf(value);
 #else
 #error No sqrtf builtin!
-#endif
-    return result;
-}
-
-internal f32
-pow(f32 x, f32 y)
-{
-    f32 result;
-#if NO_INTRINSICS
-    result = (f32)powf(x, y);
-#elif __has_builtin(__builtin_powf)
-    result = (f32)__builtin_powf(x, y);
-#else
-#error No powf builtin!
 #endif
     return result;
 }
@@ -507,6 +512,20 @@ sin(f64 radians)
 }
 
 internal f32
+tan(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)tanf(angle);
+#elif __has_builtin(__builtin_tanf)
+    result = (f32)__builtin_tanf(angle);
+#else
+#error No tan2f builtin!
+#endif
+    return result;
+}
+
+internal f32
 asin(f32 angle)
 {
     f32 result;
@@ -530,6 +549,20 @@ acos(f32 angle)
     result = (f32)__builtin_acosf(angle);
 #else
 #error No acosf builtin!
+#endif
+    return result;
+}
+
+internal f32
+atan(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)atanf(angle);
+#elif __has_builtin(__builtin_atanf)
+    result = (f32)__builtin_atanf(angle);
+#else
+#error No atan2f builtin!
 #endif
     return result;
 }
@@ -559,20 +592,6 @@ log(f32 x)
 #else
 #error No logf builtin!
 #endif
-    return result;
-}
-
-internal s32
-sign_of(s32 value)
-{
-    s32 result = (value >= 0) ? 1 : -1;
-    return result;
-}
-
-internal f32
-sign_of(f32 value)
-{
-    f32 result = (value >= 0.0f) ? 1.0f : -1.0f;
     return result;
 }
 
@@ -652,6 +671,60 @@ internal u32
 u32_from_f32_truncate(f32 number)
 {
     return (u32)number;
+}
+
+internal s64
+s64_from_f64_round(f64 number)
+{
+    s64 result = (s64)round(number);
+    return result;
+}
+
+internal u64
+u64_from_f64_round(f64 number)
+{
+    u64 result = (u64)round(number);
+    return result;
+}
+
+internal s64
+s64_from_f64_floor(f64 number)
+{
+    s64 result = (s64)floor(number);
+    return result;
+}
+
+internal u64
+u64_from_f64_floor(f64 number)
+{
+    u64 result = (u64)floor(number);
+    return result;
+}
+
+internal s64
+s64_from_f64_ceil(f64 number)
+{
+    s64 result = (s64)ceil(number);
+    return result;
+}
+
+internal u64
+u64_from_f64_ceil(f64 number)
+{
+    u64 result = (u64)ceil(number);
+    return result;
+}
+
+internal s64
+s64_from_f64_truncate(f64 number)
+{
+    return (s64)number;
+}
+
+internal u64
+u64_from_f64_truncate(f64 number)
+{
+    return (u64)number;
 }
 
 struct BitScanResult
