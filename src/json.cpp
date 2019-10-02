@@ -8,7 +8,7 @@ advance(JsonParser *parser)
 internal void
 strip_front_whitespace(JsonParser *parser)
 {
-    while (parser->scanner.size && 
+    while (parser->scanner.size &&
            is_whitespace(parser->scanner.data[0]))
     {
         advance(parser);
@@ -34,7 +34,7 @@ json_parse_number(JsonParser *parser, String *number)
     b32 result = true;
     i_expect((parser->scanner.data[0] == '-') ||
              is_digit(parser->scanner.data[0]));
-    
+
     number->size = 0;
     number->data = parser->scanner.data;
     if (parser->scanner.data[0] == '-')
@@ -42,7 +42,7 @@ json_parse_number(JsonParser *parser, String *number)
         advance(parser);
         ++number->size;
     }
-    
+
     if (parser->scanner.size &&
         is_digit(parser->scanner.data[0]))
     {
@@ -55,12 +55,12 @@ json_parse_number(JsonParser *parser, String *number)
         {
             number->size += json_parse_digits(parser);
         }
-        
+
         if (parser->scanner.data[0] == '.')
         {
             advance(parser);
             ++number->size;
-            
+
             if (parser->scanner.size &&
                 is_digit(parser->scanner.data[0]))
             {
@@ -68,25 +68,25 @@ json_parse_number(JsonParser *parser, String *number)
             }
             else
             {
-                fprintf(stderr, "Invalid number specified, no digits after the fraction dot (%.*s).\n", 
+                fprintf(stderr, "Invalid number specified, no digits after the fraction dot (%.*s).\n",
                         safe_truncate_to_u32(number->size + 1), number->data);
                 result = false;
             }
         }
-        
+
         if ((parser->scanner.data[0] == 'e') ||
             (parser->scanner.data[0] == 'E'))
         {
             advance(parser);
             ++number->size;
-            
+
             if ((parser->scanner.data[0] == '+') ||
                 (parser->scanner.data[0] == '-'))
             {
                 advance(parser);
                 ++number->size;
             }
-            
+
             if (parser->scanner.size &&
                 is_digit(parser->scanner.data[0]))
             {
@@ -105,7 +105,7 @@ json_parse_number(JsonParser *parser, String *number)
         fprintf(stderr, "Invalid number specified, %.*s\n", STR_FMT(parser->scanner));
         result = false;
     }
-    
+
     if (parser->saveAll && number->size)
     {
         u8 *frontPtr = number->data;
@@ -113,7 +113,7 @@ json_parse_number(JsonParser *parser, String *number)
         copy(number->size, frontPtr, number->data);
         number->data[number->size] = 0;
     }
-    
+
     return result;
 }
 
@@ -122,7 +122,7 @@ json_parse_string(JsonParser *parser, String *string)
 {
     b32 result = true;
     i_expect(parser->scanner.data[0] == '"');
-    
+
     advance(parser);
     string->size = 0;
     string->data = parser->scanner.data;
@@ -186,7 +186,7 @@ json_parse_string(JsonParser *parser, String *string)
             ++string->size;
         }
     }
-    
+
     if (parser->scanner.data[0] == '"')
     {
         advance(parser);
@@ -196,7 +196,7 @@ json_parse_string(JsonParser *parser, String *string)
         fprintf(stderr, "Invalid string specified, no closing quote found.\n");
         result = false;
     }
-    
+
     if (parser->saveAll && string->size)
     {
         u8 *frontPtr = string->data;
@@ -204,7 +204,7 @@ json_parse_string(JsonParser *parser, String *string)
         copy(string->size, frontPtr, string->data);
         string->data[string->size] = 0;
     }
-    
+
     return result;
 }
 
@@ -213,19 +213,26 @@ json_parse_array(JsonParser *parser, JsonArray *array)
 {
     b32 result = true;
     i_expect(parser->scanner.data[0] == '[');
-    
+
     advance(parser);
     strip_front_whitespace(parser);
-    
+
     // TODO(michiel): Use the suballocator to control this memory maybe?
     JsonValue *values = 0;
-    
+
     while (parser->scanner.size &&
            (parser->scanner.data[0] != ']'))
     {
-        JsonValue value = json_parse_value(parser);
-        buf_push(values, value);
-        
+        JsonValue value = {};
+        if (json_parse_value(parser, &value))
+        {
+            buf_push(values, value);
+        }
+        else
+        {
+            fprintf(stderr, "Invalid array specified, invalid value.\n");
+        }
+
         strip_front_whitespace(parser);
         if (parser->scanner.data[0] == ',')
         {
@@ -237,7 +244,7 @@ json_parse_array(JsonParser *parser, JsonArray *array)
             break;
         }
     }
-    
+
     if (parser->scanner.data[0] == ']')
     {
         advance(parser);
@@ -248,7 +255,7 @@ json_parse_array(JsonParser *parser, JsonArray *array)
         fprintf(stderr, "Invalid array specified, no closing bracket found.\n");
         result = false;
     }
-    
+
     array->valueCount = buf_len(values);
     if (array->valueCount)
     {
@@ -256,7 +263,7 @@ json_parse_array(JsonParser *parser, JsonArray *array)
         copy(array->valueCount * sizeof(JsonValue), values, array->values);
         buf_free(values);
     }
-    
+
     return result;
 }
 
@@ -265,13 +272,13 @@ json_parse_object(JsonParser *parser, JsonObject *object)
 {
     b32 result = true;
     i_expect(parser->scanner.data[0] == '{');
-    
+
     advance(parser);
     strip_front_whitespace(parser);
-    
+
     // TODO(michiel): Use the suballocator to control this memory maybe?
     JsonItem *items = 0;
-    
+
     while (parser->scanner.size &&
            (parser->scanner.data[0] != '}'))
     {
@@ -283,7 +290,14 @@ json_parse_object(JsonParser *parser, JsonObject *object)
                 (parser->scanner.data[0] == ':'))
             {
                 advance(parser);
-                item.value = json_parse_value(parser);
+                if (json_parse_value(parser, &item.value))
+                {
+                    buf_push(items, item);
+                }
+                else
+                {
+                    fprintf(stderr, "Invalid object specified, invalid member value.\n");
+                }
             }
             else
             {
@@ -291,7 +305,6 @@ json_parse_object(JsonParser *parser, JsonObject *object)
                 result = false;
                 break;
             }
-            buf_push(items, item);
         }
         else
         {
@@ -300,7 +313,7 @@ json_parse_object(JsonParser *parser, JsonObject *object)
             result = false;
             break;
         }
-        
+
         strip_front_whitespace(parser);
         if (parser->scanner.data[0] == ',')
         {
@@ -312,7 +325,7 @@ json_parse_object(JsonParser *parser, JsonObject *object)
             break;
         }
     }
-    
+
     if (parser->scanner.data[0] == '}')
     {
         advance(parser);
@@ -323,76 +336,70 @@ json_parse_object(JsonParser *parser, JsonObject *object)
         buf_free(items);
         result = false;
     }
-    
+
     object->itemCount = buf_len(items);
     if (object->itemCount)
     {
         object->items = arena_allocate_array(&parser->arena, JsonItem, object->itemCount);
         copy(object->itemCount * sizeof(JsonItem), items, object->items);
     }
-    
+
     return result;
 }
 
-internal JsonValue
-json_parse_value(JsonParser *parser)
+internal b32
+json_parse_value(JsonParser *parser, JsonValue *value)
 {
-    JsonValue result = {};
-    
+    b32 result = false;
+
     strip_front_whitespace(parser);
-    
+
     if (parser->scanner.data[0] == '{')
     {
-        if (json_parse_object(parser, &result.object))
-        {
-            result.kind = JsonValue_Object;
-        }
+        value->kind = JsonValue_Object;
+        result = json_parse_object(parser, &value->object);
     }
     else if (parser->scanner.data[0] == '[')
     {
-        if (json_parse_array(parser, &result.array))
-        {
-            result.kind = JsonValue_Array;
-        }
+        value->kind = JsonValue_Array;
+        result = json_parse_array(parser, &value->array);
     }
     else if (parser->scanner.data[0] == '"')
     {
-        if (json_parse_string(parser, &result.string))
-        {
-            result.kind = JsonValue_String;
-        }
+        value->kind = JsonValue_String;
+        result = json_parse_string(parser, &value->string);
     }
     else if ((parser->scanner.data[0] == '-') ||
              is_digit(parser->scanner.data[0]))
     {
-        if (json_parse_number(parser, &result.number))
-        {
-            result.kind = JsonValue_Number;
-        }
+        value->kind = JsonValue_Number;
+        result = json_parse_number(parser, &value->number);
     }
     else if (parser->scanner.size >= 4)
     {
-        result.kind = JsonValue_Constant;
+        value->kind = JsonValue_Constant;
         String constTest = parser->scanner;
         constTest.size = 5;
         if (constTest == string(5, "false"))
         {
-            result.constant = JsonConstant_False;
+            result = true;
+            value->constant = JsonConstant_False;
         }
         else
         {
             constTest.size = 4;
             if (constTest == string(4, "true"))
             {
-                result.constant = JsonConstant_True;
+                result = true;
+                value->constant = JsonConstant_True;
             }
             else if (constTest == string(4, "null"))
             {
-                result.constant = JsonConstant_Null;
+                result = true;
+                value->constant = JsonConstant_Null;
             }
             else
             {
-                result.kind = JsonValue_None;
                 fprintf(stderr, "Unknown json value at:\n%.*s\n", STR_FMT(parser->scanner));
                 constTest.size = 1;
             }
@@ -404,7 +411,12 @@ json_parse_value(JsonParser *parser)
     {
         fprintf(stderr, "Unknown json value at:\n%.*s\n", STR_FMT(parser->scanner));
     }
-    
+
+    if (!result)
+    {
+        value->kind = JsonValue_None;
+    }
+
     return result;
 }
 
@@ -421,14 +433,14 @@ json_dump(JsonValue *value)
                 {
                     fprintf(stdout, ", ");
                 }
-                
+
                 JsonItem *item = value->object.items + itemIndex;
                 fprintf(stdout, "\"%.*s\": ", STR_FMT(item->key));
                 json_dump(&item->value);
             }
             fprintf(stdout, "}");
         } break;
-        
+
         case JsonValue_Array: {
             fprintf(stdout, "[");
             for (u32 valueIndex = 0; valueIndex < value->array.valueCount; ++valueIndex)
@@ -437,39 +449,39 @@ json_dump(JsonValue *value)
                 {
                     fprintf(stdout, ",");
                 }
-                
+
                 json_dump(value->array.values + valueIndex);
             }
             fprintf(stdout, "]");
         } break;
-        
+
         case JsonValue_String: {
             fprintf(stdout, "\"%.*s\"", STR_FMT(value->string));
         } break;
-        
+
         case JsonValue_Number: {
             fprintf(stdout, "%.*s", STR_FMT(value->number));
         } break;
-        
+
         case JsonValue_Constant: {
             switch (value->constant)
             {
                 case JsonConstant_Null: {
                     fprintf(stdout, "null");
                 } break;
-                
+
                 case JsonConstant_True: {
                     fprintf(stdout, "true");
                 } break;
-                
+
                 case JsonConstant_False: {
                     fprintf(stdout, "false");
                 } break;
-                
+
                 INVALID_DEFAULT_CASE;
             }
         } break;
-        
+
         INVALID_DEFAULT_CASE;
     }
 }
@@ -478,7 +490,7 @@ internal void
 json_print(JsonValue *value, u32 indent = 0)
 {
     char *spaces = "                                                                                                    ";
-    
+
     switch (value->kind)
     {
         case JsonValue_Object: {
@@ -496,7 +508,7 @@ json_print(JsonValue *value, u32 indent = 0)
             --indent;
             fprintf(stdout, "%.*s</object>\n", indent * 2, spaces);
         } break;
-        
+
         case JsonValue_Array: {
             fprintf(stdout, "%.*s<array>\n", indent * 2, spaces);
             ++indent;
@@ -511,34 +523,34 @@ json_print(JsonValue *value, u32 indent = 0)
             --indent;
             fprintf(stdout, "%.*s</array>\n", indent * 2, spaces);
         } break;
-        
+
         case JsonValue_String: {
             fprintf(stdout, "%.*s<string>\"%.*s\"</string>\n", indent * 2, spaces, STR_FMT(value->string));
         } break;
-        
+
         case JsonValue_Number: {
             fprintf(stdout, "%.*s<number>%.*s</number>\n", indent * 2, spaces, STR_FMT(value->number));
         } break;
-        
+
         case JsonValue_Constant: {
             switch (value->constant)
             {
                 case JsonConstant_Null: {
                     fprintf(stdout, "%.*s<const null/>\n", indent * 2, spaces);
                 } break;
-                
+
                 case JsonConstant_True: {
                     fprintf(stdout, "%.*s<const true/>\n", indent * 2, spaces);
                 } break;
-                
+
                 case JsonConstant_False: {
                     fprintf(stdout, "%.*s<const false/>\n", indent * 2, spaces);
                 } break;
-                
+
                 INVALID_DEFAULT_CASE;
             }
         } break;
-        
+
         INVALID_DEFAULT_CASE;
     }
 }

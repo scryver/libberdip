@@ -36,7 +36,7 @@ struct JsonArray
 struct JsonValue
 {
     JsonValueKind kind;
-    
+
     union
     {
         JsonObject    object;
@@ -57,12 +57,12 @@ struct JsonItem
 struct JsonParser
 {
     Arena arena;     // NOTE(michiel): Storage for the parsed data structure
-    
+
     b32 saveAll;     // NOTE(michiel): If true, all needed strings are copied out of the scanner.
     String scanner;
 };
 
 // NOTE(michiel): The parse uses scanData to build the structure. Be aware that you need to keep the scanData alive
 // as long as you use the JsonValue. If a string is needed for example it will directly point into scanData, unless
-// parser->saveAll is true.
-internal JsonValue json_parse_value(JsonParser *parser);
+// parser->saveAll is true. Returns true on success.
+internal b32 json_parse_value(JsonParser *parser, JsonValue *value);
