@@ -14,11 +14,12 @@ global const u32 gDecode64Map[256] = {
     ['+'] = 62, ['/'] = 63,
 };
 
-internal b32
+internal String
 base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
 {
+    String result = {};
+
     umm outputLength = 4 * ((sourceLength + 2) / 3);
-    b32 error = false;
     if (source && dest)
     {
         for (u32 srcIndex = 0, destIndex = 0; srcIndex < sourceLength; )
@@ -51,18 +52,18 @@ base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
         }
         i_expect(outputLength < destLength);
         dest[outputLength] = 0;
+
+        result.size = outputLength;
+        result.data = dest;
     }
-    else
-    {
-        error = true;
-    }
-    return error;
+
+    return result;
 }
 
-internal b32
+internal String
 base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
 {
-    b32 error = false;
+    String result = {};
 
     if (source && dest)
     {
@@ -71,10 +72,15 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
         u32 dstIndex = 0;
         for (u32 srcIndex = 0; srcIndex < sourceLength; srcIndex += 4)
         {
-            u32 index0 = gDecode64Map[(u32)source[srcIndex + 0]];
-            u32 index1 = gDecode64Map[(u32)source[srcIndex + 1]];
-            u32 index2 = gDecode64Map[(u32)source[srcIndex + 2]];
-            u32 index3 = gDecode64Map[(u32)source[srcIndex + 3]];
+            u8 i0 = source[srcIndex + 0];
+            u8 i1 = source[srcIndex + 1];
+            u8 i2 = source[srcIndex + 2];
+            u8 i3 = source[srcIndex + 3];
+
+            u32 index0 = gDecode64Map[(u32)i0];
+            u32 index1 = gDecode64Map[(u32)i1];
+            u32 index2 = gDecode64Map[(u32)i2];
+            u32 index3 = gDecode64Map[(u32)i3];
 
             u32 triplet = ((index3 << (0 * 6)) |
                            (index2 << (1 * 6)) |
@@ -86,16 +92,21 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
 
             i_expect((dstIndex + 2) < destLength);
             dest[dstIndex++] = octetA;
-            dest[dstIndex++] = octetB;
-            dest[dstIndex++] = octetC;
+            if (i2 != '=')
+            {
+                dest[dstIndex++] = octetB;
+                if (i3 != '=')
+                {
+                    dest[dstIndex++] = octetC;
+                }
+            }
         }
         i_expect(dstIndex < destLength);
         dest[dstIndex] = 0;
-    }
-    else
-    {
-        error = true;
+
+        result.size = dstIndex;
+        result.data = dest;
     }
 
-    return error;
+    return result;
 }
