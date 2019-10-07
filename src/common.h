@@ -238,7 +238,7 @@ copy(umm size, const void *src, void *dst)
     {
         u8 *s = (u8 *)src + size;
         u8 *d = (u8 *)dst + size;
-        while (rem--) {
+        while (size--) {
             *(--d) = *(--s);
         }
     }
