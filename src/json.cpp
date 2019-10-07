@@ -1,18 +1,693 @@
 internal void
+advance(String *s)
+{
+    --s->size;
+    ++s->data;
+}
+
+internal void
+strip_whitespace(String *s)
+{
+    while (s->size && is_whitespace(s->data[0]))
+    {
+        advance(s);
+    }
+}
+
+internal b32
+json_is_constant(String input)
+{
+    b32 result = false;
+    String boolean = input;
+    if (input.size > 3)
+    {
+        boolean.size = 4;
+        if (boolean == string(4, "null"))
+        {
+            result = true;
+        }
+        else if (boolean == string(4, "true"))
+        {
+            result = true;
+        }
+        else if (input.size > 4)
+        {
+            boolean.size = 5;
+            if (boolean == string(5, "false"))
+            {
+                result = true;
+            }
+        }
+    }
+    return result;
+}
+
+internal b32
+json_is_number(String input)
+{
+    return (input.size && input.data && (is_digit(input.data[0]) || (input.data[0] == '-')));
+}
+
+internal b32
+json_is_string(String input)
+{
+    return (input.size && input.data && (input.data[0] == '"'));
+}
+
+internal b32
+json_is_array(String input)
+{
+    return (input.size && input.data && (input.data[0] == '['));
+}
+
+internal b32
+json_is_object(String input)
+{
+    return (input.size && input.data && (input.data[0] == '{'));
+}
+
+internal String
+json_skip_constant(String input)
+{
+    String result = input;
+    if (input.size > 3)
+    {
+        if ((input.data[0] == 'n') &&
+            (input.data[1] == 'u') &&
+            (input.data[2] == 'l') &&
+            (input.data[3] == 'l'))
+        {
+            result.size -= 4;
+            result.data += 4;
+        }
+        else if ((input.data[0] == 't') &&
+                 (input.data[1] == 'r') &&
+                 (input.data[2] == 'u') &&
+                 (input.data[3] == 'e'))
+        {
+            result.size -= 4;
+            result.data += 4;
+        }
+        else if ((input.size > 4) &&
+                 (input.data[0] == 'f') &&
+                 (input.data[1] == 'a') &&
+                 (input.data[2] == 'l') &&
+                 (input.data[3] == 's') &&
+                 (input.data[4] == 'e'))
+        {
+            result.size -= 5;
+            result.data += 5;
+        }
+    }
+    return result;
+}
+
+internal String
+json_skip_number(String input)
+{
+    String result = input;
+
+    if (result.size && (result.data[0] == '-'))
+    {
+        advance(&result);
+    }
+
+    while (result.size && is_digit(result.data[0]))
+    {
+        advance(&result);
+    }
+
+    if (result.size && (result.data[0] == '.'))
+    {
+        advance(&result);
+
+        while (result.size && is_digit(result.data[0]))
+        {
+            advance(&result);
+        }
+    }
+
+    if (result.size && ((result.data[0] == 'e') ||
+                        (result.data[0] == 'E')))
+    {
+        advance(&result);
+        if (result.size && ((result.data[0] == '+') ||
+                            (result.data[0] == '-')))
+        {
+            advance(&result);
+        }
+
+        while (result.size && is_digit(result.data[0]))
+        {
+            advance(&result);
+        }
+    }
+
+    return result;
+}
+
+internal String
+json_skip_string(String input)
+{
+    String result = input;
+    if (result.size && (result.data[0] == '"'))
+    {
+        advance(&result);
+        while (result.size && (result.data[0] != '"'))
+        {
+            if (result.data[0] == '\\')
+            {
+                advance(&result);
+                if (result.size == 0)
+                {
+                    break;
+                }
+            }
+            advance(&result);
+        }
+        if (result.size && (result.data[0] == '"'))
+        {
+            advance(&result);
+        }
+    }
+    return result;
+}
+
+internal String
+json_skip_array(String input)
+{
+    String result = input;
+
+    if (json_is_array(result))
+    {
+        advance(&result);
+        strip_whitespace(&result);
+        while (result.size)
+        {
+            if (result.data[0] == ']')
+            {
+                advance(&result);
+                break;
+            }
+            result = json_skip_value(result);
+            strip_whitespace(&result);
+
+            if (result.size && (result.data[0] == ','))
+            {
+                advance(&result);
+                strip_whitespace(&result);
+            }
+        }
+    }
+
+    return result;
+}
+
+internal String
+json_skip_object(String input)
+{
+    String result = input;
+
+    if (json_is_object(result))
+    {
+        advance(&result);
+        strip_whitespace(&result);
+        while (result.size)
+        {
+            if (result.data[0] == '}')
+            {
+                advance(&result);
+                break;
+            }
+            result = json_skip_string(result);
+            strip_whitespace(&result);
+            if (result.size && (result.data[0] == ':'))
+            {
+                advance(&result);
+                strip_whitespace(&result);
+                result = json_skip_value(result);
+                strip_whitespace(&result);
+            }
+            else
+            {
+                // TODO(michiel): Errors
+                result.size = 0;
+                result.data = 0;
+            }
+
+            if (result.size && (result.data[0] == ','))
+            {
+                advance(&result);
+                strip_whitespace(&result);
+            }
+        }
+    }
+
+    return result;
+}
+
+internal String
+json_skip_value(String input)
+{
+    String result = {};
+    if (json_is_object(input))
+    {
+        result = json_skip_object(input);
+    }
+    else if (json_is_array(input))
+    {
+        result = json_skip_array(input);
+    }
+    else if (json_is_string(input))
+    {
+        result = json_skip_string(input);
+    }
+    else if (json_is_number(input))
+    {
+        result = json_skip_number(input);
+    }
+    else if (json_is_constant(input))
+    {
+        result = json_skip_constant(input);
+    }
+    else
+    {
+        // TODO(michiel): Errors
+    }
+    return result;
+}
+
+internal b32
+json_parse_bool(String input)
+{
+    strip_whitespace(&input);
+
+    b32 result = false;
+    String boolean = input;
+    if (input.size > 3)
+    {
+        boolean.size = 4;
+
+        if (boolean == string(4, "true"))
+        {
+            result = true;
+        }
+    }
+    return result;
+}
+
+internal s64
+json_parse_integer(String input)
+{
+    strip_whitespace(&input);
+
+    s64 result = 0;
+
+    b32 negate = input.size && (input.data[0] == '-');
+    if (negate)
+    {
+        advance(&input);
+    }
+
+    if (input.size && (input.data[0] != '0'))
+    {
+        while (input.size && is_digit(input.data[0]))
+        {
+            result = result * 10 + (input.data[0] & 0xF);
+            advance(&input);
+        }
+    }
+
+    return result;
+}
+
+internal String
+json_parse_string(String input)
+{
+    strip_whitespace(&input);
+
+    String result = {};
+
+    if (input.size && (input.data[0] == '"'))
+    {
+        advance(&input);
+        result.data = input.data;
+        while (input.size && (input.data[0] != '"'))
+        {
+            if (input.data[0] == '\\')
+            {
+                advance(&input);
+                ++result.size;
+                if (input.size &&
+                    ((input.data[0] == '"') ||
+                     (input.data[0] == '\\') ||
+                     (input.data[0] == '/') ||
+                     (input.data[0] == 'b') ||
+                     (input.data[0] == 'f') ||
+                     (input.data[0] == 'n') ||
+                     (input.data[0] == 'r') ||
+                     (input.data[0] == 't')))
+                {
+                    advance(&input);
+                    ++result.size;
+                }
+                else if (input.size && (input.data[0] == 'u'))
+                {
+                    // TODO(michiel): Parse to utf8
+                    advance(&input);
+                    ++result.size;
+                    if (input.size >= 4)
+                    {
+                        for (u32 hexIndex = 0; hexIndex < 4; ++hexIndex)
+                        {
+                            if (is_hex_digit(input.data[0]))
+                            {
+                                advance(&input);
+                                ++result.size;
+                            }
+                            else
+                            {
+                                // TODO(michiel): Errors
+                                input.size = 0;
+                                result.size = 0;
+                                result.data = 0;
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // TODO(michiel): Errors
+                        input.size = 0;
+                        result.size = 0;
+                        result.data = 0;
+                    }
+                }
+                else
+                {
+                    // TODO(michiel): Errors
+                    input.size = 0;
+                    result.size = 0;
+                    result.data = 0;
+                }
+            }
+            else
+            {
+                advance(&input);
+                ++result.size;
+            }
+        }
+    }
+
+    return result;
+}
+
+internal JsonArrayIter
+json_iterate_array(String input)
+{
+    JsonArrayIter result = {};
+    if (input.data && (input.data[0] == '['))
+    {
+        result.string = input;
+        advance(&result.string);
+    }
+    return result;
+}
+
+internal b32
+is_valid(JsonArrayIter *iter)
+{
+    return (iter->string.size != 0);
+}
+
+internal void
+json_next_array(JsonArrayIter *iter)
+{
+    // TODO(michiel): Skip all values to the next value in the array
+    iter->string = json_skip_value(iter->string);
+    strip_whitespace(&iter->string);
+    if (iter->string.size && (iter->string.data[0] == ']'))
+    {
+        iter->string.size = 0;
+        iter->string.data = 0;
+    }
+    else if (iter->string.size && (iter->string.data[0] == ','))
+    {
+        advance(&iter->string);
+        strip_whitespace(&iter->string);
+    }
+}
+
+internal b32
+json_find(String json, String key, JsonValueKind kind, String *subString)
+{
+    b32 result = false;
+    strip_whitespace(&json);
+
+    if (json.size && json.data && (json.data[0] == '{'))
+    {
+        advance(&json);
+        strip_whitespace(&json);
+
+        while (json.size)
+        {
+            if (json.data[0] == '}')
+            {
+                break;
+            }
+
+            String foundKey = json_parse_string(json);
+            b32 found = foundKey == key;
+
+            json.size -= foundKey.size + 2; // NOTE(michiel): +2 for the ending quote "
+            json.data += foundKey.size + 2;
+            strip_whitespace(&json);
+
+            if (json.size && json.data[0] == ':')
+            {
+                advance(&json);
+            }
+            else
+            {
+                // TODO(michiel): Errors
+            }
+            strip_whitespace(&json);
+
+            if (json_is_object(json))
+            {
+                if (found && (kind == JsonValue_Object))
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_object(json);
+                }
+            }
+            else if (json_is_array(json))
+            {
+                if (found && (kind == JsonValue_Array))
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_array(json);
+                }
+            }
+            else if (json_is_string(json))
+            {
+                if (found && (kind == JsonValue_String))
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_string(json);
+                }
+            }
+            else if (json_is_number(json))
+            {
+                if (found && (kind == JsonValue_Number))
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_number(json);
+                }
+            }
+            else if (json_is_constant(json))
+            {
+                if (found && (kind == JsonValue_Constant))
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_constant(json);
+                }
+            }
+            else
+            {
+                // NOTE(michiel): Unknown...
+                advance(&json);
+            }
+
+            strip_whitespace(&json);
+            if (json.size && (json.data[0] == ','))
+            {
+                advance(&json);
+                strip_whitespace(&json);
+            }
+        }
+    }
+
+    return result;
+}
+
+internal b32
+json_find_first(String json, JsonValueKind kind, String *foundKey, String *subString)
+{
+    b32 result = false;
+    strip_whitespace(&json);
+
+    if (json.size && json.data && (json.data[0] == '{'))
+    {
+        advance(&json);
+        strip_whitespace(&json);
+
+        while (json.size)
+        {
+            if (json.data[0] == '}')
+            {
+                break;
+            }
+
+            *foundKey = json_parse_string(json);
+            json.size -= foundKey->size + 2; // NOTE(michiel): +2 for the ending quote "
+            json.data += foundKey->size + 2;
+            strip_whitespace(&json);
+
+            if (json.size && json.data[0] == ':')
+            {
+                advance(&json);
+            }
+            else
+            {
+                // TODO(michiel): Errors
+            }
+            strip_whitespace(&json);
+
+            if (json_is_object(json))
+            {
+                if (kind == JsonValue_Object)
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_object(json);
+                }
+            }
+            else if (json_is_array(json))
+            {
+                if (kind == JsonValue_Array)
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_array(json);
+                }
+            }
+            else if (json_is_string(json))
+            {
+                if (kind == JsonValue_String)
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_string(json);
+                }
+            }
+            else if (json_is_number(json))
+            {
+                if (kind == JsonValue_Number)
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_number(json);
+                }
+            }
+            else if (json_is_constant(json))
+            {
+                if (kind == JsonValue_Constant)
+                {
+                    *subString = json;
+                    result = true;
+                    break;
+                }
+                else
+                {
+                    json = json_skip_constant(json);
+                }
+            }
+            else
+            {
+                // NOTE(michiel): Unknown...
+                advance(&json);
+            }
+
+            strip_whitespace(&json);
+            if (json.size && (json.data[0] == ','))
+            {
+                advance(&json);
+                strip_whitespace(&json);
+            }
+        }
+    }
+
+    return result;
+}
+
+//
+// Full parser
+//
+
+#if JSON_FULL_PARSING
+
+internal void
 advance(JsonParser *parser)
 {
-    --parser->scanner.size;
-    ++parser->scanner.data;
+    advance(&parser->scanner);
 }
 
 internal void
 strip_front_whitespace(JsonParser *parser)
 {
-    while (parser->scanner.size &&
-           is_whitespace(parser->scanner.data[0]))
-    {
-        advance(parser);
-    }
+    strip_whitespace(&parser->scanner);
 }
 
 internal u32
@@ -554,3 +1229,4 @@ json_print(JsonValue *value, u32 indent = 0)
         INVALID_DEFAULT_CASE;
     }
 }
+#endif

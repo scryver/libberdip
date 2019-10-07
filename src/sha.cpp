@@ -286,7 +286,7 @@ sha256_process_chunk(Sha256Context *context, u8 *chunk)
     // NOTE(michiel): https://software.intel.com/en-us/articles/intel-sha-extensions
     // NOTE(michiel): expect chunk[64]
 
-    u32 ks[64] = {
+    persist const u32 ks[64] = {
         0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
         0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
         0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
@@ -364,6 +364,28 @@ sha256_process_chunk(Sha256Context *context, u8 *chunk)
     context->abef = _mm_sha256rnds2_epu32(context->abef, context->cdgh, ks_4x);
     src2_4x = _mm_sha256msg1_epu32(src2_4x, src3_4x);
 
+#if 0
+#define do_round(i, y, x, z) \
+    ks_4x    = _mm_loadu_si128(ks128 + i); \
+    ks_4x    = _mm_add_epi32(ks_4x, x); \
+    context->cdgh = _mm_sha256rnds2_epu32(context->cdgh, context->abef, ks_4x); \
+    src4_4x  = _mm_alignr_epi8(x, y, 4); \
+    z        = _mm_add_epi32(z, src4_4x); \
+    z        = _mm_sha256msg2_epu32(z, x); \
+    ks_4x    = _mm_shuffle_epi32(ks_4x, 0x0E); \
+    context->abef = _mm_sha256rnds2_epu32(context->abef, context->cdgh, ks_4x); \
+    y        = _mm_sha256msg1_epu32(y, x)
+
+    do_round( 4, src3_4x, src0_4x, src1_4x);
+    do_round( 5, src0_4x, src1_4x, src2_4x);
+    do_round( 6, src1_4x, src2_4x, src3_4x);
+    do_round( 7, src2_4x, src3_4x, src0_4x);
+    do_round( 8, src3_4x, src0_4x, src1_4x);
+    do_round( 9, src0_4x, src1_4x, src2_4x);
+    do_round(10, src1_4x, src2_4x, src3_4x);
+    do_round(11, src2_4x, src3_4x, src0_4x);
+    do_round(12, src3_4x, src0_4x, src1_4x);
+#else
     // NOTE(michiel): 16 - 20 / 64
     ks_4x    = _mm_loadu_si128(ks128 + 4);
 
@@ -471,6 +493,7 @@ sha256_process_chunk(Sha256Context *context, u8 *chunk)
     ks_4x    = _mm_shuffle_epi32(ks_4x, 0x0E);
     context->abef = _mm_sha256rnds2_epu32(context->abef, context->cdgh, ks_4x);
     src3_4x = _mm_sha256msg1_epu32(src3_4x, src0_4x);
+#endif
 
     // NOTE(michiel): 52 - 56 / 64
     ks_4x    = _mm_loadu_si128(ks128 + 13);
