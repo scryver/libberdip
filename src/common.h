@@ -189,19 +189,58 @@ internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)
 internal umm
 copy(umm size, const void *src, void *dst)
 {
-    i_expect(((u8 *)dst < ((u8 *)src - 4)) ||
-             ((u8 *)dst >= ((u8 *)src + size)));
-    u32 *src32 = (u32 *)src;
-    u32 *dst32 = (u32 *)dst;
-    umm size4 = size >> 2; // size/4
-    umm rem = size - (size4 << 2);
-    while(size4--) {
-        *dst32++ = *src32++;
+    if (size > 3)
+    {
+        if(((u8 *)dst < ((u8 *)src - 4)) ||
+           ((u8 *)dst >= ((u8 *)src + size)))
+        {
+            u32 *src32 = (u32 *)src;
+            u32 *dst32 = (u32 *)dst;
+            umm size4 = size >> 2; // size/4
+            umm rem = size - (size4 << 2);
+            while(size4--) {
+                *dst32++ = *src32++;
+            }
+            u8 *s = (u8 *)src32;
+            u8 *d = (u8 *)dst32;
+            while (rem--) {
+                *d++ = *s++;
+            }
+        }
+        else
+        {
+            umm size4 = size >> 2;
+            umm rem = size - (size4 << 2);
+
+            u8 *s = (u8 *)src + size;
+            u8 *d = (u8 *)dst + size;
+            while (rem--) {
+                *(--d) = *(--s);
+            }
+
+            u32 *src32 = (u32 *)s;
+            u32 *dst32 = (u32 *)d;
+
+            while (size4--) {
+                *(--dst32) = *(--src32);
+            }
+        }
     }
-    u8 *s = (u8 *)src32;
-    u8 *d = (u8 *)dst32;
-    while (rem--) {
-        *d++ = *s++;
+    else if (dst < src)
+    {
+        u8 *s = (u8 *)src;
+        u8 *d = (u8 *)dst;
+        while (size--) {
+            *d++ = *s++;
+        }
+    }
+    else
+    {
+        u8 *s = (u8 *)src + size;
+        u8 *d = (u8 *)dst + size;
+        while (rem--) {
+            *(--d) = *(--s);
+        }
     }
 
     return size;
