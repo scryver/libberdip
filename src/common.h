@@ -441,6 +441,9 @@ arena_free(Arena *arena)
         deallocate(it);
         it = next;
     }
+    arena->at = 0;
+    arena->end = 0;
+    arena->sentinel.next = 0;
 }
 
 internal inline TempMemory

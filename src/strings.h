@@ -345,7 +345,7 @@ strings_are_equal(const char *a, const char *b)
 internal b32
 string_contains(String str, String subStr)
 {
-    b32 result = (subStr.size <= str.size);
+    b32 result = str.size && (subStr.size <= str.size);
     if (result) {
         if (str.data != subStr.data) {
             u32 curIndex = 0;
