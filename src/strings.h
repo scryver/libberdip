@@ -260,7 +260,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 
 // NOTE(michiel): Use this to clean up string formatting arguments (for usage with "%.*s")
 // TODO(michiel): Have our own printf with %S to support strings
-#define STR_FMT(s)  safe_truncate_to_u32(s.size), s.data
+#define STR_FMT(s)  safe_truncate_to_u32((s).size), (s).data
 
 #define static_string(c) {sizeof(c) - 1, (u8 *)c}
 #define to_cstring(s)    ((char *)s.data)
