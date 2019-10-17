@@ -3,7 +3,7 @@
 #include <math.h>
 #endif
 
-internal inline f32
+internal f32
 fast_exp_(f32 x, u32 approx)
 {
     f32 result = 1.0f;
@@ -24,13 +24,13 @@ fast_exp_(f32 x, u32 approx)
     return result;
 }
 
-internal inline f32
+internal f32
 fast_exp(f32 x)
 {
     return fast_exp_(x, 12);
 }
 
-internal inline u32
+internal u32
 log2_up(u32 value)
 {
     u32 bitPos = 0;
@@ -215,6 +215,51 @@ round(f64 value)
 {
     f64 result;
     result = (f64)(s64)(value + 0.5 * sign_of(value));
+    return result;
+}
+
+// TODO(michiel): Profile this vs compile implementation
+internal DivModU32
+divmod(u32 a, u32 b)
+{
+    DivModU32 result = {a, 0};
+    asm ("div %4\n\t"
+         : "=a"(result.div), "=d"(result.mod)
+         : "a"(result.div), "d"(result.mod), "r"(b)
+         : "cc");
+    return result;
+}
+
+internal DivModS32
+divmod(s32 a, s32 b)
+{
+    DivModS32 result = {a, sign_of(a)};
+    asm ("idiv %4\n\t"
+         : "=a"(result.div), "=d"(result.mod)
+         : "a"(result.div), "d"(result.mod), "r"(b)
+         : "cc");
+    return result;
+}
+
+internal DivModU64
+divmod(u64 a, u64 b)
+{
+    DivModU64 result = {a, 0};
+    asm ("div %4\n\t"
+         : "=a"(result.div), "=d"(result.mod)
+         : "a"(result.div), "d"(result.mod), "r"(b)
+         : "cc");
+    return result;
+}
+
+internal DivModS64
+divmod(s64 a, s64 b)
+{
+    DivModS64 result = {a, sign_of(a)};
+    asm ("idiv %4\n\t"
+         : "=a"(result.div), "=d"(result.mod)
+         : "a"(result.div), "d"(result.mod), "r"(b)
+         : "cc");
     return result;
 }
 

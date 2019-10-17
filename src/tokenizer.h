@@ -71,6 +71,11 @@ enum TokenKind
     Token_DivAssign,    // /=
     Token_ModAssign,    // %=
 
+    Token_Quote,        // '
+    Token_Backslash,    // \ <= Extra space in comment needed otherwise the newline is escaped
+    Token_Number,       // #
+    Token_Dollar,       // $
+
     Token_EOF,
 
     TokenCount

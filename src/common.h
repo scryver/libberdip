@@ -270,6 +270,31 @@ clamp01(f32 value)
     return result;
 }
 
+// TODO(michiel): Add a types.h
+typedef struct DivModU32
+{
+    u32 div;
+    u32 mod;
+} DivModU32;
+
+typedef struct DivModS32
+{
+    s32 div;
+    s32 mod;
+} DivModS32;
+
+typedef struct DivModU64
+{
+    u64 div;
+    u64 mod;
+} DivModU64;
+
+typedef struct DivModS64
+{
+    s64 div;
+    s64 mod;
+} DivModS64;
+
 // NOTE(michiel): Generic buffer (memory data and a size)
 typedef struct Buffer
 {

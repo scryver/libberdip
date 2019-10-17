@@ -14,6 +14,10 @@ TEST_BEGIN(tokenizer)
     do
     {
         token = get_token(&tokenizer);
+        if (token.kind == Token_Quote)
+        {
+            advance_scanner(&tokenizer);
+        }
         //print_token(token);
 
     } while (token.kind != Token_EOF);

@@ -49,6 +49,10 @@ global String gTokenKindName[TokenCount] =
     [Token_MulAssign]    = static_string("multiply assign"),
     [Token_DivAssign]    = static_string("divide assign"),
     [Token_ModAssign]    = static_string("modulo assign"),
+    [Token_Quote]        = static_string("quote"),
+    [Token_Backslash]    = static_string("backslash"),
+    [Token_Number]       = static_string("number sign"),
+    [Token_Dollar]       = static_string("dollar sign"),
 
     [Token_EOF]          = static_string("end of file"),
 };
@@ -212,6 +216,10 @@ get_token(Tokenizer *tokenizer)
         CASE1('}',  Token_BraceClose);
         CASE1('[',  Token_BracketOpen);
         CASE1(']',  Token_BracketClose);
+        CASE1('\'', Token_Quote);
+        CASE1('\\', Token_Backslash);
+        CASE1('#',  Token_Number);
+        CASE1('$',  Token_Dollar);
 
         CASE2B('|', Token_Or, '|', Token_LogicalOr, '=', Token_OrAssign);
         CASE2B('&', Token_And, '&', Token_LogicalAnd, '=', Token_AndAssign);
@@ -338,9 +346,17 @@ get_token(Tokenizer *tokenizer)
                 tokenize_error(tokenizer, "Constant string cannot be empty.");
             }
 
+            // TODO(michiel): Use proper end of line (\n\r or \r\n)
             while (tokenizer->scanner.data[0] &&
                    (tokenizer->scanner.data[0] != '"') &&
-                   (tokenizer->scanner.data[0] != '\n')) {
+                   !is_end_of_line(tokenizer->scanner.data[0]))
+            {
+                if (tokenizer->scanner.data[0] == '\\')
+                {
+                    ++result.value.size;
+                    advance_scanner(tokenizer);
+                }
+                // TODO(michiel): Handle invalid escape case
                 ++result.value.size;
                 advance_scanner(tokenizer);
             }
