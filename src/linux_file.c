@@ -1,4 +1,4 @@
-// NOTE(michiel): Uses <fcntl.h> and <dirent.h>, and <mmap.h> but that should go away
+// NOTE(michiel): Uses <fcntl.h> and <dirent.h>, and <sys/mman.h> but that should go away
 
 typedef struct LinuxFindFile
 {
@@ -405,4 +405,24 @@ WRITE_FMT_TO_FILE(linux_write_fmt_to_file)
     va_start(args, fmt);
     linux_write_vfmt_to_file(apiFile, fmt, args);
     va_end(args);
+}
+
+internal INIT_FILE_API(linux_file_api)
+{
+    fileApi->file_error = linux_file_error;
+    fileApi->read_entire_file = linux_read_entire_file;
+    fileApi->write_entire_file = linux_write_entire_file;
+    fileApi->get_all_files_of_type_begin = linux_get_all_files_of_type_begin;
+    fileApi->get_all_files_of_type_end = linux_get_all_files_of_type_end;
+    fileApi->open_next_file = linux_open_next_file;
+    fileApi->open_file = linux_open_file;
+    fileApi->close_file = linux_close_file;
+    fileApi->get_file_size = linux_get_file_size;
+    fileApi->get_file_position = linux_get_file_position;
+    fileApi->set_file_position = linux_set_file_position;
+    fileApi->read_from_file = linux_read_from_file;
+    fileApi->read_from_file_offset = linux_read_from_file_offset;
+    fileApi->write_to_file = linux_write_to_file;
+    fileApi->write_fmt_to_file = linux_write_fmt_to_file;
+    fileApi->write_vfmt_to_file = linux_write_vfmt_to_file;
 }

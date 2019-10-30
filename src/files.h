@@ -2,6 +2,8 @@
 // NOTE(michiel): Files
 //
 
+#define MAKE_MAGIC(a, b, c, d)    ((d << 24) | (c << 16) | (b << 8) | a)
+
 typedef enum FileOpenType
 {
     FileOpen_Read = 0x1,
@@ -122,3 +124,6 @@ typedef struct FileAPI
     WriteFmtToFile *write_fmt_to_file;
     WriteVFmtToFile *write_vfmt_to_file;
 } FileAPI;
+
+#define INIT_FILE_API(name) void name(FileAPI *fileApi)
+typedef INIT_FILE_API(InitFileAPI);

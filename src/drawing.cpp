@@ -1,47 +1,10 @@
+#ifndef DRAWING_SLOW
+#define DRAWING_SLOW 0
+#endif
+
 //
 // NOTE(michiel): Colour mix helpers
 //
-
-internal v4
-unpack_colour(u8 colour)
-{
-    v4 result = {};
-    f32 oneOver255 = 1.0f / 255.0f;
-    f32 grey = (f32)colour * oneOver255;
-    result.r = grey;
-    result.g = grey;
-    result.b = grey;
-    result.a = grey;
-
-    return result;
-}
-
-internal v4
-unpack_colour(u32 colour)
-{
-    v4 result = {};
-    f32 oneOver255 = 1.0f / 255.0f;
-
-    result.r = (f32)((colour >>  0) & 0xFF) * oneOver255;
-    result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
-    result.b = (f32)((colour >> 16) & 0xFF) * oneOver255;
-    result.a = (f32)((colour >> 24) & 0xFF) * oneOver255;
-
-    return result;
-}
-
-internal u32
-pack_colour(v4 colour)
-{
-    u32 result = 0;
-
-    result = ((((u32)(clamp01(colour.a) * 255.0f) & 0xFF) << 24) |
-              (((u32)(clamp01(colour.b) * 255.0f) & 0xFF) << 16) |
-              (((u32)(clamp01(colour.g) * 255.0f) & 0xFF) <<  8) |
-              (((u32)(clamp01(colour.r) * 255.0f) & 0xFF) <<  0));
-
-    return result;
-}
 
 internal v4
 mix_colours(v4 src, v4 overlay)
@@ -67,6 +30,11 @@ alpha_blend_colours(v4 src, v4 overlay)
 internal void
 draw_pixel(Image *image, u32 x, u32 y, v4 colour)
 {
+#if DRAWING_SLOW
+    i_expect(x < image->width);
+    i_expect(y < image->height);
+#endif // DRAWING_SLOW
+
     v4 source = unpack_colour(image->pixels[y * image->width + x]);
     colour.rgb *= colour.a;
 
@@ -476,6 +444,39 @@ fill_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, u32 
     fill_rectangle(image, xStart, yStart, width, height, unpack_colour(colour));
 }
 
+internal void
+fill_rectangle(Image *image, v2 pos, v2 dim, v4 colour)
+{
+    fill_rectangle(image, s32_from_f32_round(pos.x), s32_from_f32_round(pos.y),
+                   u32_from_f32_round(dim.x), u32_from_f32_round(dim.y), colour);
+}
+
+internal void
+fill_rectangle(Image *image, v2 pos, v2 dim, u32 colour)
+{
+    fill_rectangle(image, pos, dim, unpack_colour(colour));
+}
+
+internal void
+fill_tube(Image *image, u32 x0, u32 y0, u32 w, u32 h,
+          v4 centerColour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
+{
+    f32 edgeFalloff = (f32)(h - 1) * 0.5f;
+    f32 edgeFactor = 1.0f / square(edgeFalloff);
+
+    centerColour.rgb *= centerColour.a;
+    edgeColour.rgb *= edgeColour.a;
+
+    for (u32 y = 0; y < h; ++y) {
+        f32 colourFactor = square((f32)y - edgeFalloff) * edgeFactor;
+        v4 pixel = lerp(centerColour, colourFactor, edgeColour);
+
+        for (u32 x = 0; x < w ; ++x) {
+            draw_pixel(image, x + x0, y + y0, pixel);
+        }
+    }
+}
+
 internal s32
 orient2d(v2s a, v2s b, v2s c)
 {
@@ -588,6 +589,96 @@ internal void
 fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 {
     fill_circle(image, xStart, yStart, radius, unpack_colour(colour));
+}
+
+internal void
+fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
+{
+    f32 diameter = 2.0f * radius;
+
+    f32 maxDistSqr = square(radius);
+    f32 edgeDistSqr = square(radius + 1.0f);
+    f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
+
+    colour.rgb *= colour.a;
+
+    for (s32 y = 0, yOffset = (s32)(y0 - radius);
+         (y < s32_from_f32_ceil(diameter + 1.0f)) &&
+         (yOffset < image->width); ++y, ++yOffset)
+    {
+        f32 fY = (f32)y - radius - fraction(y0);
+        f32 fYSqr = square(fY);
+        for (s32 x = 0, xOffset = (s32)(x0 - radius);
+             (x < s32_from_f32_ceil(diameter + 1.0f)) &&
+             (xOffset < image->width); ++x, ++xOffset)
+        {
+            f32 fX = (f32)x - radius - fraction(x0);
+            f32 distSqr = square(fX) + fYSqr;
+
+            if (distSqr <= edgeDistSqr)
+            {
+                v4 pixel = colour;
+
+                if (distSqr > maxDistSqr)
+                {
+                    // adjust alpha for anti-aliasing
+                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
+                    clamp01(pixel.a);
+                }
+
+                pixel.rgb *= pixel.a;
+
+                draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
+            }
+        }
+    }
+}
+
+internal void
+fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
+{
+    f32 diameter = 2.0f * radius;
+
+    f32 maxDistSqr = square(radius);
+    f32 edgeDistSqr = square(radius + 1.0f);
+    f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
+
+    f32 edgeFactor = 1.0f / maxDistSqr;
+
+    colour.rgb *= colour.a;
+    edgeColour.rgb *= edgeColour.a;
+
+    for (s32 y = 0, yOffset = (s32)(y0 - radius);
+         (y < s32_from_f32_ceil(diameter + 1.0f)) &&
+         (yOffset < image->width); ++y, ++yOffset)
+    {
+        f32 fY = (f32)y - radius - fraction(y0);
+        f32 fYSqr = square(fY);
+        for (s32 x = 0, xOffset = (s32)(x0 - radius);
+             (x < s32_from_f32_ceil(diameter + 1.0f)) &&
+             (xOffset < image->width); ++x, ++xOffset)
+        {
+            f32 fX = (f32)x - radius - fraction(x0);
+            f32 distSqr = square(fX) + fYSqr;
+
+            if (distSqr <= edgeDistSqr)
+            {
+                f32 colourFactor = clamp01(distSqr * edgeFactor);
+                v4 pixel = lerp(colour, colourFactor, edgeColour);
+
+                if (distSqr > maxDistSqr)
+                {
+                    // adjust alpha for anti-aliasing
+                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
+                    clamp01(pixel.a);
+                }
+
+                pixel.rgb *= pixel.a;
+
+                draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
+            }
+        }
+    }
 }
 
 //

@@ -1691,6 +1691,113 @@ lerp(v4 min, f32 t, v4 max)
     return result;
 }
 
+internal v4
+sRGB_linearize(v4 c)
+{
+    v4 result;
+
+    result.r = square(c.r);
+    result.g = square(c.g);
+    result.b = square(c.b);
+    result.a = c.a;
+
+    return result;
+}
+
+internal v4
+sRGB_linearize(f32 r, f32 g, f32 b, f32 a)
+{
+    v4 input = {r, g, b, a};
+    v4 result = sRGB_linearize(input);
+    return result;
+}
+
+internal v4
+sRGB_from_linear(v4 c)
+{
+    v4 result;
+
+    result.r = square_root(c.r);
+    result.g = square_root(c.g);
+    result.b = square_root(c.b);
+    result.a = c.a;
+
+    return result;
+}
+
+internal v4
+linear1_from_sRGB255(v4 c)
+{
+    v4 result;
+
+    f32 inv255 = 1.0f / 255.0f;
+
+    result.r = square(inv255*c.r);
+    result.g = square(inv255*c.g);
+    result.b = square(inv255*c.b);
+    result.a = inv255*c.a;
+
+    return result;
+}
+
+internal v4
+sRGB255_from_linear1(v4 c)
+{
+    v4 result;
+
+    f32 one255 = 255.0f;
+
+    result.r = one255*square_root(c.r);
+    result.g = one255*square_root(c.g);
+    result.b = one255*square_root(c.b);
+    result.a = one255*c.a;
+
+    return result;
+}
+
+internal v4
+unpack_colour(u8 colour)
+{
+    v4 result = {};
+    f32 oneOver255 = 1.0f / 255.0f;
+
+    result.a = (f32)colour * oneOver255;
+    result.r = (f32)colour * oneOver255;
+    result.g = (f32)colour * oneOver255;
+    result.b = (f32)colour * oneOver255;
+
+    return result;
+}
+
+internal v4
+unpack_colour(u32 colour)
+{
+    v4 result = {};
+    f32 oneOver255 = 1.0f / 255.0f;
+
+    result.a = (f32)((colour >> 24) & 0xFF) * oneOver255;
+    result.r = (f32)((colour >> 16) & 0xFF) * oneOver255;
+    result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
+    result.b = (f32)((colour >>  0) & 0xFF) * oneOver255;
+
+    return result;
+}
+
+internal u32
+pack_colour(v4 colour)
+{
+    u32 result = 0;
+
+    v4 clamped = clamp01(colour);
+    clamped *= 255.0f;
+    result = ((((u32)clamped.a & 0xFF) << 24) |
+              (((u32)clamped.r & 0xFF) << 16) |
+              (((u32)clamped.g & 0xFF) <<  8) |
+              (((u32)clamped.b & 0xFF) <<  0));
+
+    return result;
+}
+
 //
 // NOTE(michiel): Rectangle2u
 //

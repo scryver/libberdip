@@ -218,6 +218,22 @@ round(f64 value)
     return result;
 }
 
+internal f32
+fraction(f32 value)
+{
+    f32 result;
+    result = value - (f32)(s32)value;
+    return result;
+}
+
+internal f64
+fraction(f64 value)
+{
+    f64 result;
+    result = value - (f64)(s64)value;
+    return result;
+}
+
 // TODO(michiel): Profile this vs compile implementation
 internal DivModU32
 divmod(u32 a, u32 b)
@@ -664,6 +680,60 @@ rotate_right(u32 value, s32 amount)
     return result;
 }
 
+internal s16
+s16_from_f32_round(f32 number)
+{
+    s16 result = (s16)round(number);
+    return result;
+}
+
+internal u16
+u16_from_f32_round(f32 number)
+{
+    u16 result = (u16)round(number);
+    return result;
+}
+
+internal s16
+s16_from_f32_floor(f32 number)
+{
+    s16 result = (s16)floor(number);
+    return result;
+}
+
+internal u16
+u16_from_f32_floor(f32 number)
+{
+    u16 result = (u16)floor(number);
+    return result;
+}
+
+internal s16
+s16_from_f32_ceil(f32 number)
+{
+    s16 result = (s16)ceil(number);
+    return result;
+}
+
+internal u16
+u16_from_f32_ceil(f32 number)
+{
+    u16 result = (u16)ceil(number);
+    return result;
+}
+
+internal s16
+s16_from_f32_truncate(f32 number)
+{
+    return (s16)number;
+}
+
+internal u16
+u16_from_f32_truncate(f32 number)
+{
+    return (u16)number;
+}
+
 internal s32
 s32_from_f32_round(f32 number)
 {
@@ -829,70 +899,6 @@ find_most_significant_set_bit(u32 value)
         }
     }
 #endif
-
-    return result;
-}
-
-internal v4
-sRGB_linearize(v4 c)
-{
-    v4 result;
-
-    result.r = square(c.r);
-    result.g = square(c.g);
-    result.b = square(c.b);
-    result.a = c.a;
-
-    return result;
-}
-
-internal v4
-sRGB_linearize(f32 r, f32 g, f32 b, f32 a)
-{
-    v4 input = {r, g, b, a};
-    v4 result = sRGB_linearize(input);
-    return result;
-}
-
-internal v4
-sRGB_from_linear(v4 c)
-{
-    v4 result;
-
-    result.r = square_root(c.r);
-    result.g = square_root(c.g);
-    result.b = square_root(c.b);
-    result.a = c.a;
-
-    return result;
-}
-
-internal v4
-linear1_from_sRGB255(v4 c)
-{
-    v4 result;
-
-    f32 inv255 = 1.0f / 255.0f;
-
-    result.r = square(inv255*c.r);
-    result.g = square(inv255*c.g);
-    result.b = square(inv255*c.b);
-    result.a = inv255*c.a;
-
-    return result;
-}
-
-internal v4
-sRGB255_from_linear1(v4 c)
-{
-    v4 result;
-
-    f32 one255 = 255.0f;
-
-    result.r = one255*square_root(c.r);
-    result.g = one255*square_root(c.g);
-    result.b = one255*square_root(c.b);
-    result.a = one255*c.a;
 
     return result;
 }

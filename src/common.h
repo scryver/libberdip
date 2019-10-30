@@ -186,6 +186,7 @@ internal s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32_MAX); 
 internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
 internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
 
+//#define copy(n, s, d)  copy_(n*sizeof(s[0]), s, d)
 internal umm
 copy(umm size, const void *src, void *dst)
 {

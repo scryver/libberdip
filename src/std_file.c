@@ -33,6 +33,19 @@ internal WRITE_ENTIRE_FILE(write_entire_file)
     return result;
 }
 
+internal GET_FILE_SIZE(get_file_size)
+{
+    umm size = 0;
+    FILE *stdFile = (FILE *)apiFile->platform;
+    if (stdFile) {
+        umm oldPos = ftell(stdFile);
+        fseek(stdFile, 0, SEEK_END);
+        size = ftell(stdFile);
+        fseek(stdFile, oldPos, SEEK_SET);
+    }
+    return size;
+}
+
 internal OPEN_FILE(open_file)
 {
     ApiFile result = {0};
@@ -52,21 +65,10 @@ internal OPEN_FILE(open_file)
 
     FILE *f = fopen(to_cstring(filename), openMode);
     result.platform = f;
+    result.filename = filename;
+    result.fileSize = get_file_size(&result);
 
     return result;
-}
-
-internal GET_FILE_SIZE(get_file_size)
-{
-    umm size = 0;
-    FILE *stdFile = (FILE *)apiFile->platform;
-    if (stdFile) {
-        umm oldPos = ftell(stdFile);
-        fseek(stdFile, 0, SEEK_END);
-        size = ftell(stdFile);
-        fseek(stdFile, oldPos, SEEK_SET);
-    }
-    return size;
 }
 
 internal READ_FROM_FILE(read_from_file)
@@ -114,4 +116,24 @@ internal CLOSE_FILE(close_file)
         fclose(f);
     }
     apiFile->platform = 0;
+}
+
+internal INIT_FILE_API(std_file_api)
+{
+    fileApi->file_error = 0;
+    fileApi->read_entire_file = read_entire_file;
+    fileApi->write_entire_file = write_entire_file;
+    fileApi->get_all_files_of_type_begin = 0;
+    fileApi->get_all_files_of_type_end = 0;
+    fileApi->open_next_file = 0;
+    fileApi->open_file = open_file;
+    fileApi->close_file = close_file;
+    fileApi->get_file_size = get_file_size;
+    fileApi->get_file_position = 0;
+    fileApi->set_file_position = 0;
+    fileApi->read_from_file = read_from_file;
+    fileApi->read_from_file_offset = read_from_file_offset;
+    fileApi->write_to_file = write_to_file;
+    fileApi->write_fmt_to_file = write_fmt_to_file;
+    fileApi->write_vfmt_to_file = write_vfmt_to_file;
 }
