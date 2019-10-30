@@ -75,7 +75,7 @@ typedef struct Keyboard
 } Keyboard;
 
 internal b32
-is_down(Keyboard *keyboard, Keys key, b32 shouldBeFocused = true)
+is_down(Keyboard *keyboard, Keys key)
 {
     i_expect(keyboard);
     b32 result = keyboard->keys[key].isDown;
