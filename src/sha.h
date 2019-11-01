@@ -1,4 +1,7 @@
-// NOTE(michiel): Compile with the -msha -msse4 flags
+// NOTE(michiel): Compile with the -msha -mssse3 flags
+
+#define SHA1_OUTPUT_COUNT      5
+#define SHA1_OUTPUT_BYTE_COUNT (SHA1_OUTPUT_COUNT * sizeof(u32))
 
 struct Sha1Context
 {

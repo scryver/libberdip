@@ -15,29 +15,31 @@ global const u32 gDecode64Map[256] = {
 };
 
 internal String
-base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
+base64_encode(umm sourceLength, void *source, umm destLength, void *destination)
 {
     String result = {};
 
+    u8 *src = (u8 *)source;
+    u8 *dst = (u8 *)destination;
     umm outputLength = 4 * ((sourceLength + 2) / 3);
-    if (source && dest)
+    if (src && dst)
     {
         for (u32 srcIndex = 0, destIndex = 0; srcIndex < sourceLength; )
         {
-            u32 octetA = srcIndex < sourceLength ? source[srcIndex++] : 0;
-            u32 octetB = srcIndex < sourceLength ? source[srcIndex++] : 0;
-            u32 octetC = srcIndex < sourceLength ? source[srcIndex++] : 0;
+            u32 octetA = srcIndex < sourceLength ? src[srcIndex++] : 0;
+            u32 octetB = srcIndex < sourceLength ? src[srcIndex++] : 0;
+            u32 octetC = srcIndex < sourceLength ? src[srcIndex++] : 0;
 
             u32 triplet = (octetA << 16) | (octetB << 8) | octetC;
 
             i_expect(destIndex < destLength);
-            dest[destIndex++] = gBase64Map[(triplet >> (3 * 6)) & 0x3F];
+            dst[destIndex++] = gBase64Map[(triplet >> (3 * 6)) & 0x3F];
             i_expect(destIndex < destLength);
-            dest[destIndex++] = gBase64Map[(triplet >> (2 * 6)) & 0x3F];
+            dst[destIndex++] = gBase64Map[(triplet >> (2 * 6)) & 0x3F];
             i_expect(destIndex < destLength);
-            dest[destIndex++] = gBase64Map[(triplet >> (1 * 6)) & 0x3F];
+            dst[destIndex++] = gBase64Map[(triplet >> (1 * 6)) & 0x3F];
             i_expect(destIndex < destLength);
-            dest[destIndex++] = gBase64Map[(triplet >> (0 * 6)) & 0x3F];
+            dst[destIndex++] = gBase64Map[(triplet >> (0 * 6)) & 0x3F];
         }
 
         u32 extraEquals = 3 - (sourceLength % 3);
@@ -48,34 +50,36 @@ base64_encode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
 
         for (u32 destIndex = 0; destIndex < extraEquals; ++destIndex)
         {
-            dest[outputLength - destIndex - 1] = '=';
+            dst[outputLength - destIndex - 1] = '=';
         }
         i_expect(outputLength < destLength);
-        dest[outputLength] = 0;
+        dst[outputLength] = 0;
 
         result.size = outputLength;
-        result.data = dest;
+        result.data = dst;
     }
 
     return result;
 }
 
 internal String
-base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
+base64_decode(umm sourceLength, void *source, umm destLength, void *destination)
 {
     String result = {};
 
-    if (source && dest)
+    u8 *src = (u8 *)source;
+    u8 *dst = (u8 *)destination;
+    if (src && dst)
     {
         i_expect((sourceLength & ~0x3) == sourceLength);
 
         u32 dstIndex = 0;
         for (u32 srcIndex = 0; srcIndex < sourceLength; srcIndex += 4)
         {
-            u8 i0 = source[srcIndex + 0];
-            u8 i1 = source[srcIndex + 1];
-            u8 i2 = source[srcIndex + 2];
-            u8 i3 = source[srcIndex + 3];
+            u8 i0 = src[srcIndex + 0];
+            u8 i1 = src[srcIndex + 1];
+            u8 i2 = src[srcIndex + 2];
+            u8 i3 = src[srcIndex + 3];
 
             u32 index0 = gDecode64Map[(u32)i0];
             u32 index1 = gDecode64Map[(u32)i1];
@@ -91,21 +95,21 @@ base64_decode(umm sourceLength, u8 *source, umm destLength, u8 *dest)
             u32 octetC = (triplet >>  0) & 0xFF;
 
             i_expect((dstIndex + 2) < destLength);
-            dest[dstIndex++] = octetA;
+            dst[dstIndex++] = octetA;
             if (i2 != '=')
             {
-                dest[dstIndex++] = octetB;
+                dst[dstIndex++] = octetB;
                 if (i3 != '=')
                 {
-                    dest[dstIndex++] = octetC;
+                    dst[dstIndex++] = octetC;
                 }
             }
         }
         i_expect(dstIndex < destLength);
-        dest[dstIndex] = 0;
+        dst[dstIndex] = 0;
 
         result.size = dstIndex;
-        result.data = dest;
+        result.data = dst;
     }
 
     return result;
