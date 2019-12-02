@@ -324,6 +324,7 @@ json_parse_integer(String input)
 internal String
 json_parse_string(String input)
 {
+    // NOTE(michiel): This will _not_ unescape values or parse the utf8, this will return the json string as is.
     strip_whitespace(&input);
 
     String result = {};
@@ -348,13 +349,11 @@ json_parse_string(String input)
                      (input.data[0] == 'r') ||
                      (input.data[0] == 't')))
                 {
-                    // TODO(michiel): Add in the unescaped value
                     advance(&input);
                     ++result.size;
                 }
                 else if (input.size && (input.data[0] == 'u'))
                 {
-                    // TODO(michiel): Parse to utf8
                     advance(&input);
                     ++result.size;
                     if (input.size >= 4)
@@ -567,7 +566,6 @@ is_valid(JsonArrayIter *iter)
 internal void
 json_next_array(JsonArrayIter *iter)
 {
-    // TODO(michiel): Skip all values to the next value in the array
     iter->string = json_skip_value(iter->string);
     strip_whitespace(&iter->string);
     if (iter->string.size && (iter->string.data[0] == ']'))

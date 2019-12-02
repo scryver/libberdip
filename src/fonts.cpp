@@ -190,8 +190,8 @@ int main(int argc, char **argv)
                 makeFont.glyphs[0].bitmap = {};
 
                 add_character(&fontInfo, &makeFont, ' ');
-                // TODO(michiel): For now it includes UTF-8 latin and greek
 #if 0
+                // TODO(michiel): For now it includes UTF-8 latin and greek
                 //for (u32 character = '!'; character <= '~'; ++character)
                 for (u32 character = '!'; character < 0x400; ++character)
                 {

@@ -1957,8 +1957,8 @@ inverted_infinity_rectangle2(void)
 
     result.min.x = F32_MAX;
     result.min.y = F32_MAX;
-    result.max.x = F32_MIN;
-    result.max.y = F32_MIN;
+    result.max.x = -F32_MAX;
+    result.max.y = -F32_MAX;
 
     return result;
 }
