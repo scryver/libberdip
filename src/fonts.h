@@ -66,32 +66,7 @@ get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
     u8 *source = startOfUtf8;
     u32 bytes = 0;
     *codePoint = (u32)(*source);
-    if ((source[0] == '\\') && (source[1] == 'u'))
-    {
-        // TODO(michiel): Or place this in the JSON parser???
-        ++source;
-        ++source;
-        bytes = 6;
-        *codePoint =  parse_half_hex_byte(*source++) << 12;
-        *codePoint |= parse_half_hex_byte(*source++) <<  8;
-        *codePoint |= parse_half_hex_byte(*source++) <<  4;
-        *codePoint |= parse_half_hex_byte(*source++) <<  0;
-    }
-    else if ((source[0] == '\\') && (source[1] == 'U'))
-    {
-        ++source;
-        ++source;
-        bytes = 10;
-        *codePoint =  parse_half_hex_byte(*source++) << 28;
-        *codePoint |= parse_half_hex_byte(*source++) << 24;
-        *codePoint |= parse_half_hex_byte(*source++) << 20;
-        *codePoint |= parse_half_hex_byte(*source++) << 16;
-        *codePoint |= parse_half_hex_byte(*source++) << 12;
-        *codePoint |= parse_half_hex_byte(*source++) <<  8;
-        *codePoint |= parse_half_hex_byte(*source++) <<  4;
-        *codePoint |= parse_half_hex_byte(*source++) <<  0;
-    }
-    else if ((*codePoint & 0xF8) == 0xF0) {
+    if ((*codePoint & 0xF8) == 0xF0) {
         // NOTE(michiel): 4-bytes
         *codePoint = (*codePoint & ~0xF8);
         ++source;

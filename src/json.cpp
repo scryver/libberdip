@@ -348,6 +348,7 @@ json_parse_string(String input)
                      (input.data[0] == 'r') ||
                      (input.data[0] == 't')))
                 {
+                    // TODO(michiel): Add in the unescaped value
                     advance(&input);
                     ++result.size;
                 }
@@ -396,6 +397,149 @@ json_parse_string(String input)
                 advance(&input);
                 ++result.size;
             }
+        }
+    }
+
+    return result;
+}
+
+internal u32
+codepoint_to_utf8(u32 codepoint, u8 *buffer)
+{
+    // NOTE(michiel): Returns number of bytes used in buffer, 4 bytes should be available, no more than
+    // will ever be used.
+    u32 result = 0;
+
+    if (codepoint > 0x7F)
+    {
+        if (codepoint > 0x7FF)
+        {
+            if (codepoint > 0xFFFF)
+            {
+                buffer[result++] = 0xF0 | ((codepoint >> 18) & 0x07);
+                buffer[result++] = 0x80 | ((codepoint >> 12) & 0x3F);
+            }
+            else
+            {
+                buffer[result++] = 0xE0 | ((codepoint >> 12) & 0x0F);
+            }
+            buffer[result++] = 0x80 | ((codepoint >>  6) & 0x3F);
+        }
+        else
+        {
+            buffer[result++] = 0xC0 | ((codepoint >>  6) & 0x1F);
+        }
+        buffer[result++] = 0x80 | (codepoint & 0x3F);
+    }
+    else
+    {
+        buffer[result++] = codepoint;
+    }
+    return result;
+}
+
+internal String
+json_decode_string(String input, u8 *outData)
+{
+    // NOTE(michiel): This will _always_ return a string less or equal in length as the input.
+    // It will transform the escaped values back to their original value and calculate the
+    // unicode codepoints, if any.
+    String result = {};
+    result.data = outData;
+
+    while (input.size)
+    {
+        if (input.data[0] == '\\')
+        {
+            advance(&input);
+            if (input.size)
+            {
+                switch (input.data[0])
+                {
+                    case '"':  { advance(&input); result.data[result.size++] = '"'; } break;
+                    case '\\': { advance(&input); result.data[result.size++] = '\\'; } break;
+                    case '/':  { advance(&input); result.data[result.size++] = '/'; } break;
+                    case 'b':  { advance(&input); result.data[result.size++] = '\b'; } break;
+                    case 'f':  { advance(&input); result.data[result.size++] = '\f'; } break;
+                    case 'n':  { advance(&input); result.data[result.size++] = '\n'; } break;
+                    case 'r':  { advance(&input); result.data[result.size++] = '\r'; } break;
+                    case 't':  { advance(&input); result.data[result.size++] = '\t'; } break;
+
+                    case 'u':
+                    {
+                        advance(&input);
+                        u32 codepoint = 0;
+                        for (u32 idx = 0; idx < 4; ++idx)
+                        {
+                            if (is_hex_digit(input.data[0]))
+                            {
+                                codepoint |= parse_half_hex_byte(input.data[0]) << (12 - idx * 4);
+                            }
+                            else
+                            {
+                                // TODO(michiel): Errors
+                                input.size = 0;
+                                result.size = 0;
+                                break;
+                            }
+                            advance(&input);
+                        }
+
+                        // TODO(michiel): Is this normal or a special roon case?
+                        if ((codepoint & 0xFF) == codepoint)
+                        {
+                            result.data[result.size++] = codepoint & 0xFF;
+                        }
+                        else
+                        {
+                            result.size += codepoint_to_utf8(codepoint, result.data);
+                        }
+                    } break;
+
+                    case 'U':
+                    {
+                        advance(&input);
+                        u32 codepoint = 0;
+                        for (u32 idx = 0; idx < 8; ++idx)
+                        {
+                            if (is_hex_digit(input.data[0]))
+                            {
+                                codepoint |= parse_half_hex_byte(input.data[0]) << (28 - idx * 4);
+                            }
+                            else
+                            {
+                                // TODO(michiel): Errors
+                                input.size = 0;
+                                result.size = 0;
+                                break;
+                            }
+                            advance(&input);
+                        }
+
+                        // TODO(michiel): Is this normal or a special roon case?
+                        if ((codepoint & 0xFF) == codepoint)
+                        {
+                            result.data[result.size++] = codepoint & 0xFF;
+                        }
+                        else
+                        {
+                            result.size += codepoint_to_utf8(codepoint, result.data);
+                        }
+                    } break;
+
+                    default:
+                    {
+                        // TODO(michiel): Errors
+                        input.size = 0;
+                        result.size = 0;
+                    } break;
+                }
+            }
+        }
+        else
+        {
+            result.data[result.size++] = input.data[0];
+            advance(&input);
         }
     }
 
