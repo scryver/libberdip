@@ -58,13 +58,8 @@ draw_pixel(Image *image, u32 x, u32 y, v4 colour)
     i_expect(y < image->height);
 #endif // DRAWING_SLOW
 
-    // NOTE(michiel): Move this out!
-    colour.rgb *= colour.a;
-
     v4 source = unpack_colour(image->pixels[y * image->width + x]);
-
     source = alpha_blend_colours(source, colour);
-
     image->pixels[y * image->width + x] = pack_colour(source);
 }
 
@@ -94,10 +89,9 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
     // NOTE(michiel): Xiaolin Wu's line algorithm
 
     // TODO(michiel): Border control (overflow/underflow drawing) instead of safe_draw_pixel
-
     v2 diff = end - start;
     v2 absDiff = absolute(diff);
-    v4 pixel = colour;
+    v4 pixel;
 
     if (absDiff.x > absDiff.y)
     {
@@ -118,9 +112,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 xPixel1 = (s32)xEnd;
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colour.a * fraction(yEnd) * xGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
 
             f32 intery = yEnd + gradient;
@@ -132,16 +128,20 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 xPixel2 = (s32)xEnd;
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colour.a * fraction(yEnd) * xGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
 
             for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
             {
                 pixel.a = colour.a * (1.0f - fraction(intery));
+                pixel.rgb = pixel.a * colour.rgb;
                 safe_draw_pixel(image, x, (s32)intery, pixel);
                 pixel.a = colour.a * fraction(intery);
+                pixel.rgb = pixel.a * colour.rgb;
                 safe_draw_pixel(image, x, (s32)intery + 1, pixel);
                 intery += gradient;
             }
@@ -166,9 +166,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 xPixel1 = (s32)xEnd;
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colour.a * fraction(xEnd) * yGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
 
             f32 intery = xEnd + gradient;
@@ -180,16 +182,20 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 xPixel2 = (s32)xEnd;
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colour.a * fraction(xEnd) * yGap;
+            pixel.rgb = pixel.a * colour.rgb;
             safe_draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
 
             for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
             {
                 pixel.a = colour.a * (1.0f - fraction(intery));
+                pixel.rgb = pixel.a * colour.rgb;
                 safe_draw_pixel(image, (s32)intery, y, pixel);
                 pixel.a = colour.a * fraction(intery);
+                pixel.rgb = pixel.a * colour.rgb;
                 safe_draw_pixel(image, (s32)intery + 1, y, pixel);
                 intery += gradient;
             }
@@ -300,6 +306,7 @@ draw_lines(Image *image, u32 pointCount, v3 *points, v3 offset, v3 scale = V3(1,
 internal void
 outline_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, v4 colour)
 {
+    colour.rgb *= colour.a;
     for (u32 x = xStart; x < (xStart + width); ++x)
     {
         draw_pixel(image, x, yStart, colour);
@@ -366,6 +373,8 @@ internal void
 outline_circle(Image *image, s32 xStart, s32 yStart, u32 radius, f32 thickness = 1.0f,
                v4 colour = V4(1, 1, 1, 1))
 {
+    colour.rgb *= colour.a;
+
     s32 size = 2 * radius;
 
     f32 r = (s32)radius;
@@ -408,6 +417,8 @@ outline_circle(Image *image, s32 xStart, s32 yStart, u32 radius, f32 thickness =
 internal void
 fill_rectangle(Image *image, s32 xStart, s32 yStart, u32 width, u32 height, v4 colour)
 {
+    colour.rgb *= colour.a;
+
     if (xStart < 0)
     {
         s32 diff = -xStart;
@@ -484,6 +495,9 @@ internal void
 fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
           v4 centerColour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
+    centerColour.rgb *= centerColour.a;
+    edgeColour.rgb *= edgeColour.a;
+
     f32 radius = 0.5f * (f32)(h - 1);
     f32 maxDistSqr = square(radius);
     f32 edgeFactor = 1.0f / maxDistSqr;
@@ -492,7 +506,6 @@ fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
          (y < h) && ((y + yStart) < image->height);
          ++y)
     {
-        // TODO(michiel): Do we need to lerp in the prealphamultiply mode?
         f32 colourFactor = square((f32)y - radius) * edgeFactor;
         v4 pixel = lerp(centerColour, colourFactor, edgeColour);
 
@@ -546,6 +559,8 @@ is_inside_triangle(v3 edgeOffsets)
 internal void
 fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
 {
+    colour.rgb *= colour.a;
+
     f32 minX = minimum(a.x, minimum(b.x, c.x));
     f32 maxX = maximum(a.x, maximum(b.x, c.x));
     f32 minY = minimum(a.y, minimum(b.y, c.y));
@@ -577,7 +592,7 @@ fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
 
             f32 modAlpha = clamp01(1.0f + modP * minP);
             v4 pixel = colour;
-            colour.a *= modAlpha;
+            pixel *= modAlpha;
 
             draw_pixel(image, x, y, pixel);
         }
@@ -599,21 +614,23 @@ fill_triangle(Image *image, v2u a, v2u b, v2u c, v4 colour)
 internal void
 fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, v4 colour)
 {
+    colour.rgb *= colour.a;
+
     s32 size = 2 * radius;
 
-    f32 r = (s32)radius;
-    f32 maxDistSqr = r * r;
+    f32 r = (f32)radius;
+    f32 maxDistSqr = square(r);
 
-    xStart = xStart - (s32)radius + 1;
-    yStart = yStart - (s32)radius + 1;
+    xStart = xStart - (s32)radius;
+    yStart = yStart - (s32)radius;
 
     for (s32 y = yStart; y < yStart + size; ++y)
     {
-        f32 fY = (f32)(y - yStart) - r + 0.5f;
+        f32 fY = (f32)(y - yStart) - r;
         f32 fYSqr = fY * fY;
         for (s32 x = xStart; x < xStart + size; ++x)
         {
-            f32 fX = (f32)(x - xStart) - r + 0.5f;
+            f32 fX = (f32)(x - xStart) - r;
             f32 distSqr = fX * fX + fYSqr;
             if ((distSqr < maxDistSqr) &&
                 (0 <= x) && (x < image->width) &&
@@ -634,6 +651,7 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 internal void
 fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
 {
+    radius -= 1.0f;
     f32 diameter = 2.0f * radius;
 
     f32 maxDistSqr = square(radius);
@@ -663,6 +681,7 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
                     pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
                     clamp01(pixel.a);
                 }
+                pixel.rgb *= pixel.a;
 
                 draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
             }
@@ -679,6 +698,7 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 internal void
 fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
+    radius -= 1.0f;
     f32 diameter = 2.0f * radius;
 
     f32 maxDistSqr = square(radius);
@@ -703,14 +723,21 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
             if (distSqr <= edgeDistSqr)
             {
                 f32 colourFactor = clamp01(distSqr * edgeFactor);
-                v4 pixel = lerp(colour, colourFactor, edgeColour);
+                v4 centerC = colour;
+                v4 edgeC = edgeColour;
 
                 if (distSqr > maxDistSqr)
                 {
                     // adjust alpha for anti-aliasing
-                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
-                    clamp01(pixel.a);
+                    f32 alphaMod = (distSqr - maxDistSqr) * edgeDiff;
+                    centerC.a -= alphaMod;
+                    edgeC.a -= alphaMod;
+                    clamp01(centerC.a);
+                    clamp01(edgeC.a);
                 }
+                centerC.rgb *= centerC.a;
+                edgeC.rgb *= edgeC.a;
+                v4 pixel = lerp(centerC, colourFactor, edgeC);
 
                 draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
             }
@@ -725,6 +752,7 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
 internal void
 draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V4(1, 1, 1, 1))
 {
+    modColour.rgb *= modColour.a;
     u32 *imageAt = image->pixels;
     for (u32 y = yStart; (y < (yStart + image->height)) && (y < screen->height); ++y)
     {
@@ -743,6 +771,7 @@ internal void
 draw_clipped_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangle2u clipRect,
                    v4 modColour = V4(1, 1, 1, 1))
 {
+    modColour.rgb *= modColour.a;
     u32 *imageAt = image->pixels + clipRect.min.y * image->width + clipRect.min.x;
     v2u dimRect = get_dim(clipRect);
     for (u32 y = yStart;
@@ -769,6 +798,7 @@ draw_clipped_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangl
 internal void
 draw_image(Image *screen, u32 xStart, u32 yStart, Image8 *image, v4 modColour = V4(1, 1, 1, 1))
 {
+    modColour.rgb *= modColour.a;
     u8 *imageAt = image->pixels;
     for (u32 y = yStart; (y < (yStart + image->height)) && (y < screen->height); ++y)
     {
