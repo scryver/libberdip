@@ -484,15 +484,7 @@ json_decode_string(String input, u8 *outData)
                             advance(&input);
                         }
 
-                        // TODO(michiel): Is this normal or a special roon case?
-                        if ((codepoint & 0xFF) == codepoint)
-                        {
-                            result.data[result.size++] = codepoint & 0xFF;
-                        }
-                        else
-                        {
-                            result.size += codepoint_to_utf8(codepoint, result.data);
-                        }
+                        result.size += codepoint_to_utf8(codepoint, result.data + result.size);
                     } break;
 
                     case 'U':
@@ -515,15 +507,7 @@ json_decode_string(String input, u8 *outData)
                             advance(&input);
                         }
 
-                        // TODO(michiel): Is this normal or a special roon case?
-                        if ((codepoint & 0xFF) == codepoint)
-                        {
-                            result.data[result.size++] = codepoint & 0xFF;
-                        }
-                        else
-                        {
-                            result.size += codepoint_to_utf8(codepoint, result.data);
-                        }
+                        result.size += codepoint_to_utf8(codepoint, result.data + result.size);
                     } break;
 
                     default:
