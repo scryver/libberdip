@@ -1826,6 +1826,20 @@ unpack_colour(u32 colour)
     return result;
 }
 
+internal v4
+unpack_colour_bgr(u32 colour)
+{
+    v4 result = {};
+    f32 oneOver255 = 1.0f / 255.0f;
+
+    result.a = (f32)((colour >> 24) & 0xFF) * oneOver255;
+    result.b = (f32)((colour >> 16) & 0xFF) * oneOver255;
+    result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
+    result.r = (f32)((colour >>  0) & 0xFF) * oneOver255;
+
+    return result;
+}
+
 internal u32
 pack_colour(v4 colour)
 {

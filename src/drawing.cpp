@@ -50,6 +50,15 @@ alpha_blend_colours(v4 src, v4 overlay)
 // NOTE(michiel): Raw pixel setters
 //
 
+internal u32 *
+draw_pixel(u32 *pixelAt, v4 colour)
+{
+    v4 source = unpack_colour(*pixelAt);
+    source = alpha_blend_colours(source, colour);
+    *pixelAt = pack_colour(source);
+    return pixelAt + 1;
+}
+
 internal void
 draw_pixel(Image *image, u32 x, u32 y, v4 colour)
 {
@@ -502,16 +511,19 @@ fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
     f32 maxDistSqr = square(radius);
     f32 edgeFactor = 1.0f / maxDistSqr;
 
+    u32 *dstRow = image->pixels + yStart * image->width + xStart;
     for (s32 y = 0;
          (y < h) && ((y + yStart) < image->height);
          ++y)
     {
+        u32 *dst = dstRow;
         f32 colourFactor = square((f32)y - radius) * edgeFactor;
         v4 pixel = lerp(centerColour, colourFactor, edgeColour);
 
         for (u32 x = 0; (x < w) && ((x + xStart) < image->width); ++x) {
-            draw_pixel(image, x + xStart, y + yStart, pixel);
+            dst = draw_pixel(dst, pixel);
         }
+        dstRow += image->width;
     }
 }
 
@@ -651,7 +663,7 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 internal void
 fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
 {
-    radius -= 1.0f;
+    radius -= 0.5f;
     f32 diameter = 2.0f * radius;
 
     f32 maxDistSqr = square(radius);
@@ -698,7 +710,7 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 internal void
 fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
-    radius -= 1.0f;
+    radius -= 0.5f;
     f32 diameter = 2.0f * radius;
 
     f32 maxDistSqr = square(radius);
@@ -723,21 +735,15 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
             if (distSqr <= edgeDistSqr)
             {
                 f32 colourFactor = clamp01(distSqr * edgeFactor);
-                v4 centerC = colour;
-                v4 edgeC = edgeColour;
+                v4 pixel = lerp(colour, colourFactor, edgeColour);
 
                 if (distSqr > maxDistSqr)
                 {
                     // adjust alpha for anti-aliasing
-                    f32 alphaMod = (distSqr - maxDistSqr) * edgeDiff;
-                    centerC.a -= alphaMod;
-                    edgeC.a -= alphaMod;
-                    clamp01(centerC.a);
-                    clamp01(edgeC.a);
+                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
+                    clamp01(pixel.a);
                 }
-                centerC.rgb *= centerC.a;
-                edgeC.rgb *= edgeC.a;
-                v4 pixel = lerp(centerC, colourFactor, edgeC);
+                pixel.rgb *= pixel.a;
 
                 draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
             }
