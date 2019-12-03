@@ -596,6 +596,15 @@ operator !=(v2 a, v2 b)
 }
 
 internal v2
+absolute(v2 a)
+{
+    v2 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    return result;
+}
+
+internal v2
 clamp01(v2 a)
 {
     v2 result;
@@ -683,6 +692,19 @@ rotate(v2 a, v2 rotation)
 
     result.x = a.x * rotation.x - a.y * rotation.y;
     result.y = a.x * rotation.y + a.y * rotation.x;
+
+    return result;
+}
+
+internal v2
+rotate(v2 a, f32 angle)
+{
+    v2 result = {};
+
+    f32 c = cos(angle);
+    f32 s = sin(angle);
+    result.x = a.x * c - a.y * s;
+    result.y = a.x * s + a.y * c;
 
     return result;
 }
@@ -1402,6 +1424,16 @@ normalize_or_zero(v3 a)
 }
 
 internal v3
+absolute(v3 a)
+{
+    v3 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    result.z = absolute(a.z);
+    return result;
+}
+
+internal v3
 clamp01(v3 a)
 {
     v3 result;
@@ -1669,6 +1701,17 @@ internal v4
 normalize(v4 a)
 {
     v4 result = normalize(a, length(a));
+    return result;
+}
+
+internal v4
+absolute(v4 a)
+{
+    v4 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    result.z = absolute(a.z);
+    result.w = absolute(a.w);
     return result;
 }
 
