@@ -663,21 +663,21 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 internal void
 fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
 {
-    radius -= 0.5f;
     f32 diameter = 2.0f * radius;
+    radius -= 0.5f;
 
     f32 maxDistSqr = square(radius);
     f32 edgeDistSqr = square(radius + 1.0f);
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
     for (s32 y = 0, yOffset = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(diameter + 1.0f)) &&
+         (y < s32_from_f32_ceil(diameter)) &&
          (yOffset < image->width); ++y, ++yOffset)
     {
         f32 fY = (f32)y - radius - fraction(y0);
         f32 fYSqr = square(fY);
         for (s32 x = 0, xOffset = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(diameter + 1.0f)) &&
+             (x < s32_from_f32_ceil(diameter)) &&
              (xOffset < image->width); ++x, ++xOffset)
         {
             f32 fX = (f32)x - radius - fraction(x0);
@@ -710,8 +710,8 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 internal void
 fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
-    radius -= 0.5f;
     f32 diameter = 2.0f * radius;
+    radius -= 0.5f;
 
     f32 maxDistSqr = square(radius);
     f32 edgeDistSqr = square(radius + 1.0f);
@@ -720,13 +720,13 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
     f32 edgeFactor = 1.0f / maxDistSqr;
 
     for (s32 y = 0, yOffset = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(diameter + 1.0f)) &&
+         (y < s32_from_f32_ceil(diameter)) &&
          (yOffset < image->width); ++y, ++yOffset)
     {
         f32 fY = (f32)y - radius - fraction(y0);
         f32 fYSqr = square(fY);
         for (s32 x = 0, xOffset = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(diameter + 1.0f)) &&
+             (x < s32_from_f32_ceil(diameter)) &&
              (xOffset < image->width); ++x, ++xOffset)
         {
             f32 fX = (f32)x - radius - fraction(x0);
