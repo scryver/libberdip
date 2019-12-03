@@ -2,6 +2,29 @@
 #define DRAWING_SLOW 0
 #endif
 
+internal void
+clear(Image *image)
+{
+    copy_single(image->width * image->height * sizeof(u32), 0, image->pixels);
+}
+
+internal void
+clear_region(Image *image, s32 startX, s32 startY, s32 width, s32 height)
+{
+    startX = maximum(0, startX);
+    startY = maximum(0, startY);
+    u32 *destRow = image->pixels + startY * image->width;
+    for (u32 y = 0; (y < height) && ((startY + y) < image->height); ++y)
+    {
+        u32 *dest = destRow + startX;
+        for (u32 x = 0; (x < width) && ((startX + x) < image->width); ++x)
+        {
+            *dest++ = 0;
+        }
+        destRow += image->width;
+    }
+}
+
 //
 // NOTE(michiel): Colour mix helpers
 //
@@ -35,8 +58,10 @@ draw_pixel(Image *image, u32 x, u32 y, v4 colour)
     i_expect(y < image->height);
 #endif // DRAWING_SLOW
 
-    v4 source = unpack_colour(image->pixels[y * image->width + x]);
+    // NOTE(michiel): Move this out!
     colour.rgb *= colour.a;
+
+    v4 source = unpack_colour(image->pixels[y * image->width + x]);
 
     source = alpha_blend_colours(source, colour);
 
@@ -456,21 +481,23 @@ fill_rectangle(Image *image, v2 pos, v2 dim, u32 colour)
 }
 
 internal void
-fill_tube(Image *image, u32 x0, u32 y0, u32 w, u32 h,
+fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
           v4 centerColour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
-    f32 edgeFalloff = (f32)(h - 1) * 0.5f;
-    f32 edgeFactor = 1.0f / square(edgeFalloff);
+    f32 radius = 0.5f * (f32)(h - 1);
+    f32 maxDistSqr = square(radius);
+    f32 edgeFactor = 1.0f / maxDistSqr;
 
-    centerColour.rgb *= centerColour.a;
-    edgeColour.rgb *= edgeColour.a;
-
-    for (u32 y = 0; y < h; ++y) {
-        f32 colourFactor = square((f32)y - edgeFalloff) * edgeFactor;
+    for (s32 y = 0;
+         (y < h) && ((y + yStart) < image->height);
+         ++y)
+    {
+        // TODO(michiel): Do we need to lerp in the prealphamultiply mode?
+        f32 colourFactor = square((f32)y - radius) * edgeFactor;
         v4 pixel = lerp(centerColour, colourFactor, edgeColour);
 
-        for (u32 x = 0; x < w ; ++x) {
-            draw_pixel(image, x + x0, y + y0, pixel);
+        for (u32 x = 0; (x < w) && ((x + xStart) < image->width); ++x) {
+            draw_pixel(image, x + xStart, y + yStart, pixel);
         }
     }
 }
@@ -528,8 +555,6 @@ fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
     f32 modB = 1.0f / maximum(absolute(b.x - c.x), absolute(b.y - c.y));
     f32 modC = 1.0f / maximum(absolute(c.x - a.x), absolute(c.y - a.y));
 
-    colour.rgb *= colour.a;
-
     for (s32 y = s32_from_f32_truncate(minY); y < s32_from_f32_ceil(maxY); ++y)
     {
         for (s32 x = s32_from_f32_truncate(minX); x < s32_from_f32_ceil(maxX); ++x)
@@ -552,8 +577,7 @@ fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
 
             f32 modAlpha = clamp01(1.0f + modP * minP);
             v4 pixel = colour;
-            pixel.rgb *= modAlpha;
-            pixel.a *= modAlpha;
+            colour.a *= modAlpha;
 
             draw_pixel(image, x, y, pixel);
         }
@@ -582,8 +606,6 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, v4 colour)
 
     xStart = xStart - (s32)radius + 1;
     yStart = yStart - (s32)radius + 1;
-
-    colour.rgb *= colour.a;
 
     for (s32 y = yStart; y < yStart + size; ++y)
     {
@@ -618,9 +640,6 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
     f32 edgeDistSqr = square(radius + 1.0f);
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
-    // TODO(michiel): Persistent colour handling for drawing.
-    colour.rgb *= colour.a;
-
     for (s32 y = 0, yOffset = (s32)(y0 - radius);
          (y < s32_from_f32_ceil(diameter + 1.0f)) &&
          (yOffset < image->width); ++y, ++yOffset)
@@ -645,8 +664,6 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
                     clamp01(pixel.a);
                 }
 
-                pixel.rgb *= pixel.a;
-
                 draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
             }
         }
@@ -669,9 +686,6 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
     f32 edgeFactor = 1.0f / maxDistSqr;
-
-    colour.rgb *= colour.a;
-    edgeColour.rgb *= edgeColour.a;
 
     for (s32 y = 0, yOffset = (s32)(y0 - radius);
          (y < s32_from_f32_ceil(diameter + 1.0f)) &&
@@ -698,8 +712,6 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
                     clamp01(pixel.a);
                 }
 
-                pixel.rgb *= pixel.a;
-
                 draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
             }
         }
@@ -718,6 +730,33 @@ draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V
     {
         u32 *imageRow = imageAt;
         for (u32 x = xStart; (x < (xStart + image->width)) && (x < screen->width); ++x)
+        {
+            v4 pixel = unpack_colour(*imageRow++);
+            pixel = mix_colours(pixel, modColour);
+            draw_pixel(screen, x, y, pixel);
+        }
+        imageAt += image->width;
+    }
+}
+
+internal void
+draw_clipped_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangle2u clipRect,
+                   v4 modColour = V4(1, 1, 1, 1))
+{
+    u32 *imageAt = image->pixels + clipRect.min.y * image->width + clipRect.min.x;
+    v2u dimRect = get_dim(clipRect);
+    for (u32 y = yStart;
+         (y < (yStart + dimRect.height)) &&
+         (y < (yStart + image->height)) &&
+         (y < screen->height);
+         ++y)
+    {
+        u32 *imageRow = imageAt;
+        for (u32 x = xStart;
+             (x < (xStart + dimRect.width)) &&
+             (x < (xStart + image->width)) &&
+             (x < screen->width);
+             ++x)
         {
             v4 pixel = unpack_colour(*imageRow++);
             pixel = mix_colours(pixel, modColour);
