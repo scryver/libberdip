@@ -1,5 +1,9 @@
 // NOTE(michiel): Uses <fcntl.h> and <dirent.h>, and <sys/mman.h> but that should go away
 
+#ifndef LIBBERDIP_FILE_DEBUG
+#define LIBBERDIP_FILE_DEBUG 0
+#endif // LIBBERDIP_FILE_DEBUG
+
 typedef struct LinuxFindFile
 {
     DIR *dir;
@@ -48,7 +52,7 @@ internal
 FILE_ERROR(linux_file_error)
 {
     // TODO(michiel): Better define name
-#if LIBBERDIP_EXPECT
+#if LIBBERDIP_FILE_DEBUG
     fprintf(stderr, "LINUX FILE ERROR: %.*s\n", STR_FMT(message));
 #endif
     apiFile->noErrors = false;
