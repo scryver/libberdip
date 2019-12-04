@@ -596,6 +596,15 @@ operator !=(v2 a, v2 b)
 }
 
 internal v2
+absolute(v2 a)
+{
+    v2 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    return result;
+}
+
+internal v2
 clamp01(v2 a)
 {
     v2 result;
@@ -683,6 +692,19 @@ rotate(v2 a, v2 rotation)
 
     result.x = a.x * rotation.x - a.y * rotation.y;
     result.y = a.x * rotation.y + a.y * rotation.x;
+
+    return result;
+}
+
+internal v2
+rotate(v2 a, f32 angle)
+{
+    v2 result = {};
+
+    f32 c = cos(angle);
+    f32 s = sin(angle);
+    result.x = a.x * c - a.y * s;
+    result.y = a.x * s + a.y * c;
 
     return result;
 }
@@ -1402,6 +1424,16 @@ normalize_or_zero(v3 a)
 }
 
 internal v3
+absolute(v3 a)
+{
+    v3 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    result.z = absolute(a.z);
+    return result;
+}
+
+internal v3
 clamp01(v3 a)
 {
     v3 result;
@@ -1673,6 +1705,17 @@ normalize(v4 a)
 }
 
 internal v4
+absolute(v4 a)
+{
+    v4 result;
+    result.x = absolute(a.x);
+    result.y = absolute(a.y);
+    result.z = absolute(a.z);
+    result.w = absolute(a.w);
+    return result;
+}
+
+internal v4
 clamp01(v4 a)
 {
     v4 result;
@@ -1779,6 +1822,20 @@ unpack_colour(u32 colour)
     result.r = (f32)((colour >> 16) & 0xFF) * oneOver255;
     result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
     result.b = (f32)((colour >>  0) & 0xFF) * oneOver255;
+
+    return result;
+}
+
+internal v4
+unpack_colour_bgr(u32 colour)
+{
+    v4 result = {};
+    f32 oneOver255 = 1.0f / 255.0f;
+
+    result.a = (f32)((colour >> 24) & 0xFF) * oneOver255;
+    result.b = (f32)((colour >> 16) & 0xFF) * oneOver255;
+    result.g = (f32)((colour >>  8) & 0xFF) * oneOver255;
+    result.r = (f32)((colour >>  0) & 0xFF) * oneOver255;
 
     return result;
 }
@@ -1957,8 +2014,8 @@ inverted_infinity_rectangle2(void)
 
     result.min.x = F32_MAX;
     result.min.y = F32_MAX;
-    result.max.x = F32_MIN;
-    result.max.y = F32_MIN;
+    result.max.x = -F32_MAX;
+    result.max.y = -F32_MAX;
 
     return result;
 }

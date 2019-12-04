@@ -623,7 +623,7 @@ atan(f32 angle)
 #elif __has_builtin(__builtin_atanf)
     result = (f32)__builtin_atanf(angle);
 #else
-#error No atan2f builtin!
+#error No atanf builtin!
 #endif
     return result;
 }

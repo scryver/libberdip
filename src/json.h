@@ -56,6 +56,12 @@ internal b32 json_parse_bool(String input);
 internal s64 json_parse_integer(String input);
 internal String json_parse_string(String input);
 
+// NOTE(michiel): All above functions use unaltered json strings. To convert them to something useful,
+// use the below function.
+// This function can be used after json_parse_string, if you parsed the whole json object, you can use the
+// input.data as outData. Make sure you have enough space allocated, it will use at most input.size bytes.
+internal String json_decode_string(String input, u8 *outData);
+
 //
 // NOTE(michiel): Full parser
 //
