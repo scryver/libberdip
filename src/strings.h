@@ -455,6 +455,24 @@ get_extension(String name)
     return result;
 }
 
+internal String
+remove_extension(String name)
+{
+    s32 dotPos = name.size - 1;
+    while (dotPos >= 0) {
+        if (name.data[dotPos] == '.') {
+            break;
+        }
+        --dotPos;
+    }
+    String result = {0, 0};
+    if (dotPos >= 0) {
+        result.size = dotPos;
+        result.data = name.data;
+    }
+    return result;
+}
+
 // NOTE(michiel): Yes, destSize sounds better than sizeDest... or aSize, bSize
 internal String
 string_concat(String a, String b, umm destSize, char *dest)
