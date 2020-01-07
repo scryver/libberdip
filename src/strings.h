@@ -18,8 +18,6 @@ string_length(const char *cString)
     return safe_truncate_to_u32(length);
 }
 
-typedef Buffer String;
-
 // TODO(michiel): Proper UTF8 support
 
 // NOTE(michiel): String interning

@@ -34,6 +34,14 @@ typedef union v2u {
     u32 e[2];
 } v2u;
 
+typedef union v2d {
+    struct {
+        f64 x;
+        f64 y;
+    };
+    f64 e[2];
+} v2d;
+
 typedef union v3 {
     struct {
         union {
@@ -44,6 +52,11 @@ typedef union v3 {
             v2 xy;
         };
         f32 z;
+    };
+    struct {
+        f32 r;
+        f32 g;
+        f32 b;
     };
     f32 e[3];
 } v3;

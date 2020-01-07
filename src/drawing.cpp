@@ -213,6 +213,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
 }
 
 internal void
+draw_line(Image *image, f32 startX, f32 startY, f32 endX, f32 endY, v4 colour = V4(1, 1, 1, 1))
+{
+    draw_line(image, V2(startX, startY), V2(endX, endY), colour);
+}
+
+internal void
 draw_line(Image *image, s32 startX, s32 startY, s32 endX, s32 endY, v4 colour)
 {
     draw_line(image, V2((f32)startX, (f32)startY), V2((f32)endX, (f32)endY), colour);
@@ -338,6 +344,15 @@ internal void
 outline_rectangle(Image *image, Rectangle2u rect, u32 colour)
 {
     outline_rectangle(image, rect.min.x, rect.min.y, rect.max.x - rect.min.x, rect.max.y - rect.min.y, colour);
+}
+
+internal void
+outline_rectangle(Image *image, Rectangle2 rect, v4 colour)
+{
+    draw_line(image, rect.min, V2(rect.min.x, rect.max.y), colour);
+    draw_line(image, V2(rect.min.x, rect.max.y), rect.max, colour);
+    draw_line(image, rect.min, V2(rect.max.x, rect.min.y), colour);
+    draw_line(image, V2(rect.max.x, rect.min.y), rect.max, colour);
 }
 
 internal void
@@ -664,23 +679,23 @@ internal void
 fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
 {
     f32 diameter = 2.0f * radius;
-    radius -= 0.5f;
 
-    f32 maxDistSqr = square(radius);
-    f32 edgeDistSqr = square(radius + 1.0f);
+    f32 maxDistSqr = square(radius - 0.5f);
+    f32 edgeDistSqr = square(radius + 0.5f);
+
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
-    for (s32 y = 0, yOffset = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(diameter)) &&
-         (yOffset < image->width); ++y, ++yOffset)
+    for (s32 y = (s32)(y0 - radius);
+         (y < s32_from_f32_ceil(y0 + diameter)) && (y < image->height);
+         ++y)
     {
-        f32 fY = (f32)y - radius - fraction(y0);
+        f32 fY = (f32)y - y0;
         f32 fYSqr = square(fY);
-        for (s32 x = 0, xOffset = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(diameter)) &&
-             (xOffset < image->width); ++x, ++xOffset)
+        for (s32 x = (s32)(x0 - radius);
+             (x < s32_from_f32_ceil(x0 + diameter)) && (x < image->width);
+             ++x)
         {
-            f32 fX = (f32)x - radius - fraction(x0);
+            f32 fX = (f32)x - x0;
             f32 distSqr = square(fX) + fYSqr;
 
             if (distSqr <= edgeDistSqr)
@@ -691,11 +706,11 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
                 {
                     // adjust alpha for anti-aliasing
                     pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
-                    clamp01(pixel.a);
+                    pixel.a = clamp01(pixel.a);
                 }
                 pixel.rgb *= pixel.a;
 
-                draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
+                draw_pixel(image, x, y, pixel);
             }
         }
     }
@@ -711,25 +726,25 @@ internal void
 fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
     f32 diameter = 2.0f * radius;
-    radius -= 0.5f;
 
-    f32 maxDistSqr = square(radius);
-    f32 edgeDistSqr = square(radius + 1.0f);
+    f32 maxDistSqr = square(radius - 0.5f);
+    f32 edgeDistSqr = square(radius + 0.5f);
+
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
     f32 edgeFactor = 1.0f / maxDistSqr;
 
-    for (s32 y = 0, yOffset = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(diameter)) &&
-         (yOffset < image->width); ++y, ++yOffset)
+    for (s32 y = (s32)(y0 - radius);
+         (y < s32_from_f32_ceil(y0 + diameter)) && (y < image->height);
+         ++y)
     {
-        f32 fY = (f32)y - radius - fraction(y0);
+        f32 fY = (f32)y - y0;
         f32 fYSqr = square(fY);
-        for (s32 x = 0, xOffset = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(diameter)) &&
-             (xOffset < image->width); ++x, ++xOffset)
+        for (s32 x = (s32)(x0 - radius);
+             (x < s32_from_f32_ceil(x0 + diameter)) && (x < image->width);
+             ++x)
         {
-            f32 fX = (f32)x - radius - fraction(x0);
+            f32 fX = (f32)x - x0;
             f32 distSqr = square(fX) + fYSqr;
 
             if (distSqr <= edgeDistSqr)
@@ -741,11 +756,11 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
                 {
                     // adjust alpha for anti-aliasing
                     pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
-                    clamp01(pixel.a);
+                    pixel.a = clamp01(pixel.a);
                 }
                 pixel.rgb *= pixel.a;
 
-                draw_pixel(image, x + (s32)(x0 - radius), y + (s32)(y0 - radius), pixel);
+                draw_pixel(image, x, y, pixel);
             }
         }
     }

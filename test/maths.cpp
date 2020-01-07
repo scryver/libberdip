@@ -35,3 +35,12 @@ TEST_BEGIN(divmod)
 
 }
 TEST_END(divmod)
+
+#if 0
+TEST_BEGIN(trigonometry)
+{
+    f32 angle = 0.0f;
+
+}
+TEST_END(trigonometry)
+#endif

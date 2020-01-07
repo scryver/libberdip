@@ -1847,10 +1847,10 @@ pack_colour(v4 colour)
 
     v4 clamped = clamp01(colour);
     clamped *= 255.0f;
-    result = ((((u32)clamped.a & 0xFF) << 24) |
-              (((u32)clamped.r & 0xFF) << 16) |
-              (((u32)clamped.g & 0xFF) <<  8) |
-              (((u32)clamped.b & 0xFF) <<  0));
+    result = (((u32_from_f32_round(clamped.a) & 0xFF) << 24) |
+              ((u32_from_f32_round(clamped.r) & 0xFF) << 16) |
+              ((u32_from_f32_round(clamped.g) & 0xFF) <<  8) |
+              ((u32_from_f32_round(clamped.b) & 0xFF) <<  0));
 
     return result;
 }

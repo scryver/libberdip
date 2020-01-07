@@ -38,7 +38,7 @@ typedef struct FileStream
     ApiFile file;
 } FileStream;
 // TODO(michiel): This can be cleaned up if we have some file print version
-#define stdfile2stream(f)  ((FileStream){0, 0, {0, 0, 0, u64_from_ptr(f)}})
+#define stdfile2stream(f)  ((FileStream){0, 0, {0, 0, {}, f}})
 #define stream2stdfile(fs) ((FILE *)fs.file.platform)
 
 #define FILE_ERROR(name) void name(ApiFile *apiFile, String message)
