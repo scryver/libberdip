@@ -53,6 +53,7 @@ global String gTokenKindName[TokenCount] =
     [Token_Backslash]    = static_string("backslash"),
     [Token_Number]       = static_string("number sign"),
     [Token_Dollar]       = static_string("dollar sign"),
+    [Token_Query]        = static_string("question mark"),
 
     [Token_EOF]          = static_string("end of file"),
 };
@@ -220,6 +221,7 @@ get_token(Tokenizer *tokenizer)
         CASE1('\\', Token_Backslash);
         CASE1('#',  Token_Number);
         CASE1('$',  Token_Dollar);
+        CASE1('?',  Token_Query);
 
         CASE2B('|', Token_Or, '|', Token_LogicalOr, '=', Token_OrAssign);
         CASE2B('&', Token_And, '&', Token_LogicalAnd, '=', Token_AndAssign);

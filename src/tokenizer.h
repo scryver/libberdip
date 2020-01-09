@@ -75,6 +75,7 @@ enum TokenKind
     Token_Backslash,    // \ <= Extra space in comment needed otherwise the newline is escaped
     Token_Number,       // #
     Token_Dollar,       // $
+    Token_Query,        // ?
 
     Token_EOF,
 
