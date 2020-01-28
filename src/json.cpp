@@ -535,8 +535,12 @@ json_iterate_array(String input)
     JsonArrayIter result = {};
     if (input.data && (input.data[0] == '['))
     {
-        result.string = input;
-        advance(&result.string);
+        result.input = input;
+        advance(&result.input);
+
+        String skipper = json_skip_value(result.input);
+        result.value.data = result.input.data;
+        result.value.size = result.input.size - skipper.size;
     }
     return result;
 }
@@ -544,23 +548,28 @@ json_iterate_array(String input)
 internal b32
 is_valid(JsonArrayIter *iter)
 {
-    return (iter->string.size != 0);
+    return (iter->value.size != 0);
 }
 
 internal void
 json_next_array(JsonArrayIter *iter)
 {
-    iter->string = json_skip_value(iter->string);
-    strip_whitespace(&iter->string);
-    if (iter->string.size && (iter->string.data[0] == ']'))
+    iter->input = json_skip_value(iter->input);
+    strip_whitespace(&iter->input);
+
+    if (!iter->input.size || (iter->input.data[0] == ']'))
     {
-        iter->string.size = 0;
-        iter->string.data = 0;
+        iter->value.size = 0;
+        iter->value.data = 0;
     }
-    else if (iter->string.size && (iter->string.data[0] == ','))
+    else if (iter->input.size && (iter->input.data[0] == ','))
     {
-        advance(&iter->string);
-        strip_whitespace(&iter->string);
+        advance(&iter->input);
+        strip_whitespace(&iter->input);
+
+        String skipper = json_skip_value(iter->input);
+        iter->value.data = iter->input.data;
+        iter->value.size = iter->input.size - skipper.size;
     }
 }
 

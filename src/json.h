@@ -16,7 +16,8 @@ enum JsonValueKind
 
 struct JsonArrayIter
 {
-    String string;
+    String input;
+    String value;
 };
 
 //
