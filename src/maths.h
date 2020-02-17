@@ -65,9 +65,7 @@ lerp(f32 min, f32 t, f32 max)
     return result;
 }
 
-#if 0
-
-internal inline f32
+internal f32
 map(f32 value, f32 fromMin, f32 fromMax, f32 toMin, f32 toMax)
 {
     f32 result;
@@ -76,7 +74,7 @@ map(f32 value, f32 fromMin, f32 fromMax, f32 toMin, f32 toMax)
     return result;
 }
 
-internal inline f64
+internal f64
 map(f64 value, f64 fromMin, f64 fromMax, f64 toMin, f64 toMax)
 {
     f64 result;
@@ -85,7 +83,7 @@ map(f64 value, f64 fromMin, f64 fromMax, f64 toMin, f64 toMax)
     return result;
 }
 
-internal inline v2
+internal v2
 map(v2 value, v2 fromMin, v2 fromMax, v2 toMin, v2 toMax)
 {
     v2 result;
@@ -93,8 +91,6 @@ map(v2 value, v2 fromMin, v2 fromMax, v2 toMin, v2 toMax)
     result.y = map(value.y, fromMin.y, fromMax.y, toMin.y, toMax.y);
     return result;
 }
-
-#endif
 
 internal f32
 square(f32 f)

@@ -172,6 +172,7 @@ internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
 #define array_count(x)          (sizeof(x) / sizeof(*x))
 
 #define is_pow2(x)              (((x) != 0) && (((x) & ((x)-1)) == 0))
+//#define is_pow2(x)              ((x) && (((x) & ~((x)-1)) == (x)))
 
 #define align_down(x, a)        ((x) & ~((a) - 1))
 #define align_up(x, a)          align_down((x) + (a) - 1, (a))
@@ -184,8 +185,8 @@ internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
 #define u64_from_ptr(p)         ((u64)(umm)(p))
 #define ptr_from_u64(u)         ((void *)(umm)(u))
 
-#define rad2deg(angle)          (((angle) / LONG_PI) * 180)
-#define deg2rad(angle)          (((angle) / 180) * LONG_PI)
+#define rad2deg(angle)          (((angle) / F80_PI) * 180)
+#define deg2rad(angle)          (((angle) / 180) * F80_PI)
 
 #define minimum(a, b)           ((a) < (b) ? (a) : (b))
 #define maximum(a, b)           ((a) > (b) ? (a) : (b))
@@ -202,6 +203,22 @@ internal u8  safe_truncate_to_u8(u64 value)  { i_expect(value <= U8_MAX);  retur
 internal s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32_MAX); i_expect(value >= (s64)S32_MIN); return (s32)value; }
 internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
 internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
+
+internal u32
+reverse_bits(u32 b, u32 msb)
+{
+    u32 mask = (1 << msb) - 1;
+    u32 result = b;
+    --msb;
+    for (b >>= 1; b; b>>= 1)
+    {
+        result <<= 1;
+        result |= b & 1;
+        --msb;
+    }
+    result <<= msb;
+    return result & mask;
+}
 
 //#define copy(n, s, d)  copy_(n*sizeof(s[0]), s, d)
 internal umm

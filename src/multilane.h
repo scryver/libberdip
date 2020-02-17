@@ -1,3 +1,5 @@
+#define MULTILANE_SHUFFLE_MASK(a, b, c, d) (((d) << 6) | ((c) << 4) | ((b) << 2) | (a))
+
 union f32_4x
 {
     __m128  m;
@@ -59,10 +61,26 @@ F32_4x(f32 f0, f32 f1, f32 f2, f32 f3)
 }
 
 internal f32_4x
+F32_4x(f32 *f)
+{
+    f32_4x result;
+    result.m = _mm_load_ps(f);
+    return result;
+}
+
+internal f32_4x
 S32_4x(s32 s)
 {
     f32_4x result;
     result.m = _mm_set1_epi32(s);
+    return result;
+}
+
+internal f32_4x
+S32_4x(s32 s0, s32 s1, s32 s2, s32 s3)
+{
+    f32_4x result;
+    result.m = _mm_setr_epi32(s0, s1, s2, s3);
     return result;
 }
 
@@ -319,18 +337,26 @@ s32_4x_sub(f32_4x a, f32_4x b)
 }
 
 internal f32_4x
-s32_4x_equal(f32_4x a, f32_4x b)
+s32_4x_sll(f32_4x a, f32_4x b)
 {
     f32_4x result;
-    result.mi = _mm_cmpeq_epi32(a.mi, b.mi);
+    result.mi = _mm_sll_epi32(a.mi, b.mi);
     return result;
 }
 
 internal f32_4x
-s32_4x_greater(f32_4x a, f32_4x b)
+s32_4x_srl(f32_4x a, f32_4x b)
 {
     f32_4x result;
-    result.mi = _mm_cmpgt_epi32(a.mi, b.mi);
+    result.mi = _mm_srl_epi32(a.mi, b.mi);
+    return result;
+}
+
+internal f32_4x
+s32_4x_sra(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+    result.mi = _mm_sra_epi32(a.mi, b.mi);
     return result;
 }
 

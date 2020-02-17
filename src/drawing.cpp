@@ -213,6 +213,144 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
 }
 
 internal void
+draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
+{
+    // NOTE(michiel): Xiaolin Wu's line algorithm
+
+    // TODO(michiel): Border control (overflow/underflow drawing) instead of safe_draw_pixel
+    v2 diff = end - start;
+    v2 absDiff = absolute(diff);
+    v4 pixel;
+
+    if (absDiff.x > absDiff.y)
+    {
+        if (absDiff.x > 0.0f)
+        {
+            if (end.x < start.x)
+            {
+                v2 temp = start;
+                start = end;
+                end = temp;
+                v4 tempCol = colourStart;
+                colourStart = colourEnd;
+                colourEnd = tempCol;
+            }
+
+            f32 gradient = diff.y / diff.x;
+            f32 xEnd = round(start.x);
+            f32 yEnd = start.y + gradient * (xEnd - start.x);
+            f32 xGap = 1.0f - fraction(start.x + 0.5f);
+
+            s32 xPixel1 = (s32)xEnd;
+            s32 yPixel1 = (s32)yEnd;
+            pixel.a = colourStart.a * (1.0f - fraction(yEnd)) * xGap;
+            pixel.rgb = pixel.a * colourStart.rgb;
+            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+
+            pixel.a = colourStart.a * fraction(yEnd) * xGap;
+            pixel.rgb = pixel.a * colourStart.rgb;
+            safe_draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+
+            f32 intery = yEnd + gradient;
+
+            xEnd = round(end.x);
+            yEnd = end.y + gradient * (xEnd - end.x);
+            xGap = fraction(end.x + 0.5f);
+
+            s32 xPixel2 = (s32)xEnd;
+            s32 yPixel2 = (s32)yEnd;
+            pixel.a = colourEnd.a * (1.0f - fraction(yEnd)) * xGap;
+            pixel.rgb = pixel.a * colourEnd.rgb;
+            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+
+            pixel.a = colourEnd.a * fraction(yEnd) * xGap;
+            pixel.rgb = pixel.a * colourEnd.rgb;
+            safe_draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+
+            for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
+            {
+                f32 t = (f32)(x - xPixel1 - 1) / (f32)(xPixel2 - xPixel1);
+                pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
+                               colourEnd.a * (1.0f - fraction(intery)));
+                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                 pixel.a * colourEnd.rgb);
+
+                safe_draw_pixel(image, x, (s32)intery, pixel);
+                pixel.a = lerp(colourStart.a * fraction(intery), t,
+                               colourEnd.a * fraction(intery));
+                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                 pixel.a * colourEnd.rgb);
+                safe_draw_pixel(image, x, (s32)intery + 1, pixel);
+                intery += gradient;
+            }
+        }
+    }
+    else
+    {
+        if (absDiff.y > 0.0f)
+        {
+            if (end.y < start.y)
+            {
+                v2 temp = start;
+                start = end;
+                end = temp;
+                v4 tempCol = colourStart;
+                colourStart = colourEnd;
+                colourEnd = tempCol;
+            }
+
+            f32 gradient = diff.x / diff.y;
+            f32 yEnd = round(start.y);
+            f32 xEnd = start.x + gradient * (yEnd - start.y);
+            f32 yGap = 1.0f - fraction(start.y + 0.5f);
+
+            s32 xPixel1 = (s32)xEnd;
+            s32 yPixel1 = (s32)yEnd;
+            pixel.a = colourStart.a * (1.0f - fraction(xEnd)) * yGap;
+            pixel.rgb = pixel.a * colourStart.rgb;
+            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+
+            pixel.a = colourStart.a * fraction(xEnd) * yGap;
+            pixel.rgb = pixel.a * colourStart.rgb;
+            safe_draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+
+            f32 intery = xEnd + gradient;
+
+            yEnd = round(end.y);
+            xEnd = end.x + gradient * (yEnd - end.y);
+            yGap = fraction(end.y + 0.5f);
+
+            s32 xPixel2 = (s32)xEnd;
+            s32 yPixel2 = (s32)yEnd;
+            pixel.a = colourEnd.a * (1.0f - fraction(xEnd)) * yGap;
+            pixel.rgb = pixel.a * colourEnd.rgb;
+            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+
+            pixel.a = colourEnd.a * fraction(xEnd) * yGap;
+            pixel.rgb = pixel.a * colourEnd.rgb;
+            safe_draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+
+            for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
+            {
+                f32 t = (f32)(y - yPixel1 - 1) / (f32)(yPixel2 - yPixel1);
+                pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
+                               colourEnd.a * (1.0f - fraction(intery)));
+                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                 pixel.a * colourEnd.rgb);
+
+                safe_draw_pixel(image, (s32)intery, y, pixel);
+                pixel.a = lerp(colourStart.a * fraction(intery), t,
+                               colourEnd.a * fraction(intery));
+                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                 pixel.a * colourEnd.rgb);
+                safe_draw_pixel(image, (s32)intery + 1, y, pixel);
+                intery += gradient;
+            }
+        }
+    }
+}
+
+internal void
 draw_line(Image *image, f32 startX, f32 startY, f32 endX, f32 endY, v4 colour = V4(1, 1, 1, 1))
 {
     draw_line(image, V2(startX, startY), V2(endX, endY), colour);
@@ -274,6 +412,49 @@ draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1,
         P.y *= scale.y;
         P += offset;
         draw_line(image, prevP, P, colour);
+        prevP = P;
+    }
+}
+
+internal void
+draw_lines(Image *image, u32 pointCount, v2 *points, v4 *colours, v2 offset, v2 scale = V2(1, 1))
+{
+    i_expect(pointCount);
+    v2 prevP = points[0];
+    prevP.x *= scale.x;
+    prevP.y *= scale.y;
+    prevP += offset;
+    for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
+    {
+        v2 P = points[pointIdx];
+        P.x *= scale.x;
+        P.y *= scale.y;
+        P += offset;
+        draw_line(image, prevP, P, colours[pointIdx - 1], colours[pointIdx]);
+        prevP = P;
+    }
+}
+
+struct ColouredPoint
+{
+    v2 point;
+    v4 colour;
+};
+internal void
+draw_lines(Image *image, u32 pointCount, ColouredPoint *points, v2 offset, v2 scale = V2(1, 1))
+{
+    i_expect(pointCount);
+    ColouredPoint prevP = points[0];
+    prevP.point.x *= scale.x;
+    prevP.point.y *= scale.y;
+    prevP.point += offset;
+    for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
+    {
+        ColouredPoint P = points[pointIdx];
+        P.point.x *= scale.x;
+        P.point.y *= scale.y;
+        P.point += offset;
+        draw_line(image, prevP.point, P.point, prevP.colour, P.colour);
         prevP = P;
     }
 }
