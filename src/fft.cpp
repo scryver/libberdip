@@ -7,17 +7,13 @@ fft(u32 dftCount, Complex32 *signal)
 
     u32 halfCount = dftCount / 2;
     BitScanResult highBit = find_most_significant_set_bit(dftCount);
-    for (u32 index = 0; index < halfCount; index += 4)
+    for (u32 index = 0; index < halfCount; index += 2)
     {
         u32 index0 = index + 0;
         u32 index1 = index + 1;
-        u32 index2 = index + 2;
-        u32 index3 = index + 3;
 
         u32 reversedIndex0 = reverse_bits(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
-        u32 reversedIndex2 = reverse_bits(index2, highBit.index);
-        u32 reversedIndex3 = reversedIndex2 ^ halfCount;
 
         if (reversedIndex0 > index0)
         {
@@ -31,27 +27,11 @@ fft(u32 dftCount, Complex32 *signal)
             signal[index1] = signal[reversedIndex1];
             signal[reversedIndex1] = temp;
         }
-        if (reversedIndex2 > index2)
-        {
-            Complex32 temp = signal[index2];
-            signal[index2] = signal[reversedIndex2];
-            signal[reversedIndex2] = temp;
-        }
-        if (reversedIndex3 > index3)
-        {
-            Complex32 temp = signal[index3];
-            signal[index3] = signal[reversedIndex3];
-            signal[reversedIndex3] = temp;
-        }
 
         u32 index4 = index0 + halfCount;
         u32 index5 = index1 + halfCount;
-        u32 index6 = index2 + halfCount;
-        u32 index7 = index3 + halfCount;
         u32 reversedIndex4 = reversedIndex0 + 1;
         u32 reversedIndex5 = reversedIndex1 + 1;
-        u32 reversedIndex6 = reversedIndex2 + 1;
-        u32 reversedIndex7 = reversedIndex3 + 1;
 
         if (reversedIndex4 > index4)
         {
@@ -65,19 +45,6 @@ fft(u32 dftCount, Complex32 *signal)
             signal[index5] = signal[reversedIndex5];
             signal[reversedIndex5] = temp;
         }
-        if (reversedIndex6 > index6)
-        {
-            Complex32 temp = signal[index6];
-            signal[index6] = signal[reversedIndex6];
-            signal[reversedIndex6] = temp;
-        }
-        if (reversedIndex7 > index7)
-        {
-            Complex32 temp = signal[index7];
-            signal[index7] = signal[reversedIndex7];
-            signal[reversedIndex7] = temp;
-        }
-
     }
 
     Complex32 Wm4;
@@ -315,17 +282,13 @@ ifft(u32 dftCount, Complex32 *signal)
 
     u32 halfCount = dftCount / 2;
     BitScanResult highBit = find_most_significant_set_bit(dftCount);
-    for (u32 index = 0; index < halfCount; index += 4)
+    for (u32 index = 0; index < halfCount; index += 2)
     {
         u32 index0 = index + 0;
         u32 index1 = index + 1;
-        u32 index2 = index + 2;
-        u32 index3 = index + 3;
 
         u32 reversedIndex0 = reverse_bits(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
-        u32 reversedIndex2 = reverse_bits(index2, highBit.index);
-        u32 reversedIndex3 = reversedIndex2 ^ halfCount;
 
         if (reversedIndex0 > index0)
         {
@@ -339,27 +302,11 @@ ifft(u32 dftCount, Complex32 *signal)
             signal[index1] = signal[reversedIndex1];
             signal[reversedIndex1] = temp;
         }
-        if (reversedIndex2 > index2)
-        {
-            Complex32 temp = signal[index2];
-            signal[index2] = signal[reversedIndex2];
-            signal[reversedIndex2] = temp;
-        }
-        if (reversedIndex3 > index3)
-        {
-            Complex32 temp = signal[index3];
-            signal[index3] = signal[reversedIndex3];
-            signal[reversedIndex3] = temp;
-        }
 
         u32 index4 = index0 + halfCount;
         u32 index5 = index1 + halfCount;
-        u32 index6 = index2 + halfCount;
-        u32 index7 = index3 + halfCount;
         u32 reversedIndex4 = reversedIndex0 + 1;
         u32 reversedIndex5 = reversedIndex1 + 1;
-        u32 reversedIndex6 = reversedIndex2 + 1;
-        u32 reversedIndex7 = reversedIndex3 + 1;
 
         if (reversedIndex4 > index4)
         {
@@ -372,18 +319,6 @@ ifft(u32 dftCount, Complex32 *signal)
             Complex32 temp = signal[index5];
             signal[index5] = signal[reversedIndex5];
             signal[reversedIndex5] = temp;
-        }
-        if (reversedIndex6 > index6)
-        {
-            Complex32 temp = signal[index6];
-            signal[index6] = signal[reversedIndex6];
-            signal[reversedIndex6] = temp;
-        }
-        if (reversedIndex7 > index7)
-        {
-            Complex32 temp = signal[index7];
-            signal[index7] = signal[reversedIndex7];
-            signal[reversedIndex7] = temp;
         }
     }
 
