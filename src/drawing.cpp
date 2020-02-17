@@ -97,7 +97,61 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
 {
     // NOTE(michiel): Xiaolin Wu's line algorithm
 
-    // TODO(michiel): Border control (overflow/underflow drawing) instead of safe_draw_pixel
+    v2 rectSize = V2((f32)image->width - 1, (f32)image->height - 1);
+    if ((start.x < 0.0f) || (start.y < 0.0f) ||
+        (end.x < 0.0f) || (end.y < 0.0f) ||
+        (start.x > rectSize.x) ||
+        (start.y > rectSize.y) ||
+        (end.x > rectSize.x) ||
+        (end.y > rectSize.y))
+    {
+        // NOTE(michiel): Clamp line
+        f32 slope = (start.y - end.y) / (start.x - end.x);
+        f32 oneOverSlope = (start.x - end.x) / (start.y - end.y);
+
+        if (start.x < 0.0f)
+        {
+            start.y -= slope * start.x;
+            start.x = 0.0f;
+        }
+        if (start.y < 0.0f)
+        {
+            start.x -= oneOverSlope * start.y;
+            start.y = 0.0f;
+        }
+        if (end.x < 0.0f)
+        {
+            end.y -= slope * end.x;
+            end.x = 0.0f;
+        }
+        if (end.y < 0.0f)
+        {
+            end.x -= oneOverSlope * end.y;
+            end.y = 0.0f;
+        }
+
+        if (start.x > rectSize.x)
+        {
+            start.y += slope * (rectSize.x - start.x);
+            start.x = rectSize.x;
+        }
+        if (start.y > rectSize.y)
+        {
+            start.x += oneOverSlope * (rectSize.y - start.y);
+            start.y = rectSize.y;
+        }
+        if (end.x > rectSize.x)
+        {
+            end.y += slope * (rectSize.x - end.x);
+            end.x = rectSize.x;
+        }
+        if (end.y > rectSize.y)
+        {
+            end.x += oneOverSlope * (rectSize.y - end.y);
+            end.y = rectSize.y;
+        }
+    }
+
     v2 diff = end - start;
     v2 absDiff = absolute(diff);
     v4 pixel;
@@ -122,11 +176,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+            draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colour.a * fraction(yEnd) * xGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+            draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
 
             f32 intery = yEnd + gradient;
 
@@ -138,20 +192,20 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+            draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colour.a * fraction(yEnd) * xGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+            draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
 
             for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
             {
                 pixel.a = colour.a * (1.0f - fraction(intery));
                 pixel.rgb = pixel.a * colour.rgb;
-                safe_draw_pixel(image, x, (s32)intery, pixel);
+                draw_pixel(image, x, (s32)intery, pixel);
                 pixel.a = colour.a * fraction(intery);
                 pixel.rgb = pixel.a * colour.rgb;
-                safe_draw_pixel(image, x, (s32)intery + 1, pixel);
+                draw_pixel(image, x, (s32)intery + 1, pixel);
                 intery += gradient;
             }
         }
@@ -176,11 +230,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+            draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colour.a * fraction(xEnd) * yGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+            draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
 
             f32 intery = xEnd + gradient;
 
@@ -192,20 +246,20 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+            draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colour.a * fraction(xEnd) * yGap;
             pixel.rgb = pixel.a * colour.rgb;
-            safe_draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+            draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
 
             for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
             {
                 pixel.a = colour.a * (1.0f - fraction(intery));
                 pixel.rgb = pixel.a * colour.rgb;
-                safe_draw_pixel(image, (s32)intery, y, pixel);
+                draw_pixel(image, (s32)intery, y, pixel);
                 pixel.a = colour.a * fraction(intery);
                 pixel.rgb = pixel.a * colour.rgb;
-                safe_draw_pixel(image, (s32)intery + 1, y, pixel);
+                draw_pixel(image, (s32)intery + 1, y, pixel);
                 intery += gradient;
             }
         }
@@ -217,7 +271,61 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
 {
     // NOTE(michiel): Xiaolin Wu's line algorithm
 
-    // TODO(michiel): Border control (overflow/underflow drawing) instead of safe_draw_pixel
+    v2 rectSize = V2((f32)image->width - 1, (f32)image->height - 1);
+    if ((start.x < 0.0f) || (start.y < 0.0f) ||
+        (end.x < 0.0f) || (end.y < 0.0f) ||
+        (start.x > rectSize.x) ||
+        (start.y > rectSize.y) ||
+        (end.x > rectSize.x) ||
+        (end.y > rectSize.y))
+    {
+        // NOTE(michiel): Clamp line
+        f32 slope = (start.y - end.y) / (start.x - end.x);
+        f32 oneOverSlope = (start.x - end.x) / (start.y - end.y);
+
+        if (start.x < 0.0f)
+        {
+            start.y -= slope * start.x;
+            start.x = 0.0f;
+        }
+        if (start.y < 0.0f)
+        {
+            start.x -= oneOverSlope * start.y;
+            start.y = 0.0f;
+        }
+        if (end.x < 0.0f)
+        {
+            end.y -= slope * end.x;
+            end.x = 0.0f;
+        }
+        if (end.y < 0.0f)
+        {
+            end.x -= oneOverSlope * end.y;
+            end.y = 0.0f;
+        }
+
+        if (start.x > rectSize.x)
+        {
+            start.y += slope * (rectSize.x - start.x);
+            start.x = rectSize.x;
+        }
+        if (start.y > rectSize.y)
+        {
+            start.x += oneOverSlope * (rectSize.y - start.y);
+            start.y = rectSize.y;
+        }
+        if (end.x > rectSize.x)
+        {
+            end.y += slope * (rectSize.x - end.x);
+            end.x = rectSize.x;
+        }
+        if (end.y > rectSize.y)
+        {
+            end.x += oneOverSlope * (rectSize.y - end.y);
+            end.y = rectSize.y;
+        }
+    }
+
     v2 diff = end - start;
     v2 absDiff = absolute(diff);
     v4 pixel;
@@ -245,11 +353,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colourStart.a * (1.0f - fraction(yEnd)) * xGap;
             pixel.rgb = pixel.a * colourStart.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+            draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colourStart.a * fraction(yEnd) * xGap;
             pixel.rgb = pixel.a * colourStart.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+            draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
 
             f32 intery = yEnd + gradient;
 
@@ -261,11 +369,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colourEnd.a * (1.0f - fraction(yEnd)) * xGap;
             pixel.rgb = pixel.a * colourEnd.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+            draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colourEnd.a * fraction(yEnd) * xGap;
             pixel.rgb = pixel.a * colourEnd.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+            draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
 
             for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
             {
@@ -275,12 +383,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
                                  pixel.a * colourEnd.rgb);
 
-                safe_draw_pixel(image, x, (s32)intery, pixel);
+                draw_pixel(image, x, (s32)intery, pixel);
                 pixel.a = lerp(colourStart.a * fraction(intery), t,
                                colourEnd.a * fraction(intery));
                 pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
                                  pixel.a * colourEnd.rgb);
-                safe_draw_pixel(image, x, (s32)intery + 1, pixel);
+                draw_pixel(image, x, (s32)intery + 1, pixel);
                 intery += gradient;
             }
         }
@@ -308,11 +416,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
             s32 yPixel1 = (s32)yEnd;
             pixel.a = colourStart.a * (1.0f - fraction(xEnd)) * yGap;
             pixel.rgb = pixel.a * colourStart.rgb;
-            safe_draw_pixel(image, xPixel1, yPixel1, pixel);
+            draw_pixel(image, xPixel1, yPixel1, pixel);
 
             pixel.a = colourStart.a * fraction(xEnd) * yGap;
             pixel.rgb = pixel.a * colourStart.rgb;
-            safe_draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+            draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
 
             f32 intery = xEnd + gradient;
 
@@ -324,11 +432,11 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
             s32 yPixel2 = (s32)yEnd;
             pixel.a = colourEnd.a * (1.0f - fraction(xEnd)) * yGap;
             pixel.rgb = pixel.a * colourEnd.rgb;
-            safe_draw_pixel(image, xPixel2, yPixel2, pixel);
+            draw_pixel(image, xPixel2, yPixel2, pixel);
 
             pixel.a = colourEnd.a * fraction(xEnd) * yGap;
             pixel.rgb = pixel.a * colourEnd.rgb;
-            safe_draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+            draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
 
             for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
             {
@@ -338,12 +446,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
                                  pixel.a * colourEnd.rgb);
 
-                safe_draw_pixel(image, (s32)intery, y, pixel);
+                draw_pixel(image, (s32)intery, y, pixel);
                 pixel.a = lerp(colourStart.a * fraction(intery), t,
                                colourEnd.a * fraction(intery));
                 pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
                                  pixel.a * colourEnd.rgb);
-                safe_draw_pixel(image, (s32)intery + 1, y, pixel);
+                draw_pixel(image, (s32)intery + 1, y, pixel);
                 intery += gradient;
             }
         }
