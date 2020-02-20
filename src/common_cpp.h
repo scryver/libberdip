@@ -15,6 +15,16 @@ internal b32 is_nan(f32 f)
     u32 uf = *(u32 *)&f;
     return ((uf & F32_EXP_MASK) == F32_EXP_MASK) && (uf & F32_FRAC_MASK);
 }
+internal b32 is_pos_nan(f32 f)
+{
+    u32 uf = *(u32 *)&f;
+    return ((uf & F32_EXP_MASK) == F32_EXP_MASK) && (uf & F32_FRAC_MASK) && ((uf & F32_SIGN_MASK) == 0);
+}
+internal b32 is_neg_nan(f32 f)
+{
+    u32 uf = *(u32 *)&f;
+    return ((uf & F32_EXP_MASK) == F32_EXP_MASK) && (uf & F32_FRAC_MASK) && (uf & F32_SIGN_MASK);
+}
 
 internal b32 is_infinite(f64 f)
 {
@@ -25,6 +35,16 @@ internal b32 is_nan(f64 f)
 {
     u64 uf = *(u64 *)&f;
     return ((uf & F64_EXP_MASK) == F64_EXP_MASK) && (uf & F64_FRAC_MASK);
+}
+internal b32 is_pos_nan(f64 f)
+{
+    u64 uf = *(u64 *)&f;
+    return ((uf & F64_EXP_MASK) == F64_EXP_MASK) && (uf & F64_FRAC_MASK) && ((uf & F64_SIGN_MASK) == 0);
+}
+internal b32 is_neg_nan(f64 f)
+{
+    u64 uf = *(u64 *)&f;
+    return ((uf & F64_EXP_MASK) == F64_EXP_MASK) && (uf & F64_FRAC_MASK) && (uf & F64_SIGN_MASK);
 }
 
 internal void *allocate_size(u32 size) { return allocate_size(size, 0); }

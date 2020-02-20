@@ -1,3 +1,8 @@
+#define fft_cos(x)  cos_f32(x)
+#define fft_sin(x)  sin_f32(x)
+//#define fft_cos(x)  __builtin_cosf(F32_TAU * x)
+//#define fft_sin(x)  __builtin_sinf(F32_TAU * x)
+
 internal void
 fft(u32 dftCount, Complex32 *signal)
 {
@@ -48,16 +53,20 @@ fft(u32 dftCount, Complex32 *signal)
     }
 
     Complex32 Wm4;
-    Wm4.real = cos_f32(-0.25f);
-    Wm4.imag = sin_f32(-0.25f);
+    Wm4.real = fft_cos(-0.25f);
+    Wm4.imag = fft_sin(-0.25f);
     f32_4x W4_reals = F32_4x(1, Wm4.real, 1, Wm4.real);
     f32_4x W4_imags = F32_4x(0, Wm4.imag, 0, Wm4.imag);
 
     Complex32 Wm8_1;
-    Wm8_1.real = cos_f32(-0.125f);
-    Wm8_1.imag = sin_f32(-0.125f);
-    Complex32 Wm8_2 = Wm8_1 * Wm8_1;
-    Complex32 Wm8_3 = Wm8_2 * Wm8_1;
+    Wm8_1.real = fft_cos(-0.125f);
+    Wm8_1.imag = fft_sin(-0.125f);
+    Complex32 Wm8_2;
+    Wm8_2.real = fft_cos(-0.25f);
+    Wm8_2.imag = fft_sin(-0.25f);
+    Complex32 Wm8_3;
+    Wm8_3.real = fft_cos(-0.375f);
+    Wm8_3.imag = fft_sin(-0.375f);
     f32_4x W8_reals = F32_4x(1, Wm8_1.real, Wm8_2.real, Wm8_3.real);
     f32_4x W8_imags = F32_4x(0, Wm8_1.imag, Wm8_2.imag, Wm8_3.imag);
     for (u32 k = 0; k < dftCount; k += 8)
@@ -153,11 +162,17 @@ fft(u32 dftCount, Complex32 *signal)
     {
         f32 oneOverM = 1.0f / (f32)m;
         Complex32 Wm;
-        Wm.real = cos_f32(-oneOverM);
-        Wm.imag = sin_f32(-oneOverM);
-        Complex32 Wm2 = Wm * Wm;
-        Complex32 Wm3 = Wm2 * Wm;
-        Complex32 Wm4 = Wm3 * Wm;
+        Wm.real = fft_cos(-oneOverM);
+        Wm.imag = fft_sin(-oneOverM);
+        Complex32 Wm2;
+        Wm2.real = fft_cos(-oneOverM * 2.0f);
+        Wm2.imag = fft_sin(-oneOverM * 2.0f);
+        Complex32 Wm3;
+        Wm3.real = fft_cos(-oneOverM * 3.0f);
+        Wm3.imag = fft_sin(-oneOverM * 3.0f);
+        Complex32 Wm4;
+        Wm4.real = fft_cos(-oneOverM * 4.0f);
+        Wm4.imag = fft_sin(-oneOverM * 4.0f);
 
         f32_4x wm4_real_4x = F32_4x(Wm4.real);
         f32_4x wm4_imag_4x = F32_4x(Wm4.imag);
@@ -272,7 +287,6 @@ fft(u32 dftCount, Complex32 *signal)
     }
 }
 
-
 internal void
 ifft(u32 dftCount, Complex32 *signal)
 {
@@ -323,14 +337,14 @@ ifft(u32 dftCount, Complex32 *signal)
     }
 
     Complex32 Wm4;
-    Wm4.real = cos_f32(0.25f);
-    Wm4.imag = sin_f32(0.25f);
+    Wm4.real = fft_cos(0.25f);
+    Wm4.imag = fft_sin(0.25f);
     f32_4x W4_reals = F32_4x(1, Wm4.real, 1, Wm4.real);
     f32_4x W4_imags = F32_4x(0, Wm4.imag, 0, Wm4.imag);
 
     Complex32 Wm8_1;
-    Wm8_1.real = cos_f32(0.125f);
-    Wm8_1.imag = sin_f32(0.125f);
+    Wm8_1.real = fft_cos(0.125f);
+    Wm8_1.imag = fft_sin(0.125f);
     Complex32 Wm8_2 = Wm8_1 * Wm8_1;
     Complex32 Wm8_3 = Wm8_2 * Wm8_1;
     f32_4x W8_reals = F32_4x(1, Wm8_1.real, Wm8_2.real, Wm8_3.real);
@@ -436,11 +450,17 @@ ifft(u32 dftCount, Complex32 *signal)
         Complex32 Wm;
 
         f32 oneOverM = 1.0f / (f32)m;
-        Wm.real = cos_f32(oneOverM);
-        Wm.imag = sin_f32(oneOverM);
-        Complex32 Wm2 = Wm * Wm;
-        Complex32 Wm3 = Wm2 * Wm;
-        Complex32 Wm4 = Wm3 * Wm;
+        Wm.real = fft_cos(oneOverM);
+        Wm.imag = fft_sin(oneOverM);
+        Complex32 Wm2;
+        Wm2.real = fft_cos(oneOverM * 2.0f);
+        Wm2.imag = fft_sin(oneOverM * 2.0f);
+        Complex32 Wm3;
+        Wm3.real = fft_cos(oneOverM * 3.0f);
+        Wm3.imag = fft_sin(oneOverM * 3.0f);
+        Complex32 Wm4;
+        Wm4.real = fft_cos(oneOverM * 4.0f);
+        Wm4.imag = fft_sin(oneOverM * 4.0f);
 
         f32_4x wm4_real_4x = F32_4x(Wm4.real);
         f32_4x wm4_imag_4x = F32_4x(Wm4.imag);

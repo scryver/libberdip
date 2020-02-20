@@ -2,6 +2,73 @@
 #define DRAWING_SLOW 0
 #endif
 
+//
+// TODO(michiel): Move to some kind of line algorithm file
+//
+enum RectPositionFlag
+{
+    Outside_Inside = 0x00,
+    Outside_Left   = 0x01,
+    Outside_Right  = 0x02,
+    Outside_Bottom = 0x04,
+    Outside_Top    = 0x08,
+};
+
+internal u32
+calculate_point_outside_rect(v2 point, v2 rectMin, v2 rectMax)
+{
+    u32 result = Outside_Inside;
+
+    if (point.x < rectMin.x) { result |= Outside_Left; }
+    if (point.y < rectMin.y) { result |= Outside_Bottom; }
+    if (point.x > rectMax.x) { result |= Outside_Right; }
+    if (point.y > rectMax.y) { result |= Outside_Top; }
+
+    return result;
+}
+
+internal v2
+calculate_intersection(v2 start, v2 end, v2 rectMin, v2 rectMax, u32 flags)
+{
+    v2 result = {};
+
+    v2 delta = end - start;
+
+    f32 slopeX = delta.y / delta.x;
+    f32 slopeY = delta.x / delta.y;
+
+    if (flags & Outside_Top)
+    {
+        result.x = start.x + slopeY * (rectMax.y - start.y);
+        result.y = rectMax.y;
+    }
+    else if (flags & Outside_Bottom)
+    {
+        result.x = start.x + slopeY * (rectMin.y - start.y);
+        result.y = rectMin.y;
+    }
+    else if (flags & Outside_Right)
+    {
+        result.x = rectMax.x;
+        result.y = start.y + slopeX * (rectMax.x - start.x);
+    }
+    else if (flags & Outside_Left)
+    {
+        result.x = rectMin.x;
+        result.y = start.y + slopeX * (rectMin.x - start.x);
+    }
+    else
+    {
+        INVALID_CODE_PATH;
+    }
+
+    return result;
+}
+
+//
+//
+//
+
 internal void
 clear(Image *image)
 {
@@ -96,171 +163,167 @@ internal void
 draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
 {
     // NOTE(michiel): Xiaolin Wu's line algorithm
+    v2 rectMin = V2(0, 0);
+    v2 rectMax = V2((f32)image->width - 1, (f32)image->height - 1);
 
-    v2 rectSize = V2((f32)image->width - 1, (f32)image->height - 1);
-    if ((start.x < 0.0f) || (start.y < 0.0f) ||
-        (end.x < 0.0f) || (end.y < 0.0f) ||
-        (start.x > rectSize.x) ||
-        (start.y > rectSize.y) ||
-        (end.x > rectSize.x) ||
-        (end.y > rectSize.y))
+    f32 maxLinePoint = 1.0e20f;
+    if (is_neg_nan(start.x) || (start.x < -maxLinePoint))
     {
-        // NOTE(michiel): Clamp line
-        f32 slope = (start.y - end.y) / (start.x - end.x);
-        f32 oneOverSlope = (start.x - end.x) / (start.y - end.y);
+        start.x = -maxLinePoint;
+    }
+    if (is_neg_nan(start.y) || (start.y < -maxLinePoint))
+    {
+        start.y = -maxLinePoint;
+    }
+    if (is_pos_nan(end.x) || (end.x > maxLinePoint))
+    {
+        end.x = maxLinePoint;
+    }
+    if (is_pos_nan(end.y) || (end.y > maxLinePoint))
+    {
+        end.y = maxLinePoint;
+    }
 
-        if (start.x < 0.0f)
+    u32 startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+    u32 endFlag   = calculate_point_outside_rect(end, rectMin, rectMax);
+
+    b32 drawLine = false;
+    while (1)
+    {
+        if ((startFlag | endFlag) == Outside_Inside)
         {
-            start.y -= slope * start.x;
-            start.x = 0.0f;
+            drawLine = true;
+            break;
         }
-        if (start.y < 0.0f)
+        if ((startFlag & endFlag) != 0)
         {
-            start.x -= oneOverSlope * start.y;
-            start.y = 0.0f;
-        }
-        if (end.x < 0.0f)
-        {
-            end.y -= slope * end.x;
-            end.x = 0.0f;
-        }
-        if (end.y < 0.0f)
-        {
-            end.x -= oneOverSlope * end.y;
-            end.y = 0.0f;
+            break;
         }
 
-        if (start.x > rectSize.x)
+        if (startFlag != Outside_Inside)
         {
-            start.y += slope * (rectSize.x - start.x);
-            start.x = rectSize.x;
+            start = calculate_intersection(start, end, rectMin, rectMax, startFlag);
+            startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
         }
-        if (start.y > rectSize.y)
+        else
         {
-            start.x += oneOverSlope * (rectSize.y - start.y);
-            start.y = rectSize.y;
-        }
-        if (end.x > rectSize.x)
-        {
-            end.y += slope * (rectSize.x - end.x);
-            end.x = rectSize.x;
-        }
-        if (end.y > rectSize.y)
-        {
-            end.x += oneOverSlope * (rectSize.y - end.y);
-            end.y = rectSize.y;
+            end = calculate_intersection(start, end, rectMin, rectMax, endFlag);
+            endFlag = calculate_point_outside_rect(end, rectMin, rectMax);
         }
     }
 
-    v2 diff = end - start;
-    v2 absDiff = absolute(diff);
-    v4 pixel;
-
-    if (absDiff.x > absDiff.y)
+    if (drawLine)
     {
-        if (absDiff.x > 0.0f)
+        v2 diff = end - start;
+        v2 absDiff = absolute(diff);
+        v4 pixel;
+
+        if (absDiff.x > absDiff.y)
         {
-            if (end.x < start.x)
+            if (absDiff.x > 0.0f)
             {
-                v2 temp = start;
-                start = end;
-                end = temp;
-            }
+                if (end.x < start.x)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                }
 
-            f32 gradient = diff.y / diff.x;
-            f32 xEnd = round(start.x);
-            f32 yEnd = start.y + gradient * (xEnd - start.x);
-            f32 xGap = 1.0f - fraction(start.x + 0.5f);
+                f32 gradient = diff.y / diff.x;
+                f32 xEnd = round(start.x);
+                f32 yEnd = start.y + gradient * (xEnd - start.x);
+                f32 xGap = 1.0f - fraction(start.x + 0.5f);
 
-            s32 xPixel1 = (s32)xEnd;
-            s32 yPixel1 = (s32)yEnd;
-            pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel1, yPixel1, pixel);
-
-            pixel.a = colour.a * fraction(yEnd) * xGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
-
-            f32 intery = yEnd + gradient;
-
-            xEnd = round(end.x);
-            yEnd = end.y + gradient * (xEnd - end.x);
-            xGap = fraction(end.x + 0.5f);
-
-            s32 xPixel2 = (s32)xEnd;
-            s32 yPixel2 = (s32)yEnd;
-            pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel2, yPixel2, pixel);
-
-            pixel.a = colour.a * fraction(yEnd) * xGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
-
-            for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
-            {
-                pixel.a = colour.a * (1.0f - fraction(intery));
+                s32 xPixel1 = (s32)xEnd;
+                s32 yPixel1 = (s32)yEnd;
+                pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
                 pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, x, (s32)intery, pixel);
-                pixel.a = colour.a * fraction(intery);
+                draw_pixel(image, xPixel1, yPixel1, pixel);
+
+                pixel.a = colour.a * fraction(yEnd) * xGap;
                 pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, x, (s32)intery + 1, pixel);
-                intery += gradient;
+                draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+
+                f32 intery = yEnd + gradient;
+
+                xEnd = round(end.x);
+                yEnd = end.y + gradient * (xEnd - end.x);
+                xGap = fraction(end.x + 0.5f);
+
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+                pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
+                pixel.rgb = pixel.a * colour.rgb;
+                draw_pixel(image, xPixel2, yPixel2, pixel);
+
+                pixel.a = colour.a * fraction(yEnd) * xGap;
+                pixel.rgb = pixel.a * colour.rgb;
+                draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+
+                for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
+                {
+                    pixel.a = colour.a * (1.0f - fraction(intery));
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, x, (s32)intery, pixel);
+                    pixel.a = colour.a * fraction(intery);
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, x, (s32)intery + 1, pixel);
+                    intery += gradient;
+                }
             }
         }
-    }
-    else
-    {
-        if (absDiff.y > 0.0f)
+        else
         {
-            if (end.y < start.y)
+            if (absDiff.y > 0.0f)
             {
-                v2 temp = start;
-                start = end;
-                end = temp;
-            }
+                if (end.y < start.y)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                }
 
-            f32 gradient = diff.x / diff.y;
-            f32 yEnd = round(start.y);
-            f32 xEnd = start.x + gradient * (yEnd - start.y);
-            f32 yGap = 1.0f - fraction(start.y + 0.5f);
+                f32 gradient = diff.x / diff.y;
+                f32 yEnd = round(start.y);
+                f32 xEnd = start.x + gradient * (yEnd - start.y);
+                f32 yGap = 1.0f - fraction(start.y + 0.5f);
 
-            s32 xPixel1 = (s32)xEnd;
-            s32 yPixel1 = (s32)yEnd;
-            pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel1, yPixel1, pixel);
-
-            pixel.a = colour.a * fraction(xEnd) * yGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
-
-            f32 intery = xEnd + gradient;
-
-            yEnd = round(end.y);
-            xEnd = end.x + gradient * (yEnd - end.y);
-            yGap = fraction(end.y + 0.5f);
-
-            s32 xPixel2 = (s32)xEnd;
-            s32 yPixel2 = (s32)yEnd;
-            pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel2, yPixel2, pixel);
-
-            pixel.a = colour.a * fraction(xEnd) * yGap;
-            pixel.rgb = pixel.a * colour.rgb;
-            draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
-
-            for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
-            {
-                pixel.a = colour.a * (1.0f - fraction(intery));
+                s32 xPixel1 = (s32)xEnd;
+                s32 yPixel1 = (s32)yEnd;
+                pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
                 pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, (s32)intery, y, pixel);
-                pixel.a = colour.a * fraction(intery);
+                draw_pixel(image, xPixel1, yPixel1, pixel);
+
+                pixel.a = colour.a * fraction(xEnd) * yGap;
                 pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, (s32)intery + 1, y, pixel);
-                intery += gradient;
+                draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+
+                f32 intery = xEnd + gradient;
+
+                yEnd = round(end.y);
+                xEnd = end.x + gradient * (yEnd - end.y);
+                yGap = fraction(end.y + 0.5f);
+
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+                pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
+                pixel.rgb = pixel.a * colour.rgb;
+                draw_pixel(image, xPixel2, yPixel2, pixel);
+
+                pixel.a = colour.a * fraction(xEnd) * yGap;
+                pixel.rgb = pixel.a * colour.rgb;
+                draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+
+                for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
+                {
+                    pixel.a = colour.a * (1.0f - fraction(intery));
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, (s32)intery, y, pixel);
+                    pixel.a = colour.a * fraction(intery);
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, (s32)intery + 1, y, pixel);
+                    intery += gradient;
+                }
             }
         }
     }
@@ -270,189 +333,186 @@ internal void
 draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
 {
     // NOTE(michiel): Xiaolin Wu's line algorithm
+    v2 rectMin = V2(0, 0);
+    v2 rectMax = V2((f32)image->width - 1, (f32)image->height - 1);
 
-    v2 rectSize = V2((f32)image->width - 1, (f32)image->height - 1);
-    if ((start.x < 0.0f) || (start.y < 0.0f) ||
-        (end.x < 0.0f) || (end.y < 0.0f) ||
-        (start.x > rectSize.x) ||
-        (start.y > rectSize.y) ||
-        (end.x > rectSize.x) ||
-        (end.y > rectSize.y))
+    f32 maxLinePoint = 1.0e20f;
+    if (is_neg_nan(start.x) || (start.x < -maxLinePoint))
     {
-        // NOTE(michiel): Clamp line
-        f32 slope = (start.y - end.y) / (start.x - end.x);
-        f32 oneOverSlope = (start.x - end.x) / (start.y - end.y);
+        start.x = -maxLinePoint;
+    }
+    if (is_neg_nan(start.y) || (start.y < -maxLinePoint))
+    {
+        start.y = -maxLinePoint;
+    }
+    if (is_pos_nan(end.x) || (end.x > maxLinePoint))
+    {
+        end.x = maxLinePoint;
+    }
+    if (is_pos_nan(end.y) || (end.y > maxLinePoint))
+    {
+        end.y = maxLinePoint;
+    }
 
-        if (start.x < 0.0f)
+    u32 startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+    u32 endFlag   = calculate_point_outside_rect(end, rectMin, rectMax);
+
+    b32 drawLine = false;
+    while (1)
+    {
+        if ((startFlag | endFlag) == Outside_Inside)
         {
-            start.y -= slope * start.x;
-            start.x = 0.0f;
+            drawLine = true;
+            break;
         }
-        if (start.y < 0.0f)
+        if ((startFlag & endFlag) != 0)
         {
-            start.x -= oneOverSlope * start.y;
-            start.y = 0.0f;
-        }
-        if (end.x < 0.0f)
-        {
-            end.y -= slope * end.x;
-            end.x = 0.0f;
-        }
-        if (end.y < 0.0f)
-        {
-            end.x -= oneOverSlope * end.y;
-            end.y = 0.0f;
+            break;
         }
 
-        if (start.x > rectSize.x)
+        if (startFlag != Outside_Inside)
         {
-            start.y += slope * (rectSize.x - start.x);
-            start.x = rectSize.x;
+            start = calculate_intersection(start, end, rectMin, rectMax, startFlag);
+            startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
         }
-        if (start.y > rectSize.y)
+        else
         {
-            start.x += oneOverSlope * (rectSize.y - start.y);
-            start.y = rectSize.y;
-        }
-        if (end.x > rectSize.x)
-        {
-            end.y += slope * (rectSize.x - end.x);
-            end.x = rectSize.x;
-        }
-        if (end.y > rectSize.y)
-        {
-            end.x += oneOverSlope * (rectSize.y - end.y);
-            end.y = rectSize.y;
+            end = calculate_intersection(start, end, rectMin, rectMax, endFlag);
+            endFlag = calculate_point_outside_rect(end, rectMin, rectMax);
         }
     }
 
-    v2 diff = end - start;
-    v2 absDiff = absolute(diff);
-    v4 pixel;
-
-    if (absDiff.x > absDiff.y)
+    if (drawLine)
     {
-        if (absDiff.x > 0.0f)
+        v2 diff = end - start;
+        v2 absDiff = absolute(diff);
+
+        v4 pixel;
+
+        if (absDiff.x > absDiff.y)
         {
-            if (end.x < start.x)
+            if (absDiff.x > 0.0f)
             {
-                v2 temp = start;
-                start = end;
-                end = temp;
-                v4 tempCol = colourStart;
-                colourStart = colourEnd;
-                colourEnd = tempCol;
-            }
+                if (end.x < start.x)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
 
-            f32 gradient = diff.y / diff.x;
-            f32 xEnd = round(start.x);
-            f32 yEnd = start.y + gradient * (xEnd - start.x);
-            f32 xGap = 1.0f - fraction(start.x + 0.5f);
+                f32 gradient = diff.y / diff.x;
+                f32 xEnd = round(start.x);
+                f32 yEnd = start.y + gradient * (xEnd - start.x);
+                f32 xGap = 1.0f - fraction(start.x + 0.5f);
 
-            s32 xPixel1 = (s32)xEnd;
-            s32 yPixel1 = (s32)yEnd;
-            pixel.a = colourStart.a * (1.0f - fraction(yEnd)) * xGap;
-            pixel.rgb = pixel.a * colourStart.rgb;
-            draw_pixel(image, xPixel1, yPixel1, pixel);
+                s32 xPixel1 = (s32)xEnd;
+                s32 yPixel1 = (s32)yEnd;
+                pixel.a = colourStart.a * (1.0f - fraction(yEnd)) * xGap;
+                pixel.rgb = pixel.a * colourStart.rgb;
+                draw_pixel(image, xPixel1, yPixel1, pixel);
 
-            pixel.a = colourStart.a * fraction(yEnd) * xGap;
-            pixel.rgb = pixel.a * colourStart.rgb;
-            draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+                pixel.a = colourStart.a * fraction(yEnd) * xGap;
+                pixel.rgb = pixel.a * colourStart.rgb;
+                draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
 
-            f32 intery = yEnd + gradient;
+                f32 intery = yEnd + gradient;
 
-            xEnd = round(end.x);
-            yEnd = end.y + gradient * (xEnd - end.x);
-            xGap = fraction(end.x + 0.5f);
+                xEnd = round(end.x);
+                yEnd = end.y + gradient * (xEnd - end.x);
+                xGap = fraction(end.x + 0.5f);
 
-            s32 xPixel2 = (s32)xEnd;
-            s32 yPixel2 = (s32)yEnd;
-            pixel.a = colourEnd.a * (1.0f - fraction(yEnd)) * xGap;
-            pixel.rgb = pixel.a * colourEnd.rgb;
-            draw_pixel(image, xPixel2, yPixel2, pixel);
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+                pixel.a = colourEnd.a * (1.0f - fraction(yEnd)) * xGap;
+                pixel.rgb = pixel.a * colourEnd.rgb;
+                draw_pixel(image, xPixel2, yPixel2, pixel);
 
-            pixel.a = colourEnd.a * fraction(yEnd) * xGap;
-            pixel.rgb = pixel.a * colourEnd.rgb;
-            draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+                pixel.a = colourEnd.a * fraction(yEnd) * xGap;
+                pixel.rgb = pixel.a * colourEnd.rgb;
+                draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
 
-            for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
-            {
-                f32 t = (f32)(x - xPixel1 - 1) / (f32)(xPixel2 - xPixel1);
-                pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
-                               colourEnd.a * (1.0f - fraction(intery)));
-                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
-                                 pixel.a * colourEnd.rgb);
+                for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
+                {
+                    f32 t = (f32)(x - xPixel1 - 1) / (f32)(xPixel2 - xPixel1);
+                    pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
+                                   colourEnd.a * (1.0f - fraction(intery)));
+                    pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                     pixel.a * colourEnd.rgb);
 
-                draw_pixel(image, x, (s32)intery, pixel);
-                pixel.a = lerp(colourStart.a * fraction(intery), t,
-                               colourEnd.a * fraction(intery));
-                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
-                                 pixel.a * colourEnd.rgb);
-                draw_pixel(image, x, (s32)intery + 1, pixel);
-                intery += gradient;
+                    draw_pixel(image, x, (s32)intery, pixel);
+                    pixel.a = lerp(colourStart.a * fraction(intery), t,
+                                   colourEnd.a * fraction(intery));
+                    pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                     pixel.a * colourEnd.rgb);
+                    draw_pixel(image, x, (s32)intery + 1, pixel);
+                    intery += gradient;
+                }
             }
         }
-    }
-    else
-    {
-        if (absDiff.y > 0.0f)
+        else
         {
-            if (end.y < start.y)
+            if (absDiff.y > 0.0f)
             {
-                v2 temp = start;
-                start = end;
-                end = temp;
-                v4 tempCol = colourStart;
-                colourStart = colourEnd;
-                colourEnd = tempCol;
-            }
+                if (end.y < start.y)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
 
-            f32 gradient = diff.x / diff.y;
-            f32 yEnd = round(start.y);
-            f32 xEnd = start.x + gradient * (yEnd - start.y);
-            f32 yGap = 1.0f - fraction(start.y + 0.5f);
+                f32 gradient = diff.x / diff.y;
+                f32 yEnd = round(start.y);
+                f32 xEnd = start.x + gradient * (yEnd - start.y);
+                f32 yGap = 1.0f - fraction(start.y + 0.5f);
 
-            s32 xPixel1 = (s32)xEnd;
-            s32 yPixel1 = (s32)yEnd;
-            pixel.a = colourStart.a * (1.0f - fraction(xEnd)) * yGap;
-            pixel.rgb = pixel.a * colourStart.rgb;
-            draw_pixel(image, xPixel1, yPixel1, pixel);
+                s32 xPixel1 = (s32)xEnd;
+                s32 yPixel1 = (s32)yEnd;
+                pixel.a = colourStart.a * (1.0f - fraction(xEnd)) * yGap;
+                pixel.rgb = pixel.a * colourStart.rgb;
+                draw_pixel(image, xPixel1, yPixel1, pixel);
 
-            pixel.a = colourStart.a * fraction(xEnd) * yGap;
-            pixel.rgb = pixel.a * colourStart.rgb;
-            draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+                pixel.a = colourStart.a * fraction(xEnd) * yGap;
+                pixel.rgb = pixel.a * colourStart.rgb;
+                draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
 
-            f32 intery = xEnd + gradient;
+                f32 intery = xEnd + gradient;
 
-            yEnd = round(end.y);
-            xEnd = end.x + gradient * (yEnd - end.y);
-            yGap = fraction(end.y + 0.5f);
+                yEnd = round(end.y);
+                xEnd = end.x + gradient * (yEnd - end.y);
+                yGap = fraction(end.y + 0.5f);
 
-            s32 xPixel2 = (s32)xEnd;
-            s32 yPixel2 = (s32)yEnd;
-            pixel.a = colourEnd.a * (1.0f - fraction(xEnd)) * yGap;
-            pixel.rgb = pixel.a * colourEnd.rgb;
-            draw_pixel(image, xPixel2, yPixel2, pixel);
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+                pixel.a = colourEnd.a * (1.0f - fraction(xEnd)) * yGap;
+                pixel.rgb = pixel.a * colourEnd.rgb;
+                draw_pixel(image, xPixel2, yPixel2, pixel);
 
-            pixel.a = colourEnd.a * fraction(xEnd) * yGap;
-            pixel.rgb = pixel.a * colourEnd.rgb;
-            draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+                pixel.a = colourEnd.a * fraction(xEnd) * yGap;
+                pixel.rgb = pixel.a * colourEnd.rgb;
+                draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
 
-            for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
-            {
-                f32 t = (f32)(y - yPixel1 - 1) / (f32)(yPixel2 - yPixel1);
-                pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
-                               colourEnd.a * (1.0f - fraction(intery)));
-                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
-                                 pixel.a * colourEnd.rgb);
+                for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
+                {
+                    f32 t = (f32)(y - yPixel1 - 1) / (f32)(yPixel2 - yPixel1);
+                    pixel.a = lerp(colourStart.a * (1.0f - fraction(intery)), t,
+                                   colourEnd.a * (1.0f - fraction(intery)));
+                    pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                     pixel.a * colourEnd.rgb);
 
-                draw_pixel(image, (s32)intery, y, pixel);
-                pixel.a = lerp(colourStart.a * fraction(intery), t,
-                               colourEnd.a * fraction(intery));
-                pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
-                                 pixel.a * colourEnd.rgb);
-                draw_pixel(image, (s32)intery + 1, y, pixel);
-                intery += gradient;
+                    draw_pixel(image, (s32)intery, y, pixel);
+                    pixel.a = lerp(colourStart.a * fraction(intery), t,
+                                   colourEnd.a * fraction(intery));
+                    pixel.rgb = lerp(pixel.a * colourStart.rgb, t,
+                                     pixel.a * colourEnd.rgb);
+                    draw_pixel(image, (s32)intery + 1, y, pixel);
+                    intery += gradient;
+                }
             }
         }
     }

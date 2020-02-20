@@ -360,6 +360,22 @@ s32_4x_sra(f32_4x a, f32_4x b)
     return result;
 }
 
+internal f32_4x
+s32_4x_equal(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+    result.mi = _mm_cmpeq_epi32(a.mi, b.mi);
+    return result;
+}
+
+internal f32_4x
+s32_4x_greater(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+    result.mi = _mm_cmpgt_epi32(a.mi, b.mi);
+    return result;
+}
+
 //
 // End of s32_4x stuff
 //
