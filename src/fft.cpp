@@ -174,16 +174,42 @@ fft(u32 dftCount, Complex32 *signal)
         Wm4.real = fft_cos(-oneOverM * 4.0f);
         Wm4.imag = fft_sin(-oneOverM * 4.0f);
 
+#define MORE_FFT_SINES 1
+#if MORE_FFT_SINES
+        Complex32 Wm5;
+        Wm5.real = fft_cos(-oneOverM * 5.0f);
+        Wm5.imag = fft_sin(-oneOverM * 5.0f);
+        Complex32 Wm6;
+        Wm6.real = fft_cos(-oneOverM * 6.0f);
+        Wm6.imag = fft_sin(-oneOverM * 6.0f);
+        Complex32 Wm7;
+        Wm7.real = fft_cos(-oneOverM * 7.0f);
+        Wm7.imag = fft_sin(-oneOverM * 7.0f);
+        Complex32 Wm8;
+        Wm8.real = fft_cos(-oneOverM * 8.0f);
+        Wm8.imag = fft_sin(-oneOverM * 8.0f);
+
+        f32_4x wm8_real_4x = F32_4x(Wm8.real);
+        f32_4x wm8_imag_4x = F32_4x(Wm8.imag);
+#else
         f32_4x wm4_real_4x = F32_4x(Wm4.real);
         f32_4x wm4_imag_4x = F32_4x(Wm4.imag);
+#endif
 
         for (u32 k = 0; k < dftCount; k += m)
         {
             Complex32 *src0 = signal + k;
             Complex32 *src1 = signal + k + halfM;
 
+#if MORE_FFT_SINES
+            f32_4x w0_real_4x = F32_4x(1.0f, Wm.real, Wm2.real, Wm3.real);
+            f32_4x w0_imag_4x = F32_4x(0.0f, Wm.imag, Wm2.imag, Wm3.imag);
+            f32_4x w1_real_4x = F32_4x(Wm4.real, Wm5.real, Wm6.real, Wm7.real);
+            f32_4x w1_imag_4x = F32_4x(Wm4.imag, Wm5.imag, Wm6.imag, Wm7.imag);
+#else
             f32_4x w_real_4x = F32_4x(1.0f, Wm.real, Wm2.real, Wm3.real);
             f32_4x w_imag_4x = F32_4x(0.0f, Wm.imag, Wm2.imag, Wm3.imag);
+#endif
 
             for (u32 j = 0; j < halfM; j += 8)
             {
@@ -205,6 +231,16 @@ fft(u32 dftCount, Complex32 *signal)
                 a_real.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                 a_imag.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
+#if MORE_FFT_SINES
+                f32_4x mulX0 = w0_real_4x * a_real;
+                f32_4x mulX1 = w0_imag_4x * a_imag;
+                f32_4x mulX2 = w0_real_4x * a_imag;
+                f32_4x mulX3 = w0_imag_4x * a_real;
+
+                f32_4x temp_w = (w0_real_4x * wm8_real_4x) - (w0_imag_4x * wm8_imag_4x);
+                w0_imag_4x = (w0_real_4x * wm8_imag_4x) + (w0_imag_4x * wm8_real_4x);
+                w0_real_4x = temp_w;
+#else
                 f32_4x mulX0 = w_real_4x * a_real;
                 f32_4x mulX1 = w_imag_4x * a_imag;
                 f32_4x mulX2 = w_real_4x * a_imag;
@@ -213,7 +249,7 @@ fft(u32 dftCount, Complex32 *signal)
                 f32_4x temp_w = (w_real_4x * wm4_real_4x) - (w_imag_4x * wm4_imag_4x);
                 w_imag_4x = (w_real_4x * wm4_imag_4x) + (w_imag_4x * wm4_real_4x);
                 w_real_4x = temp_w;
-
+#endif
                 f32_4x O0_real = mulX0 - mulX1;
                 f32_4x O0_imag = mulX2 + mulX3;
 
@@ -222,6 +258,16 @@ fft(u32 dftCount, Complex32 *signal)
                 b_real.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                 b_imag.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
+#if MORE_FFT_SINES
+                f32_4x mulY0 = w1_real_4x * b_real;
+                f32_4x mulY1 = w1_imag_4x * b_imag;
+                f32_4x mulY2 = w1_real_4x * b_imag;
+                f32_4x mulY3 = w1_imag_4x * b_real;
+
+                f32_4x temp_w2 = (w1_real_4x * wm8_real_4x) - (w1_imag_4x * wm8_imag_4x);
+                w1_imag_4x = (w1_real_4x * wm8_imag_4x) + (w1_imag_4x * wm8_real_4x);
+                w1_real_4x = temp_w2;
+#else
                 f32_4x mulY0 = w_real_4x * b_real;
                 f32_4x mulY1 = w_imag_4x * b_imag;
                 f32_4x mulY2 = w_real_4x * b_imag;
@@ -230,7 +276,7 @@ fft(u32 dftCount, Complex32 *signal)
                 f32_4x temp_w2 = (w_real_4x * wm4_real_4x) - (w_imag_4x * wm4_imag_4x);
                 w_imag_4x = (w_real_4x * wm4_imag_4x) + (w_imag_4x * wm4_real_4x);
                 w_real_4x = temp_w2;
-
+#endif
                 f32_4x O1_real = mulY0 - mulY1;
                 f32_4x O1_imag = mulY2 + mulY3;
 
