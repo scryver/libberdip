@@ -2140,7 +2140,7 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 }
 
 internal void
-fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, f32 innerRadius = 0.0f, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
+fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1), f32 innerRadius = 0.0f)
 {
     f32 diameter = 2.0f * radius;
 
@@ -2173,7 +2173,7 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, f32 innerRadius =
             }
             else if (distSqr <= edgeDistSqr)
             {
-                f32 colourFactor = clamp01(distSqr * edgeFactor);
+                f32 colourFactor = clamp01((distSqr - innerDistSqr) * edgeFactor);
                 v4 pixel = lerp(colour, colourFactor, edgeColour);
 
                 if (distSqr > maxDistSqr)
