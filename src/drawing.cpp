@@ -3,7 +3,7 @@
 #endif
 
 //
-// TODO(michiel): Move to some kind of line algorithm file
+// TODO(michiel): Move to some kind of line algorithm file (also in drawing_simd.cpp)
 //
 enum RectPositionFlag
 {
@@ -240,9 +240,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel1, yPixel1, pixel);
 
-                pixel.a = colour.a * fraction(yEnd) * xGap;
-                pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+                if (yPixel1 + 1 < image->height)
+                {
+                    pixel.a = colour.a * fraction(yEnd) * xGap;
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
+                }
 
                 f32 intery = yEnd + gradient;
 
@@ -256,9 +259,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel2, yPixel2, pixel);
 
-                pixel.a = colour.a * fraction(yEnd) * xGap;
-                pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+                if (yPixel2 + 1 < image->height)
+                {
+                    pixel.a = colour.a * fraction(yEnd) * xGap;
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
+                }
 
                 for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
                 {
@@ -294,9 +300,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel1, yPixel1, pixel);
 
-                pixel.a = colour.a * fraction(xEnd) * yGap;
-                pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+                if (xPixel1 + 1 < image->width)
+                {
+                    pixel.a = colour.a * fraction(xEnd) * yGap;
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
+                }
 
                 f32 intery = xEnd + gradient;
 
@@ -310,9 +319,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel2, yPixel2, pixel);
 
-                pixel.a = colour.a * fraction(xEnd) * yGap;
-                pixel.rgb = pixel.a * colour.rgb;
-                draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+                if (xPixel2 + 1 < image->width)
+                {
+                    pixel.a = colour.a * fraction(xEnd) * yGap;
+                    pixel.rgb = pixel.a * colour.rgb;
+                    draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
+                }
 
                 for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
                 {
@@ -329,6 +341,7 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
     }
 }
 
+#if 0
 internal void
 draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
 {
@@ -517,6 +530,1061 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
         }
     }
 }
+#else
+
+#if 0
+internal void
+draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
+{
+    // NOTE(michiel): Xiaolin Wu's line algorithm
+    v2 rectMin = V2(0, 0);
+    v2 rectMax = V2((f32)image->width - 1, (f32)image->height - 1);
+
+    f32 maxLinePoint = 1.0e20f;
+    if (is_neg_nan(start.x) || (start.x < -maxLinePoint))
+    {
+        start.x = -maxLinePoint;
+    }
+    if (is_neg_nan(start.y) || (start.y < -maxLinePoint))
+    {
+        start.y = -maxLinePoint;
+    }
+    if (is_pos_nan(end.x) || (end.x > maxLinePoint))
+    {
+        end.x = maxLinePoint;
+    }
+    if (is_pos_nan(end.y) || (end.y > maxLinePoint))
+    {
+        end.y = maxLinePoint;
+    }
+
+    u32 startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+    u32 endFlag   = calculate_point_outside_rect(end, rectMin, rectMax);
+
+    b32 drawLine = false;
+    while (1)
+    {
+        if ((startFlag | endFlag) == Outside_Inside)
+        {
+            drawLine = true;
+            break;
+        }
+        if ((startFlag & endFlag) != 0)
+        {
+            break;
+        }
+
+        if (startFlag != Outside_Inside)
+        {
+            start = calculate_intersection(start, end, rectMin, rectMax, startFlag);
+            startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+        }
+        else
+        {
+            end = calculate_intersection(start, end, rectMin, rectMax, endFlag);
+            endFlag = calculate_point_outside_rect(end, rectMin, rectMax);
+        }
+    }
+
+    if (drawLine)
+    {
+        v2 diff = end - start;
+        v2 absDiff = absolute(diff);
+
+        if (absDiff.x > absDiff.y)
+        {
+            if (absDiff.x > 0.0f)
+            {
+                if (end.x < start.x)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
+
+                v4 pixel0;
+                v4 pixel1;
+                v4 pixel2;
+                v4 pixel3;
+
+                f32 gradient = diff.y / diff.x;
+                f32 xStart = round(start.x);
+                f32 yStart = start.y + gradient * (xStart - start.x);
+                f32 gapStart = 1.0f - fraction(start.x + 0.5f);
+
+                f32 xEnd = round(end.x);
+                f32 yEnd = end.y + gradient * (xEnd - end.x);
+                f32 gapEnd = fraction(end.x + 0.5f);
+
+                f32 intery = yStart + gradient;
+
+                s32 xPixel1 = (s32)xStart;
+                s32 yPixel1 = (s32)yStart;
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+
+                pixel0.a = colourStart.a * (1.0f - fraction(yStart)) * gapStart;
+                pixel1.a = colourStart.a * fraction(yStart) * gapStart;
+                pixel2.a = colourEnd.a * (1.0f - fraction(yEnd)) * gapEnd;
+                pixel3.a = colourEnd.a * fraction(yEnd) * gapEnd;
+
+                pixel0.rgb = pixel0.a * colourStart.rgb;
+                pixel1.rgb = pixel1.a * colourStart.rgb;
+                pixel2.rgb = pixel2.a * colourEnd.rgb;
+                pixel3.rgb = pixel3.a * colourEnd.rgb;
+
+                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+
+                v4 source0 = unpack_colour(basePixels1[0]);
+                v4 source1 = unpack_colour(basePixels1[image->width]);
+                v4 source2 = unpack_colour(basePixels2[0]);
+                v4 source3 = unpack_colour(basePixels2[image->width]);
+
+                source0.rgb = source0.rgb * (1.0f - pixel0.a) + pixel0.rgb;
+                source1.rgb = source1.rgb * (1.0f - pixel1.a) + pixel1.rgb;
+                source2.rgb = source2.rgb * (1.0f - pixel2.a) + pixel2.rgb;
+                source3.rgb = source3.rgb * (1.0f - pixel3.a) + pixel3.rgb;
+
+                source0.a = pixel0.a;
+                source1.a = pixel1.a;
+                source2.a = pixel2.a;
+                source3.a = pixel3.a;
+
+                basePixels1[0] = pack_colour(source0);
+                basePixels1[image->width] = pack_colour(source1);
+                basePixels2[0] = pack_colour(source2);
+                basePixels2[image->width] = pack_colour(source3);
+
+                for (s32 x = xPixel1 + 1; x < xPixel2; x += 4)
+                {
+                    v4 pixelsA[4];
+                    v4 pixelsB[4];
+
+                    f32 intery0 = intery + 0.0f * gradient;
+                    f32 intery1 = intery + 1.0f * gradient;
+                    f32 intery2 = intery + 2.0f * gradient;
+                    f32 intery3 = intery + 3.0f * gradient;
+                    intery += 4.0f * gradient;
+
+                    f32 t0 = (f32)(x - xPixel1 - 1) / (f32)(xPixel2 - xPixel1);
+                    f32 t1 = (f32)(x - xPixel1 + 0) / (f32)(xPixel2 - xPixel1);
+                    f32 t2 = (f32)(x - xPixel1 + 1) / (f32)(xPixel2 - xPixel1);
+                    f32 t3 = (f32)(x - xPixel1 + 2) / (f32)(xPixel2 - xPixel1);
+
+                    f32 fract0 = fraction(intery0);
+                    f32 fract1 = fraction(intery1);
+                    f32 fract2 = fraction(intery2);
+                    f32 fract3 = fraction(intery3);
+                    f32 oneMinF0 = 1.0f - fract0;
+                    f32 oneMinF1 = 1.0f - fract1;
+                    f32 oneMinF2 = 1.0f - fract2;
+                    f32 oneMinF3 = 1.0f - fract3;
+
+                    f32 lerpAlpha0 = lerp(colourStart.a, t0, colourEnd.a);
+                    f32 lerpAlpha1 = lerp(colourStart.a, t1, colourEnd.a);
+                    f32 lerpAlpha2 = lerp(colourStart.a, t2, colourEnd.a);
+                    f32 lerpAlpha3 = lerp(colourStart.a, t3, colourEnd.a);
+
+                    v3 lerpColour0 = lerp(colourStart.rgb, t0, colourEnd.rgb);
+                    v3 lerpColour1 = lerp(colourStart.rgb, t1, colourEnd.rgb);
+                    v3 lerpColour2 = lerp(colourStart.rgb, t2, colourEnd.rgb);
+                    v3 lerpColour3 = lerp(colourStart.rgb, t3, colourEnd.rgb);
+
+                    pixelsA[0].a = oneMinF0 * lerpAlpha0;
+                    pixelsA[1].a = oneMinF1 * lerpAlpha1;
+                    pixelsA[2].a = oneMinF2 * lerpAlpha2;
+                    pixelsA[3].a = oneMinF3 * lerpAlpha3;
+
+                    pixelsB[0].a = fract0 * lerpAlpha0;
+                    pixelsB[1].a = fract1 * lerpAlpha1;
+                    pixelsB[2].a = fract2 * lerpAlpha2;
+                    pixelsB[3].a = fract3 * lerpAlpha3;
+
+                    pixelsA[0].rgb = pixelsA[0].a * lerpColour0;
+                    pixelsA[1].rgb = pixelsA[1].a * lerpColour1;
+                    pixelsA[2].rgb = pixelsA[2].a * lerpColour2;
+                    pixelsA[3].rgb = pixelsA[3].a * lerpColour3;
+
+                    pixelsB[0].rgb = pixelsB[0].a * lerpColour0;
+                    pixelsB[1].rgb = pixelsB[1].a * lerpColour1;
+                    pixelsB[2].rgb = pixelsB[2].a * lerpColour2;
+                    pixelsB[3].rgb = pixelsB[3].a * lerpColour3;
+
+                    u32 offsetA0 = (s32)intery0 * image->width + x + 0;
+                    u32 offsetA1 = (s32)intery1 * image->width + x + 1;
+                    u32 offsetA2 = (s32)intery2 * image->width + x + 2;
+                    u32 offsetA3 = (s32)intery3 * image->width + x + 3;
+                    u32 offsetB0 = ((s32)intery0 + 1) * image->width + x + 0;
+                    u32 offsetB1 = ((s32)intery1 + 1) * image->width + x + 1;
+                    u32 offsetB2 = ((s32)intery2 + 1) * image->width + x + 2;
+                    u32 offsetB3 = ((s32)intery3 + 1) * image->width + x + 3;
+                    if ((x + 3) < xPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+                        v4 sourceA2 = unpack_colour(image->pixels[offsetA2]);
+                        v4 sourceA3 = unpack_colour(image->pixels[offsetA3]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+                        sourceA2.rgb = sourceA2.rgb * (1.0f - pixelsA[2].a) + pixelsA[2].rgb;
+                        sourceA3.rgb = sourceA3.rgb * (1.0f - pixelsA[3].a) + pixelsA[3].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+                        sourceA2.a = pixelsA[2].a;
+                        sourceA3.a = pixelsA[3].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+                        image->pixels[offsetA2] = pack_colour(sourceA2);
+                        image->pixels[offsetA3] = pack_colour(sourceA3);
+
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+                        v4 sourceB2 = unpack_colour(image->pixels[offsetB2]);
+                        v4 sourceB3 = unpack_colour(image->pixels[offsetB3]);
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+                        sourceB2.rgb = sourceB2.rgb * (1.0f - pixelsB[2].a) + pixelsB[2].rgb;
+                        sourceB3.rgb = sourceB3.rgb * (1.0f - pixelsB[3].a) + pixelsB[3].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+                        sourceB2.a = pixelsB[2].a;
+                        sourceB3.a = pixelsB[3].a;
+
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                        image->pixels[offsetB2] = pack_colour(sourceB2);
+                        image->pixels[offsetB3] = pack_colour(sourceB3);
+                    }
+                    else if ((x + 2) < xPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+                        v4 sourceA2 = unpack_colour(image->pixels[offsetA2]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+                        sourceA2.rgb = sourceA2.rgb * (1.0f - pixelsA[2].a) + pixelsA[2].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+                        sourceA2.a = pixelsA[2].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+                        image->pixels[offsetA2] = pack_colour(sourceA2);
+
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+                        v4 sourceB2 = unpack_colour(image->pixels[offsetB2]);
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+                        sourceB2.rgb = sourceB2.rgb * (1.0f - pixelsB[2].a) + pixelsB[2].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+                        sourceB2.a = pixelsB[2].a;
+
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                        image->pixels[offsetB2] = pack_colour(sourceB2);
+                    }
+                    else if ((x + 1) < xPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                    }
+                    else
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceB0.a = pixelsB[0].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (absDiff.y > 0.0f)
+            {
+                if (end.y < start.y)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
+
+                v4 pixels[4];
+
+                f32 gradient = diff.x / diff.y;
+                f32 yStart = round(start.y);
+                f32 xStart = start.x + gradient * (yStart - start.y);
+                f32 gapStart = 1.0f - fraction(start.y + 0.5f);
+
+                f32 yEnd = round(end.y);
+                f32 xEnd = end.x + gradient * (yEnd - end.y);
+                f32 gapEnd = fraction(end.y + 0.5f);
+
+                f32 intery = xStart + gradient;
+
+                s32 xPixel1 = (s32)xStart;
+                s32 yPixel1 = (s32)yStart;
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+
+                pixels[0].a = colourStart.a * (1.0f - fraction(xStart)) * gapStart;
+                pixels[1].a = colourStart.a * fraction(xStart) * gapStart;
+                pixels[2].a = colourEnd.a * (1.0f - fraction(xEnd)) * gapEnd;
+                pixels[3].a = colourEnd.a * fraction(xEnd) * gapEnd;
+
+                pixels[0].rgb = pixels[0].a * colourStart.rgb;
+                pixels[1].rgb = pixels[1].a * colourStart.rgb;
+                pixels[2].rgb = pixels[2].a * colourEnd.rgb;
+                pixels[3].rgb = pixels[3].a * colourEnd.rgb;
+
+                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+
+                v4 source0 = unpack_colour(basePixels1[0]);
+                v4 source1 = unpack_colour(basePixels1[1]);
+                v4 source2 = unpack_colour(basePixels2[0]);
+                v4 source3 = unpack_colour(basePixels2[1]);
+
+                source0.rgb = source0.rgb * (1.0f - pixels[0].a) + pixels[0].rgb;
+                source1.rgb = source1.rgb * (1.0f - pixels[1].a) + pixels[1].rgb;
+                source2.rgb = source2.rgb * (1.0f - pixels[2].a) + pixels[2].rgb;
+                source3.rgb = source3.rgb * (1.0f - pixels[3].a) + pixels[3].rgb;
+
+                source0.a = pixels[0].a;
+                source1.a = pixels[1].a;
+                source2.a = pixels[2].a;
+                source3.a = pixels[3].a;
+
+                basePixels1[0] = pack_colour(source0);
+                basePixels1[1] = pack_colour(source1);
+                basePixels2[0] = pack_colour(source2);
+                basePixels2[1] = pack_colour(source3);
+
+                for (s32 y = yPixel1 + 1; y < yPixel2; y += 4)
+                {
+                    v4 pixelsA[4];
+                    v4 pixelsB[4];
+
+                    f32 intery0 = intery + 0.0f * gradient;
+                    f32 intery1 = intery + 1.0f * gradient;
+                    f32 intery2 = intery + 2.0f * gradient;
+                    f32 intery3 = intery + 3.0f * gradient;
+                    intery += 4.0f * gradient;
+
+                    f32 t0 = (f32)(y - yPixel1 - 1) / (f32)(yPixel2 - yPixel1);
+                    f32 t1 = (f32)(y - yPixel1 + 0) / (f32)(yPixel2 - yPixel1);
+                    f32 t2 = (f32)(y - yPixel1 + 1) / (f32)(yPixel2 - yPixel1);
+                    f32 t3 = (f32)(y - yPixel1 + 2) / (f32)(yPixel2 - yPixel1);
+
+                    f32 fract0 = fraction(intery0);
+                    f32 fract1 = fraction(intery1);
+                    f32 fract2 = fraction(intery2);
+                    f32 fract3 = fraction(intery3);
+                    f32 oneMinF0 = 1.0f - fract0;
+                    f32 oneMinF1 = 1.0f - fract1;
+                    f32 oneMinF2 = 1.0f - fract2;
+                    f32 oneMinF3 = 1.0f - fract3;
+
+                    f32 lerpAlpha0 = lerp(colourStart.a, t0, colourEnd.a);
+                    f32 lerpAlpha1 = lerp(colourStart.a, t1, colourEnd.a);
+                    f32 lerpAlpha2 = lerp(colourStart.a, t2, colourEnd.a);
+                    f32 lerpAlpha3 = lerp(colourStart.a, t3, colourEnd.a);
+
+                    v3 lerpColour0 = lerp(colourStart.rgb, t0, colourEnd.rgb);
+                    v3 lerpColour1 = lerp(colourStart.rgb, t1, colourEnd.rgb);
+                    v3 lerpColour2 = lerp(colourStart.rgb, t2, colourEnd.rgb);
+                    v3 lerpColour3 = lerp(colourStart.rgb, t3, colourEnd.rgb);
+
+                    pixelsA[0].a = oneMinF0 * lerpAlpha0;
+                    pixelsA[1].a = oneMinF1 * lerpAlpha1;
+                    pixelsA[2].a = oneMinF2 * lerpAlpha2;
+                    pixelsA[3].a = oneMinF3 * lerpAlpha3;
+
+                    pixelsB[0].a = fract0 * lerpAlpha0;
+                    pixelsB[1].a = fract1 * lerpAlpha1;
+                    pixelsB[2].a = fract2 * lerpAlpha2;
+                    pixelsB[3].a = fract3 * lerpAlpha3;
+
+                    pixelsA[0].rgb = pixelsA[0].a * lerpColour0;
+                    pixelsA[1].rgb = pixelsA[1].a * lerpColour1;
+                    pixelsA[2].rgb = pixelsA[2].a * lerpColour2;
+                    pixelsA[3].rgb = pixelsA[3].a * lerpColour3;
+
+                    pixelsB[0].rgb = pixelsB[0].a * lerpColour0;
+                    pixelsB[1].rgb = pixelsB[1].a * lerpColour1;
+                    pixelsB[2].rgb = pixelsB[2].a * lerpColour2;
+                    pixelsB[3].rgb = pixelsB[3].a * lerpColour3;
+
+                    u32 offsetA0 = (y + 0) * image->width + (s32)intery0;
+                    u32 offsetB0 = (y + 0) * image->width + (s32)intery0 + 1;
+                    u32 offsetA1 = (y + 1) * image->width + (s32)intery1;
+                    u32 offsetB1 = (y + 1) * image->width + (s32)intery1 + 1;
+                    u32 offsetA2 = (y + 2) * image->width + (s32)intery2;
+                    u32 offsetB2 = (y + 2) * image->width + (s32)intery2 + 1;
+                    u32 offsetA3 = (y + 3) * image->width + (s32)intery3;
+                    u32 offsetB3 = (y + 3) * image->width + (s32)intery3 + 1;
+                    if ((y + 3) < yPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+                        v4 sourceA2 = unpack_colour(image->pixels[offsetA2]);
+                        v4 sourceB2 = unpack_colour(image->pixels[offsetB2]);
+                        v4 sourceA3 = unpack_colour(image->pixels[offsetA3]);
+                        v4 sourceB3 = unpack_colour(image->pixels[offsetB3]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+                        sourceA2.rgb = sourceA2.rgb * (1.0f - pixelsA[2].a) + pixelsA[2].rgb;
+                        sourceA3.rgb = sourceA3.rgb * (1.0f - pixelsA[3].a) + pixelsA[3].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+                        sourceA2.a = pixelsA[2].a;
+                        sourceA3.a = pixelsA[3].a;
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+                        sourceB2.rgb = sourceB2.rgb * (1.0f - pixelsB[2].a) + pixelsB[2].rgb;
+                        sourceB3.rgb = sourceB3.rgb * (1.0f - pixelsB[3].a) + pixelsB[3].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+                        sourceB2.a = pixelsB[2].a;
+                        sourceB3.a = pixelsB[3].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                        image->pixels[offsetA2] = pack_colour(sourceA2);
+                        image->pixels[offsetB2] = pack_colour(sourceB2);
+                        image->pixels[offsetA3] = pack_colour(sourceA3);
+                        image->pixels[offsetB3] = pack_colour(sourceB3);
+                    }
+                    else if ((y + 2) < yPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+                        v4 sourceA2 = unpack_colour(image->pixels[offsetA2]);
+                        v4 sourceB2 = unpack_colour(image->pixels[offsetB2]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+                        sourceA2.rgb = sourceA2.rgb * (1.0f - pixelsA[2].a) + pixelsA[2].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+                        sourceA2.a = pixelsA[2].a;
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+                        sourceB2.rgb = sourceB2.rgb * (1.0f - pixelsB[2].a) + pixelsB[2].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+                        sourceB2.a = pixelsB[2].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                        image->pixels[offsetA2] = pack_colour(sourceA2);
+                        image->pixels[offsetB2] = pack_colour(sourceB2);
+                    }
+                    else if ((y + 1) < yPixel2)
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+                        v4 sourceA1 = unpack_colour(image->pixels[offsetA1]);
+                        v4 sourceB1 = unpack_colour(image->pixels[offsetB1]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceA1.rgb = sourceA1.rgb * (1.0f - pixelsA[1].a) + pixelsA[1].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceA1.a = pixelsA[1].a;
+
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+                        sourceB1.rgb = sourceB1.rgb * (1.0f - pixelsB[1].a) + pixelsB[1].rgb;
+
+                        sourceB0.a = pixelsB[0].a;
+                        sourceB1.a = pixelsB[1].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                        image->pixels[offsetA1] = pack_colour(sourceA1);
+                        image->pixels[offsetB1] = pack_colour(sourceB1);
+                    }
+                    else
+                    {
+                        v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
+                        v4 sourceB0 = unpack_colour(image->pixels[offsetB0]);
+
+                        sourceA0.rgb = sourceA0.rgb * (1.0f - pixelsA[0].a) + pixelsA[0].rgb;
+                        sourceB0.rgb = sourceB0.rgb * (1.0f - pixelsB[0].a) + pixelsB[0].rgb;
+
+                        sourceA0.a = pixelsA[0].a;
+                        sourceB0.a = pixelsB[0].a;
+
+                        image->pixels[offsetA0] = pack_colour(sourceA0);
+                        image->pixels[offsetB0] = pack_colour(sourceB0);
+                    }
+                }
+            }
+        }
+    }
+}
+#else
+
+internal void
+draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
+{
+    // NOTE(michiel): Xiaolin Wu's line algorithm
+    v2 rectMin = V2(0, 0);
+    v2 rectMax = V2((f32)image->width - 1, (f32)image->height - 1);
+
+    f32 maxLinePoint = 1.0e20f;
+    if (is_neg_nan(start.x) || (start.x < -maxLinePoint))
+    {
+        start.x = -maxLinePoint;
+    }
+    if (is_neg_nan(start.y) || (start.y < -maxLinePoint))
+    {
+        start.y = -maxLinePoint;
+    }
+    if (is_pos_nan(end.x) || (end.x > maxLinePoint))
+    {
+        end.x = maxLinePoint;
+    }
+    if (is_pos_nan(end.y) || (end.y > maxLinePoint))
+    {
+        end.y = maxLinePoint;
+    }
+
+    u32 startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+    u32 endFlag   = calculate_point_outside_rect(end, rectMin, rectMax);
+
+    b32 drawLine = false;
+    while (1)
+    {
+        if ((startFlag | endFlag) == Outside_Inside)
+        {
+            drawLine = true;
+            break;
+        }
+        if ((startFlag & endFlag) != 0)
+        {
+            break;
+        }
+
+        if (startFlag != Outside_Inside)
+        {
+            start = calculate_intersection(start, end, rectMin, rectMax, startFlag);
+            startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
+        }
+        else
+        {
+            end = calculate_intersection(start, end, rectMin, rectMax, endFlag);
+            endFlag = calculate_point_outside_rect(end, rectMin, rectMax);
+        }
+    }
+
+    if (drawLine)
+    {
+        v2 diff = end - start;
+        v2 absDiff = absolute(diff);
+
+        if (absDiff.x > absDiff.y)
+        {
+            if (absDiff.x > 0.0f)
+            {
+                if (end.x < start.x)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
+
+                v4 pixel0;
+                v4 pixel1;
+                v4 pixel2;
+                v4 pixel3;
+
+                f32 gradient = diff.y / diff.x;
+                f32 xStart = round(start.x);
+                f32 yStart = start.y + gradient * (xStart - start.x);
+                f32 gapStart = 1.0f - fraction(start.x + 0.5f);
+
+                f32 xEnd = round(end.x);
+                f32 yEnd = end.y + gradient * (xEnd - end.x);
+                f32 gapEnd = fraction(end.x + 0.5f);
+
+                f32 intery = yStart + gradient;
+
+                s32 xPixel1 = (s32)xStart;
+                s32 yPixel1 = (s32)yStart;
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+
+                pixel0.a = colourStart.a * (1.0f - fraction(yStart)) * gapStart;
+                pixel1.a = colourStart.a * fraction(yStart) * gapStart;
+                pixel2.a = colourEnd.a * (1.0f - fraction(yEnd)) * gapEnd;
+                pixel3.a = colourEnd.a * fraction(yEnd) * gapEnd;
+
+                pixel0.rgb = pixel0.a * colourStart.rgb;
+                pixel1.rgb = pixel1.a * colourStart.rgb;
+                pixel2.rgb = pixel2.a * colourEnd.rgb;
+                pixel3.rgb = pixel3.a * colourEnd.rgb;
+
+                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+
+                v4 source0 = unpack_colour(basePixels1[0]);
+                v4 source1 = unpack_colour(basePixels1[image->width]);
+                v4 source2 = unpack_colour(basePixels2[0]);
+                v4 source3 = unpack_colour(basePixels2[image->width]);
+
+                source0.rgb = source0.rgb * (1.0f - pixel0.a) + pixel0.rgb;
+                source1.rgb = source1.rgb * (1.0f - pixel1.a) + pixel1.rgb;
+                source2.rgb = source2.rgb * (1.0f - pixel2.a) + pixel2.rgb;
+                source3.rgb = source3.rgb * (1.0f - pixel3.a) + pixel3.rgb;
+
+                source0.a = pixel0.a;
+                source1.a = pixel1.a;
+                source2.a = pixel2.a;
+                source3.a = pixel3.a;
+
+                basePixels1[0] = pack_colour(source0);
+                basePixels1[image->width] = pack_colour(source1);
+                basePixels2[0] = pack_colour(source2);
+                basePixels2[image->width] = pack_colour(source3);
+
+                f32_4x interies = F32_4x(intery, intery + 1.0f * gradient,
+                                         intery + 2.0f * gradient, intery + 3.0f * gradient);
+                f32_4x interyStep = F32_4x(4.0f * gradient);
+
+                f32_4x oneOverCount = F32_4x(1.0f / (f32)(xPixel2 - xPixel1));
+                f32_4x xMod = F32_4x(-1.0f, 0.0f, 1.0f, 2.0f);
+                f32_4x xPixel1_4x = F32_4x((f32)xPixel1) + xMod;
+
+                f32_4x const_0 = zero_f32_4x();
+                f32_4x const_1 = F32_4x(1.0f);
+                f32_4x const_255 = F32_4x(255.0f);
+                f32_4x oneOver255 = F32_4x(1.0f / 255.0f);
+                f32_4x pixelMask = S32_4x(0x00FF);
+                f32_4x const_8_int = S32_4x(8);
+                f32_4x const_16_int = S32_4x(16);
+                f32_4x const_24_int = S32_4x(24);
+
+                for (s32 x = xPixel1 + 1; x < xPixel2; x += 4)
+                {
+                    v4_4x pixelsA;
+                    v4_4x pixelsB;
+
+                    f32_4x t = F32_4x((f32)x) - xPixel1_4x;
+                    t = t * oneOverCount;
+
+                    f32_4x fract = fraction(interies);
+                    f32_4x oneMinFract = const_1 - fract;
+
+                    f32_4x lerpAlpha  = lerp(F32_4x(colourStart.a), t, F32_4x(colourEnd.a));
+                    v3_4x  lerpColour = lerp(V3_4x(colourStart.rgb), t, V3_4x(colourEnd.rgb));
+
+                    pixelsA.a = oneMinFract * lerpAlpha;
+                    pixelsB.a = fract * lerpAlpha;
+                    pixelsA.rgb = pixelsA.a * lerpColour;
+                    pixelsB.rgb = pixelsB.a * lerpColour;
+
+                    u32 offsetA0 = (s32)interies.e[0] * image->width + x + 0;
+                    u32 offsetA1 = (s32)interies.e[1] * image->width + x + 1;
+                    u32 offsetA2 = (s32)interies.e[2] * image->width + x + 2;
+                    u32 offsetA3 = (s32)interies.e[3] * image->width + x + 3;
+                    u32 offsetB0 = ((s32)interies.e[0] + 1) * image->width + x + 0;
+                    u32 offsetB1 = ((s32)interies.e[1] + 1) * image->width + x + 1;
+                    u32 offsetB2 = ((s32)interies.e[2] + 1) * image->width + x + 2;
+                    u32 offsetB3 = ((s32)interies.e[3] + 1) * image->width + x + 3;
+
+                    u32 pixelA0 = image->pixels[offsetA0];
+                    u32 pixelA1 = 0;
+                    u32 pixelA2 = 0;
+                    u32 pixelA3 = 0;
+
+                    u32 pixelB0 = image->pixels[offsetB0];
+                    u32 pixelB1 = 0;
+                    u32 pixelB2 = 0;
+                    u32 pixelB3 = 0;
+                    if ((x + 1) < xPixel2)
+                    {
+                        pixelA1 = image->pixels[offsetA1];
+                        pixelB1 = image->pixels[offsetB1];
+                        if ((x + 2) < xPixel2)
+                        {
+                            pixelA2 = image->pixels[offsetA2];
+                            pixelB2 = image->pixels[offsetB2];
+                            if ((x + 3) < xPixel2)
+                            {
+                                pixelA3 = image->pixels[offsetA3];
+                                pixelB3 = image->pixels[offsetB3];
+                            }
+                        }
+                    }
+
+                    f32_4x sourceARaw = S32_4x(pixelA0, pixelA1, pixelA2, pixelA3);
+                    f32_4x sourceBRaw = S32_4x(pixelB0, pixelB1, pixelB2, pixelB3);
+
+                    v4_4x sourceA;
+                    v4_4x sourceB;
+                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_16_int), pixelMask));
+                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_8_int), pixelMask));
+                    sourceA.b = f32_4x_from_s32(s32_4x_and(sourceARaw, pixelMask));
+                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_24_int), pixelMask));
+                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_16_int), pixelMask));
+                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_8_int), pixelMask));
+                    sourceB.b = f32_4x_from_s32(s32_4x_and(sourceBRaw, pixelMask));
+                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_24_int), pixelMask));
+
+                    sourceA = sourceA * oneOver255;
+                    sourceB = sourceB * oneOver255;
+
+                    sourceA.rgb = sourceA.rgb * (const_1 - pixelsA.a) + pixelsA.rgb;
+                    sourceA.a = pixelsA.a;
+
+                    sourceA = clamp_4x(const_0, sourceA, const_1);
+                    sourceA = sourceA * const_255;
+
+                    sourceB.rgb = sourceB.rgb * (const_1 - pixelsB.a) + pixelsB.rgb;
+                    sourceB.a = pixelsB.a;
+
+                    sourceB = clamp_4x(const_0, sourceB, const_1);
+                    sourceB = sourceB * const_255;
+
+                    image->pixels[offsetA0] = (((u32_from_f32_round(sourceA.a.e[0]) & 0xFF) << 24) |
+                                               ((u32_from_f32_round(sourceA.r.e[0]) & 0xFF) << 16) |
+                                               ((u32_from_f32_round(sourceA.g.e[0]) & 0xFF) <<  8) |
+                                               ((u32_from_f32_round(sourceA.b.e[0]) & 0xFF) <<  0));
+
+                    image->pixels[offsetB0] = (((u32_from_f32_round(sourceB.a.e[0]) & 0xFF) << 24) |
+                                               ((u32_from_f32_round(sourceB.r.e[0]) & 0xFF) << 16) |
+                                               ((u32_from_f32_round(sourceB.g.e[0]) & 0xFF) <<  8) |
+                                               ((u32_from_f32_round(sourceB.b.e[0]) & 0xFF) <<  0));
+
+                    if ((x + 1) < xPixel2)
+                    {
+                        image->pixels[offsetA1] = (((u32_from_f32_round(sourceA.a.e[1]) & 0xFF) << 24) |
+                                                   ((u32_from_f32_round(sourceA.r.e[1]) & 0xFF) << 16) |
+                                                   ((u32_from_f32_round(sourceA.g.e[1]) & 0xFF) <<  8) |
+                                                   ((u32_from_f32_round(sourceA.b.e[1]) & 0xFF) <<  0));
+
+                        image->pixels[offsetB1] = (((u32_from_f32_round(sourceB.a.e[1]) & 0xFF) << 24) |
+                                                   ((u32_from_f32_round(sourceB.r.e[1]) & 0xFF) << 16) |
+                                                   ((u32_from_f32_round(sourceB.g.e[1]) & 0xFF) <<  8) |
+                                                   ((u32_from_f32_round(sourceB.b.e[1]) & 0xFF) <<  0));
+
+                        if ((x + 2) < xPixel2)
+                        {
+                            image->pixels[offsetA2] = (((u32_from_f32_round(sourceA.a.e[2]) & 0xFF) << 24) |
+                                                       ((u32_from_f32_round(sourceA.r.e[2]) & 0xFF) << 16) |
+                                                       ((u32_from_f32_round(sourceA.g.e[2]) & 0xFF) <<  8) |
+                                                       ((u32_from_f32_round(sourceA.b.e[2]) & 0xFF) <<  0));
+
+                            image->pixels[offsetB2] = (((u32_from_f32_round(sourceB.a.e[2]) & 0xFF) << 24) |
+                                                       ((u32_from_f32_round(sourceB.r.e[2]) & 0xFF) << 16) |
+                                                       ((u32_from_f32_round(sourceB.g.e[2]) & 0xFF) <<  8) |
+                                                       ((u32_from_f32_round(sourceB.b.e[2]) & 0xFF) <<  0));
+
+                            if ((x + 3) < xPixel2)
+                            {
+                                image->pixels[offsetA3] = (((u32_from_f32_round(sourceA.a.e[3]) & 0xFF) << 24) |
+                                                           ((u32_from_f32_round(sourceA.r.e[3]) & 0xFF) << 16) |
+                                                           ((u32_from_f32_round(sourceA.g.e[3]) & 0xFF) <<  8) |
+                                                           ((u32_from_f32_round(sourceA.b.e[3]) & 0xFF) <<  0));
+
+                                image->pixels[offsetB3] = (((u32_from_f32_round(sourceB.a.e[3]) & 0xFF) << 24) |
+                                                           ((u32_from_f32_round(sourceB.r.e[3]) & 0xFF) << 16) |
+                                                           ((u32_from_f32_round(sourceB.g.e[3]) & 0xFF) <<  8) |
+                                                           ((u32_from_f32_round(sourceB.b.e[3]) & 0xFF) <<  0));
+                            }
+                        }
+                    }
+                    interies = interies + interyStep;
+                }
+            }
+        }
+        else
+        {
+            if (absDiff.y > 0.0f)
+            {
+                if (end.y < start.y)
+                {
+                    v2 temp = start;
+                    start = end;
+                    end = temp;
+                    v4 tempCol = colourStart;
+                    colourStart = colourEnd;
+                    colourEnd = tempCol;
+                }
+
+                v4 pixels[4];
+
+                f32 gradient = diff.x / diff.y;
+                f32 yStart = round(start.y);
+                f32 xStart = start.x + gradient * (yStart - start.y);
+                f32 gapStart = 1.0f - fraction(start.y + 0.5f);
+
+                f32 yEnd = round(end.y);
+                f32 xEnd = end.x + gradient * (yEnd - end.y);
+                f32 gapEnd = fraction(end.y + 0.5f);
+
+                f32 intery = xStart + gradient;
+
+                s32 xPixel1 = (s32)xStart;
+                s32 yPixel1 = (s32)yStart;
+                s32 xPixel2 = (s32)xEnd;
+                s32 yPixel2 = (s32)yEnd;
+
+                pixels[0].a = colourStart.a * (1.0f - fraction(xStart)) * gapStart;
+                pixels[1].a = colourStart.a * fraction(xStart) * gapStart;
+                pixels[2].a = colourEnd.a * (1.0f - fraction(xEnd)) * gapEnd;
+                pixels[3].a = colourEnd.a * fraction(xEnd) * gapEnd;
+
+                pixels[0].rgb = pixels[0].a * colourStart.rgb;
+                pixels[1].rgb = pixels[1].a * colourStart.rgb;
+                pixels[2].rgb = pixels[2].a * colourEnd.rgb;
+                pixels[3].rgb = pixels[3].a * colourEnd.rgb;
+
+                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+
+                v4 source0 = unpack_colour(basePixels1[0]);
+                v4 source1 = unpack_colour(basePixels1[1]);
+                v4 source2 = unpack_colour(basePixels2[0]);
+                v4 source3 = unpack_colour(basePixels2[1]);
+
+                source0.rgb = source0.rgb * (1.0f - pixels[0].a) + pixels[0].rgb;
+                source1.rgb = source1.rgb * (1.0f - pixels[1].a) + pixels[1].rgb;
+                source2.rgb = source2.rgb * (1.0f - pixels[2].a) + pixels[2].rgb;
+                source3.rgb = source3.rgb * (1.0f - pixels[3].a) + pixels[3].rgb;
+
+                source0.a = pixels[0].a;
+                source1.a = pixels[1].a;
+                source2.a = pixels[2].a;
+                source3.a = pixels[3].a;
+
+                basePixels1[0] = pack_colour(source0);
+                basePixels1[1] = pack_colour(source1);
+                basePixels2[0] = pack_colour(source2);
+                basePixels2[1] = pack_colour(source3);
+
+                f32_4x interies = F32_4x(intery, intery + 1.0f * gradient,
+                                         intery + 2.0f * gradient, intery + 3.0f * gradient);
+                f32_4x interyStep = F32_4x(4.0f * gradient);
+
+                f32_4x oneOverCount = F32_4x(1.0f / (f32)(yPixel2 - yPixel1));
+                f32_4x yMod = F32_4x(-1.0f, 0.0f, 1.0f, 2.0f);
+                f32_4x yPixel1_4x = F32_4x((f32)yPixel1) + yMod;
+
+                f32_4x const_0 = zero_f32_4x();
+                f32_4x const_1 = F32_4x(1.0f);
+                f32_4x const_255 = F32_4x(255.0f);
+                f32_4x oneOver255 = F32_4x(1.0f / 255.0f);
+                f32_4x pixelMask = S32_4x(0x00FF);
+                f32_4x const_8_int = S32_4x(8);
+                f32_4x const_16_int = S32_4x(16);
+                f32_4x const_24_int = S32_4x(24);
+
+                for (s32 y = yPixel1 + 1; y < yPixel2; y += 4)
+                {
+                    v4_4x pixelsA;
+                    v4_4x pixelsB;
+
+                    f32_4x t = F32_4x((f32)y) - yPixel1_4x;
+                    t = t * oneOverCount;
+
+                    f32_4x fract = fraction(interies);
+                    f32_4x oneMinFract = const_1 - fract;
+
+                    f32_4x lerpAlpha  = lerp(F32_4x(colourStart.a), t, F32_4x(colourEnd.a));
+                    v3_4x  lerpColour = lerp(V3_4x(colourStart.rgb), t, V3_4x(colourEnd.rgb));
+
+                    pixelsA.a = oneMinFract * lerpAlpha;
+                    pixelsB.a = fract * lerpAlpha;
+                    pixelsA.rgb = pixelsA.a * lerpColour;
+                    pixelsB.rgb = pixelsB.a * lerpColour;
+
+                    u32 offsetA0 = (y + 0) * image->width + (s32)interies.e[0];
+                    u32 offsetB0 = (y + 0) * image->width + (s32)interies.e[0] + 1;
+                    u32 offsetA1 = (y + 1) * image->width + (s32)interies.e[1];
+                    u32 offsetB1 = (y + 1) * image->width + (s32)interies.e[1] + 1;
+                    u32 offsetA2 = (y + 2) * image->width + (s32)interies.e[2];
+                    u32 offsetB2 = (y + 2) * image->width + (s32)interies.e[2] + 1;
+                    u32 offsetA3 = (y + 3) * image->width + (s32)interies.e[3];
+                    u32 offsetB3 = (y + 3) * image->width + (s32)interies.e[3] + 1;
+
+                    u32 pixelA0 = image->pixels[offsetA0];
+                    u32 pixelA1 = 0;
+                    u32 pixelA2 = 0;
+                    u32 pixelA3 = 0;
+
+                    u32 pixelB0 = image->pixels[offsetB0];
+                    u32 pixelB1 = 0;
+                    u32 pixelB2 = 0;
+                    u32 pixelB3 = 0;
+
+                    if ((y + 1) < yPixel2)
+                    {
+                        pixelA1 = image->pixels[offsetA1];
+                        pixelB1 = image->pixels[offsetB1];
+                        if ((y + 2) < yPixel2)
+                        {
+                            pixelA2 = image->pixels[offsetA2];
+                            pixelB2 = image->pixels[offsetB2];
+                            if ((y + 3) < yPixel2)
+                            {
+                                pixelA3 = image->pixels[offsetA3];
+                                pixelB3 = image->pixels[offsetB3];
+                            }
+                        }
+                    }
+
+                    f32_4x sourceARaw = S32_4x(pixelA0, pixelA1, pixelA2, pixelA3);
+                    f32_4x sourceBRaw = S32_4x(pixelB0, pixelB1, pixelB2, pixelB3);
+
+                    v4_4x sourceA;
+                    v4_4x sourceB;
+                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_16_int), pixelMask));
+                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_8_int), pixelMask));
+                    sourceA.b = f32_4x_from_s32(s32_4x_and(sourceARaw, pixelMask));
+                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_24_int), pixelMask));
+                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_16_int), pixelMask));
+                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_8_int), pixelMask));
+                    sourceB.b = f32_4x_from_s32(s32_4x_and(sourceBRaw, pixelMask));
+                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_24_int), pixelMask));
+
+                    sourceA = sourceA * oneOver255;
+                    sourceB = sourceB * oneOver255;
+
+                    sourceA.rgb = sourceA.rgb * (const_1 - pixelsA.a) + pixelsA.rgb;
+                    sourceA.a = pixelsA.a;
+
+                    sourceA = clamp_4x(const_0, sourceA, const_1);
+                    sourceA = sourceA * const_255;
+
+                    sourceB.rgb = sourceB.rgb * (const_1 - pixelsB.a) + pixelsB.rgb;
+                    sourceB.a = pixelsB.a;
+
+                    sourceB = clamp_4x(const_0, sourceB, const_1);
+                    sourceB = sourceB * const_255;
+
+                    image->pixels[offsetA0] = (((u32_from_f32_round(sourceA.a.e[0]) & 0xFF) << 24) |
+                                               ((u32_from_f32_round(sourceA.r.e[0]) & 0xFF) << 16) |
+                                               ((u32_from_f32_round(sourceA.g.e[0]) & 0xFF) <<  8) |
+                                               ((u32_from_f32_round(sourceA.b.e[0]) & 0xFF) <<  0));
+
+                    image->pixels[offsetB0] = (((u32_from_f32_round(sourceB.a.e[0]) & 0xFF) << 24) |
+                                               ((u32_from_f32_round(sourceB.r.e[0]) & 0xFF) << 16) |
+                                               ((u32_from_f32_round(sourceB.g.e[0]) & 0xFF) <<  8) |
+                                               ((u32_from_f32_round(sourceB.b.e[0]) & 0xFF) <<  0));
+
+                    if ((y + 1) < yPixel2)
+                    {
+                        image->pixels[offsetA1] = (((u32_from_f32_round(sourceA.a.e[1]) & 0xFF) << 24) |
+                                                   ((u32_from_f32_round(sourceA.r.e[1]) & 0xFF) << 16) |
+                                                   ((u32_from_f32_round(sourceA.g.e[1]) & 0xFF) <<  8) |
+                                                   ((u32_from_f32_round(sourceA.b.e[1]) & 0xFF) <<  0));
+
+                        image->pixels[offsetB1] = (((u32_from_f32_round(sourceB.a.e[1]) & 0xFF) << 24) |
+                                                   ((u32_from_f32_round(sourceB.r.e[1]) & 0xFF) << 16) |
+                                                   ((u32_from_f32_round(sourceB.g.e[1]) & 0xFF) <<  8) |
+                                                   ((u32_from_f32_round(sourceB.b.e[1]) & 0xFF) <<  0));
+                        if ((y + 2) < yPixel2)
+                        {
+                            image->pixels[offsetA2] = (((u32_from_f32_round(sourceA.a.e[2]) & 0xFF) << 24) |
+                                                       ((u32_from_f32_round(sourceA.r.e[2]) & 0xFF) << 16) |
+                                                       ((u32_from_f32_round(sourceA.g.e[2]) & 0xFF) <<  8) |
+                                                       ((u32_from_f32_round(sourceA.b.e[2]) & 0xFF) <<  0));
+
+                            image->pixels[offsetB2] = (((u32_from_f32_round(sourceB.a.e[2]) & 0xFF) << 24) |
+                                                       ((u32_from_f32_round(sourceB.r.e[2]) & 0xFF) << 16) |
+                                                       ((u32_from_f32_round(sourceB.g.e[2]) & 0xFF) <<  8) |
+                                                       ((u32_from_f32_round(sourceB.b.e[2]) & 0xFF) <<  0));
+                            if ((y + 3) < yPixel2)
+                            {
+                                image->pixels[offsetA3] = (((u32_from_f32_round(sourceA.a.e[3]) & 0xFF) << 24) |
+                                                           ((u32_from_f32_round(sourceA.r.e[3]) & 0xFF) << 16) |
+                                                           ((u32_from_f32_round(sourceA.g.e[3]) & 0xFF) <<  8) |
+                                                           ((u32_from_f32_round(sourceA.b.e[3]) & 0xFF) <<  0));
+
+                                image->pixels[offsetB3] = (((u32_from_f32_round(sourceB.a.e[3]) & 0xFF) << 24) |
+                                                           ((u32_from_f32_round(sourceB.r.e[3]) & 0xFF) << 16) |
+                                                           ((u32_from_f32_round(sourceB.g.e[3]) & 0xFF) <<  8) |
+                                                           ((u32_from_f32_round(sourceB.b.e[3]) & 0xFF) <<  0));
+                            }
+                        }
+                    }
+                    interies = interies + interyStep;
+                }
+            }
+        }
+    }
+}
+
+#endif
+
+
+#endif
 
 internal void
 draw_line(Image *image, f32 startX, f32 startY, f32 endX, f32 endY, v4 colour = V4(1, 1, 1, 1))
@@ -1072,16 +2140,17 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 }
 
 internal void
-fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
+fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, f32 innerRadius = 0.0f, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1))
 {
     f32 diameter = 2.0f * radius;
 
     f32 maxDistSqr = square(radius - 0.5f);
     f32 edgeDistSqr = square(radius + 0.5f);
+    f32 innerDistSqr = square(innerRadius);
 
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
-    f32 edgeFactor = 1.0f / maxDistSqr;
+    f32 edgeFactor = 1.0f / (maxDistSqr - innerDistSqr);
 
     for (s32 y = (s32)(y0 - radius);
          (y < s32_from_f32_ceil(y0 + diameter)) && (y < image->height);
@@ -1096,7 +2165,13 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
             f32 fX = (f32)x - x0;
             f32 distSqr = square(fX) + fYSqr;
 
-            if (distSqr <= edgeDistSqr)
+            if (distSqr <= innerDistSqr)
+            {
+                v4 pixel = colour;
+                pixel.rgb *= pixel.a;
+                draw_pixel(image, x, y, pixel);
+            }
+            else if (distSqr <= edgeDistSqr)
             {
                 f32 colourFactor = clamp01(distSqr * edgeFactor);
                 v4 pixel = lerp(colour, colourFactor, edgeColour);
