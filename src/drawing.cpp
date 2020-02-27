@@ -2102,15 +2102,21 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
 
     f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
 
-    for (s32 y = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(y0 + diameter)) && (y < image->height);
-         ++y)
+    s32 xMin = (s32)(x0 - radius);
+    s32 yMin = (s32)(y0 - radius);
+    s32 xMax = s32_from_f32_ceil(x0 + diameter);
+    s32 yMax = s32_from_f32_ceil(y0 + diameter);
+
+    xMin = clamp(0, xMin, (s32)image->width);
+    yMin = clamp(0, yMin, (s32)image->height);
+    xMax = clamp(0, xMax, (s32)image->width);
+    yMax = clamp(0, yMax, (s32)image->height);
+
+    for (s32 y = yMin; y < yMax; ++y)
     {
         f32 fY = (f32)y - y0;
         f32 fYSqr = square(fY);
-        for (s32 x = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(x0 + diameter)) && (x < image->width);
-             ++x)
+        for (s32 x = xMin; x < xMax; ++x)
         {
             f32 fX = (f32)x - x0;
             f32 distSqr = square(fX) + fYSqr;
@@ -2152,15 +2158,21 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
 
     f32 edgeFactor = 1.0f / (maxDistSqr - innerDistSqr);
 
-    for (s32 y = (s32)(y0 - radius);
-         (y < s32_from_f32_ceil(y0 + diameter)) && (y < image->height);
-         ++y)
+    s32 xMin = (s32)(x0 - radius);
+    s32 yMin = (s32)(y0 - radius);
+    s32 xMax = s32_from_f32_ceil(x0 + diameter);
+    s32 yMax = s32_from_f32_ceil(y0 + diameter);
+
+    xMin = clamp(0, xMin, (s32)image->width);
+    yMin = clamp(0, yMin, (s32)image->height);
+    xMax = clamp(0, xMax, (s32)image->width);
+    yMax = clamp(0, yMax, (s32)image->height);
+
+    for (s32 y = yMin; y < yMax; ++y)
     {
         f32 fY = (f32)y - y0;
         f32 fYSqr = square(fY);
-        for (s32 x = (s32)(x0 - radius);
-             (x < s32_from_f32_ceil(x0 + diameter)) && (x < image->width);
-             ++x)
+        for (s32 x = xMin; x < xMax; ++x)
         {
             f32 fX = (f32)x - x0;
             f32 distSqr = square(fX) + fYSqr;
