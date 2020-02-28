@@ -192,6 +192,11 @@ internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
 #define maximum(a, b)           ((a) > (b) ? (a) : (b))
 #define clamp(min, x, max)      (maximum((min), minimum((max), (x))))
 
+#define minimum3(a, b, c)       minimum((a), minimum((b), (c)))
+#define maximum3(a, b, c)       maximum((a), maximum((b), (c)))
+#define minimum4(a, b, c, d)    minimum(minimum((a), (b)), minimum((c), (d)))
+#define maximum4(a, b, c, d)    maximum(maximum((a), (b)), maximum((c), (d)))
+
 #define kilobytes(kB)           ((kB) * 1024LL)
 #define megabytes(MB)           (kilobytes(MB) * 1024LL)
 #define gigabytes(GB)           (megabytes(GB) * 1024LL)

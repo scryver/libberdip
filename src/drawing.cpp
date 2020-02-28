@@ -2014,9 +2014,19 @@ fill_triangle(Image *image, v2 a, v2 b, v2 c, v4 colour)
     f32 modB = 1.0f / maximum(absolute(b.x - c.x), absolute(b.y - c.y));
     f32 modC = 1.0f / maximum(absolute(c.x - a.x), absolute(c.y - a.y));
 
-    for (s32 y = s32_from_f32_truncate(minY); y < s32_from_f32_ceil(maxY); ++y)
+    s32 xMin = s32_from_f32_truncate(minX);
+    s32 yMin = s32_from_f32_truncate(minY);
+    s32 xMax = s32_from_f32_ceil(maxX);
+    s32 yMax = s32_from_f32_ceil(maxY);
+
+    xMin = clamp(0, xMin, (s32)image->width);
+    yMin = clamp(0, yMin, (s32)image->height);
+    xMax = clamp(0, xMax, (s32)image->width);
+    yMax = clamp(0, yMax, (s32)image->height);
+
+    for (s32 y = yMin; y < yMax; ++y)
     {
-        for (s32 x = s32_from_f32_truncate(minX); x < s32_from_f32_ceil(maxX); ++x)
+        for (s32 x = xMin; x < xMax; ++x)
         {
             v2 point = V2(x, y);
             v3 edges = edge_offsets(point, a, b, c);
