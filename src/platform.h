@@ -109,6 +109,7 @@ is_modified(Keyboard *keyboard, KeyModifiers mod)
 struct API
 {
     FileAPI file;
+    //MemoryContext memoryCtx;
 
     b32 closeProgram;
 

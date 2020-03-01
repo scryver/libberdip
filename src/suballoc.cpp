@@ -1,4 +1,3 @@
-#define MIN_SUBALLOC_BITS  4
 #define MIN_SUBALLOC_SIZE  (1 << MIN_SUBALLOC_BITS)
 compile_expect(MIN_SUBALLOC_SIZE >= sizeof(SubAllocItem));
 
@@ -231,13 +230,17 @@ init_sub_allocator(SubAllocator *allocator, u32 size, u8 *data)
 }
 
 internal void *
-sub_alloc(SubAllocator *allocator, u32 requestSize)
+sub_alloc(SubAllocator *allocator, u32 requestSize, MemoryAllocFlags allocInfo)
 {
     i_expect(allocator);
     i_expect(allocator->base);
 
+    // NOTE(michiel): We ignore allocInfo.alignment for now, because the suballocator will always be aligned
+    // if the requestSize is greater than or equal to the alignment. Which is _probably_ true.
+
     void *result = 0;
     u32 totalSize = requestSize + SUBALLOC_HEADER_OFFSET;
+    b32 clear = !(allocInfo.flags & Memory_NoClear);
 
     if ((requestSize > 0) && (totalSize <= allocator->totalSize))
     {
@@ -304,6 +307,11 @@ sub_alloc(SubAllocator *allocator, u32 requestSize)
 
     i_expect(result < allocator->end);
 
+    if (clear)
+    {
+        copy_single(requestSize, 0, result);
+    }
+
     return result;
 }
 
@@ -333,3 +341,90 @@ sub_dealloc(SubAllocator *allocator, void *pointer)
     return result;
 }
 
+internal void *
+sub_realloc(SubAllocator *allocator, void *pointer, u32 requestSize, MemoryAllocFlags allocInfo)
+{
+    void *result = 0;
+    b32 clear = !(allocInfo.flags & Memory_NoClear);
+
+    if (pointer)
+    {
+        SubAllocItem *entry = (SubAllocItem *)((u8 *)pointer - SUBALLOC_HEADER_OFFSET);
+        suballoc_expect(entry->isUsed);
+        umm entrySize = entry->size - 1 - SUBALLOC_HEADER_OFFSET;
+
+        if (entrySize < requestSize)
+        {
+            // TODO(michiel): Could check for a free sibling to increase the bucket, then no copy is needed.
+            MemoryAllocFlags moddedInfo = allocInfo;
+            moddedInfo.flags |= Memory_NoClear;
+            void *newPoint = sub_alloc(allocator, requestSize, moddedInfo);
+            copy(entrySize, pointer, newPoint);
+            if (clear)
+            {
+                copy_single(requestSize - entrySize, 0, newPoint + entrySize);
+            }
+            sub_dealloc(allocator, pointer);
+            result = newPoint;
+        }
+        else
+        {
+            // NOTE(michiel): Nothing to do.
+            result = pointer;
+        }
+    }
+    else
+    {
+        result = sub_alloc(allocator, requestSize);
+    }
+
+    return result;
+}
+
+internal String
+sub_alloc_string(SubAllocator *allocator, u32 size, MemoryAllocFlags allocInfo)
+{
+    String result = {};
+    u8 *mem = (u8 *)sub_alloc(allocator, size + 1, allocInfo);
+    if (mem) {
+        result.size = size;
+        result.data = mem;
+    }
+    return result;
+}
+
+internal String
+sub_alloc_string(SubAllocator *allocator, String s)
+{
+    String result = sub_alloc_string(allocator, s.size, no_clear_memory_alloc());
+    copy(s.size, s.data, result.data);
+    result.data[result.size] = 0;
+    return result;
+}
+
+internal String
+sub_alloc_string_fmt(SubAllocator *allocator, char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    String sizeStr = vstring_fmt(0, 0, fmt, args);
+    va_end(args);
+
+    String allocStr = sub_alloc_string(allocator, sizeStr.size, no_clear_memory_alloc());
+    va_start(args, fmt);
+    String result = string_fmt(allocStr.size + 1, allocStr.data, fmt, args);
+    va_end(args);
+    i_expect(result.size == sizeStr.size);
+    result.data[result.size] = 0;
+
+    return result;
+}
+
+internal String
+sub_dealloc_string(SubAllocator *allocator, String s)
+{
+    String result = {};
+    result.data = (u8 *)sub_dealloc(allocator, s.data);
+    result.size = 0;
+    return result;
+}

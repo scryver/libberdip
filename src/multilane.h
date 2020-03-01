@@ -1098,125 +1098,44 @@ select(v4_4x op0, f32_4x mask, v4_4x op1)
     return result;
 }
 
-
-
-alignas(16) global f32_4x gSinCosCoefs_4x[] =
-{
-    // NOTE(michiel): Cos/Sin coefficients interleaved
-    {
-        -1.0 / (2.0 * 1.0),
-        -1.0 / (2.0 * 1.0),
-        -1.0 / (2.0 * 1.0),
-        -1.0 / (2.0 * 1.0)
-    },
-    {
-        -1.0 / (3.0 * 2.0 * 1.0),
-        -1.0 / (3.0 * 2.0 * 1.0),
-        -1.0 / (3.0 * 2.0 * 1.0),
-        -1.0 / (3.0 * 2.0 * 1.0)
-    },
-    {
-        1.0 / (4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (4.0 * 3.0 * 2.0 * 1.0)
-    },
-    {
-        1.0 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0)
-    },
-    {
-        -1.0 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0)
-    },
-    {
-        -1.0 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        -1.0 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0)
-    },
-    {
-        1.0 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0)
-    },
-    {
-        1.0 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0),
-        1.0 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0)
-    },
-};
-
 internal SinCos_4x
 sincos_f32_4x_approx_small(f32_4x angles)
 {
     // NOTE(michiel): Valid for angles between -0.5 and 0.5
     SinCos_4x result;
 
-#if 0
-    f64 piSqOver4  = square(F64_PI) / 4.0;
-    f64 pi4Over16  = square(piSqOver4);
-    f64 pi6Over64  = pi4Over16 * piSqOver4;
-    //f64 pi8Over256 = square(pi4Over16);
-    f32 cos_c0 = -piSqOver4 / (2.0 * 1.0);
-    f32 cos_c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
-    f32 cos_c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 cos_c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f32 sin_c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
-    f32 sin_c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    f32 sin_c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 sin_c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-
-    f32_4x one_4x = F32_4x(1.0f);
-
-    f32_4x angSq_4x = square(angles);
-    //result.sin = F32_4x(sin_c3) * angSq_4x;
-    //result.cos = F32_4x(cos_c3) * angSq_4x;
-    //result.sin = (result.sin + F32_4x(sin_c2)) * angSq_4x;
-    //result.cos = (result.cos + F32_4x(cos_c2)) * angSq_4x;
-    result.sin = F32_4x(sin_c2) * angSq_4x;
-    result.cos = F32_4x(cos_c2) * angSq_4x;
-    result.sin = (result.sin + F32_4x(sin_c1)) * angSq_4x;
-    result.cos = (result.cos + F32_4x(cos_c1)) * angSq_4x;
-    result.sin = (result.sin + F32_4x(sin_c0)) * angSq_4x;
-    result.cos = (result.cos + F32_4x(cos_c0)) * angSq_4x;
-    result.sin = (result.sin + one_4x) * angles;
-    result.cos = (result.cos + one_4x);
-    result.sin = result.sin * F32_4x(0.5f * F32_PI);
-#else
-
-    f32_4x *coefPtr = gSinCosCoefs_4x;
-    //f32 cos_c0 = -1.0 / (2.0 * 1.0);
-    //f32 cos_c1 = 1.0 / (4.0 * 3.0 * 2.0 * 1.0);
-    //f32 cos_c2 = -1.0 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 cos_c3 = 1.0 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 sin_c0 = -1.0 / (3.0 * 2.0 * 1.0);
-    //f32 sin_c1 = 1.0 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 sin_c2 = -1.0 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-    //f32 sin_c3 = 1.0 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-
     f32_4x one_4x = F32_4x(1.0f);
     f32_4x halfPi_4x = F32_4x(0.5f * F32_PI);
 
-    f32_4x piAngles_4x = halfPi_4x * angles;
-    f32_4x angSq_4x = square(piAngles_4x);
-    result.cos = *coefPtr++ * angSq_4x;
-    result.sin = *coefPtr++ * angSq_4x;
-    //result.cos = (result.cos + *coefPtr++) * angSq_4x;
-    //result.sin = (result.sin + *coefPtr++) * angSq_4x;
-    result.cos = (result.cos + *coefPtr++) * angSq_4x;
-    result.sin = (result.sin + *coefPtr++) * angSq_4x;
-    result.cos = (result.cos + *coefPtr++) * angSq_4x;
-    result.sin = (result.sin + *coefPtr++) * angSq_4x;
-    result.cos = (result.cos + one_4x);
-    result.sin = (result.sin + one_4x) * piAngles_4x;
-#endif
+    // cos(x) = 1 - (x^2/2!) + (x^4/4!) - (x^6/6!) + (x^8/8!)
+    // cosA(x) = x^2/2! + x^6/6! = x^2 * (1/2! + x^4/6!)
+    // cosB(x) = x^4/4! + x^8/8! = x^4 * (1/4! + x^4/8!)
+    // cos(x) = 1 - cosA(x) + cosB(x)
+    f32_4x c0 = F32_4x(1.2337005501361697490381175157381221652030944824f); // NOTE(michiel): (pi^2 /   4) / 2!
+    f32_4x c1 = F32_4x(0.2536695079010479747516626503056613728404045105f); // NOTE(michiel): (pi^4 /  16) / 4!
+    f32_4x c2 = F32_4x(0.0208634807633529574533159944849103339947760105f); // NOTE(michiel): (pi^6 /  64) / 6!
+    f32_4x c3 = F32_4x(0.0009192602748394262598963244670358108123764396f); // NOTE(michiel): (pi^8 / 256) / 8!
+
+    // sin(x) = x - (x^3/3!) + (x^5/5!) - (x^7/7!) + (x^9/9!)
+    // sin(x) = x * (1 - (x^2/3!) + (x^4/5!) - (x^6/7!) + (x^8/9!)
+    // sinA(x) = x^2/3! + x^6/7! = x^2 * (1/3! + x^4/7!)
+    // sinB(x) = x^4/5! + x^8/9! = x^4 * (1/5! + x^4/9!)
+    // sin(x) = x * (1 - sinA(x) + sinB(x))
+    f32_4x s0 = F32_4x(0.4112335167120566015164229156653163954615592956f); // NOTE(michiel): (pi^2 /   4) / 3!
+    f32_4x s1 = F32_4x(0.0507339015802095935625537492796865990385413170f); // NOTE(michiel): (pi^4 /  16) / 5!
+    f32_4x s2 = F32_4x(0.0029804972519075654743825332104734116001054644f); // NOTE(michiel): (pi^6 /  64) / 7!
+    f32_4x s3 = F32_4x(0.0001021400305377140213481876318546426318789599f); // NOTE(michiel): (pi^8 / 256) / 9!
+
+    f32_4x angSq = square(angles);
+    f32_4x angQd = square(square(angles));
+
+    f32_4x cosA = angSq * (c0 + angQd * c2);
+    f32_4x cosB = angQd * (c1 + angQd * c3);
+    f32_4x sinA = angSq * (s0 + angQd * s2);
+    f32_4x sinB = angQd * (s1 + angQd * s3);
+
+    result.cos = one_4x - cosA + cosB;
+    result.sin = halfPi_4x * angles * (one_4x - sinA + sinB);
 
     return result;
 }
@@ -1261,6 +1180,43 @@ sin_f32_4x(f32_4x angles)
     f32_4x result = cos_f32_4x(angles - quarter_4x);
     return result;
 }
+
+internal SinCos_4x
+sincos_4x(f32_4x angles)
+{
+    // NOTE(michiel): Getting the sine and cosine of some angle is basically free.
+    f32_4x eight_4x = F32_4x(0.125f);
+    f32_4x one_4x   = F32_4x(1.0f);
+
+    angles = angles + eight_4x;
+    angles = fraction(angles);
+    angles = angles - eight_4x;
+    angles = angles * F32_4x(4.0f);
+
+    f32_4x quadrant4 = angles > F32_4x(2.5f);
+    f32_4x quadrant3 = angles > F32_4x(1.5f);
+    f32_4x quadrant2 = angles > F32_4x(0.5f);
+
+    quadrant2 = and_not(quadrant2, quadrant3);
+    quadrant3 = and_not(quadrant3, quadrant4);
+
+    f32_4x quadrants = (F32_4x(3.0f) & quadrant4) | (F32_4x(2.0f) & quadrant3) | (one_4x & quadrant2);
+    angles = angles - quadrants;
+
+    f32_4x do_cos_mask = quadrant3 | (quadrants == zero_f32_4x());
+    f32_4x do_invc_mask = quadrant2 | quadrant3;
+    f32_4x do_invs_mask = quadrant3 | quadrant4;
+
+    SinCos_4x sincos = sincos_f32_4x_approx_small(angles);
+    SinCos_4x result;
+    result.cos = select(sincos.sin, do_cos_mask, sincos.cos);
+    result.cos = select(result.cos, do_invc_mask, -result.cos);
+    result.sin = select(sincos.cos, do_cos_mask, sincos.sin);
+    result.sin = select(result.sin, do_invs_mask, -result.sin);
+
+    return result;
+}
+
 #else
 internal f32_4x
 cos_f32_4x(f32_4x angles)

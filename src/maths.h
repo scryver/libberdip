@@ -408,9 +408,6 @@ square_root(f32 value)
     return result;
 }
 
-#define SINCOS_F32_PRECISION 4
-#define SINCOS_F64_PRECISION 5
-
 internal f32
 cos_f32_approx8_small(f32 angle)
 {
@@ -420,88 +417,18 @@ cos_f32_approx8_small(f32 angle)
     // cos(x) = 1 - x^2 (1/2! + x^2 (1/4! - x^2 (1/6! + x^2/8!)))
 
     // TODO(michiel): How to improve accuracy
-    f64 piSqOver4  = square(F64_PI) / 4.0;
-#if SINCOS_F32_PRECISION > 1
-    f64 pi4Over16  = square(piSqOver4);
-#if SINCOS_F32_PRECISION > 2
-    f64 pi6Over64  = pi4Over16 * piSqOver4;
-#if SINCOS_F32_PRECISION > 3
-    f64 pi8Over256 = square(pi4Over16);
-#if SINCOS_F32_PRECISION > 4
-    f64 pi10Over1024 = pi8Over256 * piSqOver4;
-#if SINCOS_F32_PRECISION > 5
-    f64 pi12Over4096 = pi8Over256 * pi4Over16;
-#if SINCOS_F32_PRECISION > 6
-    f64 pi14Over16384 = pi8Over256 * pi6Over64;
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-
-    f32 c0 = -piSqOver4 / (2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 1
-    f32 c1 = pi4Over16 / (4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 2
-    f32 c2 = -pi6Over64 / (6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 3
-    f32 c3 = pi8Over256 / (8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 4
-    f32 c4 = -pi10Over1024 / (10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 5
-    f32 c5 = pi12Over4096 / (12.0 * 11.0 * 10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 6
-    f32 c6 = -pi14Over16384 / (14.0 * 13.0 * 12.0 * 11.0 * 10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+    f32 c0 = -1.2337005501361697490381175157381221652030944824f; // NOTE(michiel): (pi^2 /   4) / 2!
+    f32 c1 = 0.25366950790104797475166265030566137284040451050f; // NOTE(michiel): (pi^4 /  16) / 4!
+    f32 c2 = -0.0208634807633529574533159944849103339947760105f; // NOTE(michiel): (pi^6 /  64) / 6!
+    f32 c3 = 0.00091926027483942625989632446703581081237643957f; // NOTE(michiel): (pi^8 / 256) / 8!
 
     f32 angSq = square(angle);
     //f32 result = 1.0f + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq)));
-#if SINCOS_F32_PRECISION > 6
-    f32 result = c6 * angSq + c5;
-    result = result * angSq + c4;
-    result = result * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 5
-    f32 result = c5 * angSq + c4;
-    result = result * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 4
-    f32 result = c4 * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 3
-    f32 result = c3 * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 2
-    f32 result = c2 * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 1
-    f32 result = c1 * angSq + c0;
-    result = result * angSq + 1.0f;
-#else
-    f32 result = c0 * angSq + 1.0f;
-#endif
-    //f32 result = c3 * angSq + c2;
-    //result = result * angSq + c1;
-    //result = result * angSq + c0;
-    //result = result * angSq + 1.0f;
+
+    f32 angQd = square(square(angle));
+    f32 a = angQd * (c1 + angQd * c3);
+    f32 b = angSq * (c0 + angQd * c2);
+    f32 result = 1.0f + a + b;
     return result;
 }
 
@@ -514,91 +441,22 @@ sin_f32_approx7_small(f32 angle)
     // sin(x) = x (1 - x^2 (1/3! + x^2 (1/5! - x^2 (1/7! + x^2/9!)))
 
     // TODO(michiel): How to improve accuracy
-    f64 piSqOver4  = square(F64_PI) / 4.0;
-#if SINCOS_F32_PRECISION > 1
-    f64 pi4Over16  = square(piSqOver4);
-#if SINCOS_F32_PRECISION > 2
-    f64 pi6Over64  = pi4Over16 * piSqOver4;
-#if SINCOS_F32_PRECISION > 3
-    f64 pi8Over256 = square(pi4Over16);
-#if SINCOS_F32_PRECISION > 4
-    f64 pi10Over1024 = pi8Over256 * piSqOver4;
-#if SINCOS_F32_PRECISION > 5
-    f64 pi12Over4096 = pi8Over256 * pi4Over16;
-#if SINCOS_F32_PRECISION > 6
-    f64 pi14Over16384 = pi8Over256 * pi6Over64;
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
-
-    f32 c0 = -piSqOver4 / (3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 1
-    f32 c1 = pi4Over16 / (5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 2
-    f32 c2 = -pi6Over64 / (7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 3
-    f32 c3 = pi8Over256 / (9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 4
-    f32 c4 = -pi10Over1024 / (11.0 * 10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 5
-    f32 c5 = pi12Over4096 / (13.0 * 12.0 * 11.0 * 10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#if SINCOS_F32_PRECISION > 6
-    f32 c6 = -pi14Over16384 / (15.0 * 14.0 * 13.0 * 12.0 * 11.0 * 10.0 * 9.0 * 8.0 * 7.0 * 6.0 * 5.0 * 4.0 * 3.0 * 2.0 * 1.0);
-#endif
-#endif
-#endif
-#endif
-#endif
-#endif
+    f32 c0 = -0.4112335167120566015164229156653163954615592956f; // NOTE(michiel): (pi^2 /   4) / 3!
+    f32 c1 = 0.05073390158020959356255374927968659903854131698f; // NOTE(michiel): (pi^4 /  16) / 5!
+    f32 c2 = -0.0029804972519075654743825332104734116001054644f; // NOTE(michiel): (pi^6 /  64) / 7!
+    f32 c3 = 0.00010214003053771402134818763185464263187895994f; // NOTE(michiel): (pi^8 / 256) / 9!
 
     f32 angSq = square(angle);
     //f32 result = 0.5f * F32_PI * angle * (1.0f + angSq * (c0 + angSq * (c1 + angSq * (c2 + c3 * angSq))));
-#if SINCOS_F32_PRECISION > 6
-    f32 result = c6 * angSq + c5;
-    result = result * angSq + c4;
-    result = result * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 5
-    f32 result = c5 * angSq + c4;
-    result = result * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 4
-    f32 result = c4 * angSq + c3;
-    result = result * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 3
-    f32 result = c3 * angSq + c2;
-    result = result * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 2
-    f32 result = c2 * angSq + c1;
-    result = result * angSq + c0;
-    result = result * angSq + 1.0f;
-#elif SINCOS_F32_PRECISION > 1
-    f32 result = c1 * angSq + c0;
-    result = result * angSq + 1.0f;
-#else
-    f32 result = c0 * angSq + 1.0f;
-#endif
-    //f32 result = c3 * angSq + c2;
-    //result = result * angSq + c1;
-    //result = result * angSq + c0;
-    //result = result * angSq + 1.0f;
-    result = result * angle * F32_PI * 0.5f;
+
+    f32 angQd = square(square(angle));
+    f32 a = angQd * (c1 + angQd * c3);
+    f32 b = angSq * (c0 + angQd * c2);
+    f32 result = 0.5f * F32_PI * angle * (1.0f + a + b);
     return result;
 }
+
+#define SINCOS_F64_PRECISION 6
 
 internal f64
 cos_f64_approx8_small(f64 angle)
