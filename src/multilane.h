@@ -137,7 +137,7 @@ internal f32_4x
 S32_4x(s32 s0, s32 s1, s32 s2, s32 s3)
 {
     f32_4x result;
-    result.m = _mm_setr_epi32(s0, s1, s2, s3);
+    result.mi = _mm_setr_epi32(s0, s1, s2, s3);
     return result;
 }
 
@@ -256,6 +256,24 @@ operator >=(f32_4x a, f32_4x b)
 }
 
 internal f32_4x
+operator ~(f32_4x a)
+{
+    u32 maskU = U32_MAX;
+    f32_4x mask = S32_4x(maskU);
+    f32_4x result;
+    result = a ^ mask;
+    return result;
+}
+
+internal f32_4x
+reciprocal(f32_4x a)
+{
+    f32_4x result;
+    result.m = _mm_rcp_ps(a.m);
+    return result;
+}
+
+internal f32_4x
 and_not(f32_4x a, f32_4x b)
 {
     // NOTE(michiel): Returns a & ~b
@@ -366,6 +384,14 @@ select(f32_4x op0, f32_4x mask, f32_4x op1)
 //
 // TODO(michiel): How to handle this s32_4x stuff
 //
+
+internal f32_4x
+s32_4x_from_f32_trunc(f32_4x a)
+{
+    f32_4x result;
+    result.mi = _mm_cvttps_epi32(a.m);
+    return result;
+}
 
 internal f32_4x
 s32_4x_from_f32(f32_4x a)
@@ -1182,9 +1208,9 @@ sin_f32_4x(f32_4x angles)
 }
 
 internal SinCos_4x
-sincos_4x(f32_4x angles)
+sincos_f32_4x(f32_4x angles)
 {
-    // NOTE(michiel): Getting the sine and cosine of some angle is basically free.
+    // NOTE(michiel): Getting both the sine and cosine of some angle is basically free (about as fast as just a sine).
     f32_4x eight_4x = F32_4x(0.125f);
     f32_4x one_4x   = F32_4x(1.0f);
 
@@ -1214,6 +1240,158 @@ sincos_4x(f32_4x angles)
     result.sin = select(sincos.cos, do_cos_mask, sincos.sin);
     result.sin = select(result.sin, do_invs_mask, -result.sin);
 
+    return result;
+}
+
+// TODO(michiel): TEMP
+#ifndef F32_PI_OVER_4_PREC_1
+
+/* These are for a 24-bit significand: */
+#define F32_PI_OVER_4_PREC_1 0.78515625f
+#define F32_PI_OVER_4_PREC_2 2.4187564849853515625e-4f
+#define F32_PI_OVER_4_PREC_3 3.77489497744594108e-8f
+
+#define F32_SIN_COEF_0       1.6666654611e-1f
+#define F32_SIN_COEF_1       8.3321608736e-3f
+#define F32_SIN_COEF_2       1.9515295891e-4f
+
+#define F32_COS_COEF_0       0.5f
+#define F32_COS_COEF_1       4.166664568298827e-2f
+#define F32_COS_COEF_2       1.388731625493765e-3f
+#define F32_COS_COEF_3       2.443315711809948e-5f
+
+#define F32_ATAN_COEF_0      3.33329491539e-1f
+#define F32_ATAN_COEF_1      1.99777106478e-1f
+#define F32_ATAN_COEF_2      1.38776856032e-1f
+#define F32_ATAN_COEF_3      8.05374449538e-2f
+
+#endif
+
+internal SinCos_4x
+sincos_pi_4x(f32_4x angles)
+{
+    f32_4x zero_4x = zero_f32_4x();
+    f32_4x one_4x = F32_4x(1.0f);
+    f32_4x oneInt_4x = S32_4x(1);
+    f32_4x twoInt_4x = S32_4x(2);
+    f32_4x threeInt_4x = S32_4x(3);
+    f32_4x sevenInt_4x = S32_4x(7);
+    f32_4x fourOverPi_4x = F32_4x(F32_FOUR_OVER_PI);
+
+    f32_4x angleIsNegative = angles < zero_4x;
+
+    angles = absolute(angles);
+
+    f32_4x intPartPre = fourOverPi_4x * angles;
+    f32_4x integerPart = s32_4x_from_f32_trunc(intPartPre);
+    f32_4x y = f32_4x_from_s32(integerPart);
+
+    f32_4x intIsOdd = integerPart & oneInt_4x;
+    integerPart = s32_4x_add(integerPart, intIsOdd);
+    y = y + f32_4x_from_s32(intIsOdd);
+
+    integerPart = integerPart & sevenInt_4x;
+
+    f32_4x signModMask = s32_4x_greater(integerPart, threeInt_4x);
+    integerPart = integerPart & threeInt_4x;
+    f32_4x signCosModMask = s32_4x_greater(integerPart, oneInt_4x);
+
+    f32_4x stepX = angles - y * F32_4x(F32_PI_OVER_4_PREC_1);
+    stepX = stepX - y * F32_4x(F32_PI_OVER_4_PREC_2);
+    stepX = stepX - y * F32_4x(F32_PI_OVER_4_PREC_3);
+
+    f32_4x xSquare = square(stepX);
+    f32_4x xQuad   = square(square(stepX));
+
+    f32_4x sinA = xSquare * (F32_4x(F32_SIN_COEF_0) + xQuad * F32_4x(F32_SIN_COEF_2));
+    f32_4x sinB = xQuad   * F32_4x(F32_SIN_COEF_1);
+    f32_4x sinApprox = stepX * (one_4x - sinA + sinB);
+
+    f32_4x cosA = xSquare * (F32_4x(F32_COS_COEF_0) + xQuad * F32_4x(F32_COS_COEF_2));
+    f32_4x cosB = xQuad   * (F32_4x(F32_COS_COEF_1) + xQuad * F32_4x(F32_COS_COEF_3));
+    f32_4x cosApprox = one_4x - cosA + cosB;
+
+    f32_4x flipMask = s32_4x_equal(integerPart, oneInt_4x) | s32_4x_equal(integerPart, twoInt_4x);
+
+    SinCos_4x result;
+    result.sin = select(sinApprox, flipMask, cosApprox);
+    result.cos = select(cosApprox, flipMask, sinApprox);
+
+    f32_4x negateSinMask = angleIsNegative ^ signModMask;
+    f32_4x negateCosMask = signModMask ^ signCosModMask;
+    result.sin = select(result.sin, negateSinMask, -result.sin);
+    result.cos = select(result.cos, negateCosMask, -result.cos);
+
+    return result;
+}
+
+internal f32_4x
+atan_pi_4x(f32_4x x)
+{
+    f32_4x zero_4x = zero_f32_4x();
+    f32_4x one_4x = F32_4x(1.0f);
+
+    f32_4x negativeMask = x < zero_4x;
+    x = absolute(x);
+
+    f32_4x result = zero_4x;
+    f32_4x biggestMask = x > F32_4x(2.414213562373095f);  // NOTE(michiel): tan(3/8*pi)
+    f32_4x biggerMask  = x > F32_4x(0.4142135623730950f); // NOTE(michiel): tan(1/8*pi)
+    biggerMask = and_not(biggerMask, biggestMask);
+
+    f32_4x oneOverMinX = -reciprocal(x);
+    f32_4x invertOverX = (x - one_4x) / (x + one_4x);
+
+    result = select(result, biggestMask, F32_4x(F32_PI_OVER_2));
+    x = select(x, biggestMask, oneOverMinX);
+    result = select(result, biggerMask, F32_4x(F32_PI_OVER_4));
+    x = select(x, biggerMask, invertOverX);
+
+    f32_4x xSquare = square(x);
+    f32_4x xQuad = square(square(x));
+
+    f32_4x a = xSquare * (F32_4x(F32_ATAN_COEF_0) + xQuad * F32_4x(F32_ATAN_COEF_2));
+    f32_4x b = xQuad   * (F32_4x(F32_ATAN_COEF_1) + xQuad * F32_4x(F32_ATAN_COEF_3));
+    result = result + x * (one_4x - a + b);
+    result = select(result, negativeMask, -result);
+
+    return result;
+}
+
+internal f32_4x
+atan2_pi_4x(f32_4x y, f32_4x x)
+{
+    f32_4x zero_4x = zero_f32_4x();
+    f32_4x pi_4x = F32_4x(F32_PI);
+    f32_4x minPi_4x = F32_4x(-F32_PI);
+    f32_4x piOver2_4x = F32_4x(F32_PI_OVER_2);
+    f32_4x minPiOver2_4x = F32_4x(-F32_PI_OVER_2);
+
+    f32_4x xNegative = x < zero_4x;
+    f32_4x yNegative = y < zero_4x;
+    f32_4x xIsZero   = x == zero_4x;
+    f32_4x yIsZero   = y == zero_4x;
+
+    f32_4x minPiO2Mask = xIsZero & yNegative;
+    f32_4x piOver2Mask = and_not(xIsZero, yIsZero);
+    piOver2Mask = and_not(piOver2Mask, minPiO2Mask);
+
+    f32_4x xZeroResult = select(zero_4x, minPiO2Mask, minPiOver2_4x);
+    xZeroResult = select(xZeroResult, piOver2Mask, piOver2_4x);
+
+    f32_4x piMask = yIsZero & xNegative;
+
+    f32_4x piMask2 = and_not(xNegative, yNegative);
+    f32_4x minPiMask = xNegative & yNegative;
+
+    f32_4x result = select(zero_4x, piMask2, pi_4x);
+    result = select(result, minPiMask, minPi_4x);
+
+    f32_4x atanRes_4x = atan_pi_4x(y / x);
+    result = result + atanRes_4x;
+
+    result = select(result, piMask, pi_4x);
+    result = select(result, xIsZero, xZeroResult);
     return result;
 }
 

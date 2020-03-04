@@ -230,7 +230,7 @@ init_sub_allocator(SubAllocator *allocator, u32 size, u8 *data)
 }
 
 internal void *
-sub_alloc(SubAllocator *allocator, u32 requestSize, MemoryAllocFlags allocInfo)
+sub_alloc(SubAllocator *allocator, u32 requestSize, MemoryAllocInfo allocInfo)
 {
     i_expect(allocator);
     i_expect(allocator->base);
@@ -342,7 +342,7 @@ sub_dealloc(SubAllocator *allocator, void *pointer)
 }
 
 internal void *
-sub_realloc(SubAllocator *allocator, void *pointer, u32 requestSize, MemoryAllocFlags allocInfo)
+sub_realloc(SubAllocator *allocator, void *pointer, u32 requestSize, MemoryAllocInfo allocInfo)
 {
     void *result = 0;
     b32 clear = !(allocInfo.flags & Memory_NoClear);
@@ -356,13 +356,13 @@ sub_realloc(SubAllocator *allocator, void *pointer, u32 requestSize, MemoryAlloc
         if (entrySize < requestSize)
         {
             // TODO(michiel): Could check for a free sibling to increase the bucket, then no copy is needed.
-            MemoryAllocFlags moddedInfo = allocInfo;
+            MemoryAllocInfo moddedInfo = allocInfo;
             moddedInfo.flags |= Memory_NoClear;
             void *newPoint = sub_alloc(allocator, requestSize, moddedInfo);
             copy(entrySize, pointer, newPoint);
             if (clear)
             {
-                copy_single(requestSize - entrySize, 0, newPoint + entrySize);
+                copy_single(requestSize - entrySize, 0, (u8 *)newPoint + entrySize);
             }
             sub_dealloc(allocator, pointer);
             result = newPoint;
@@ -382,7 +382,7 @@ sub_realloc(SubAllocator *allocator, void *pointer, u32 requestSize, MemoryAlloc
 }
 
 internal String
-sub_alloc_string(SubAllocator *allocator, u32 size, MemoryAllocFlags allocInfo)
+sub_alloc_string(SubAllocator *allocator, u32 size, MemoryAllocInfo allocInfo)
 {
     String result = {};
     u8 *mem = (u8 *)sub_alloc(allocator, size + 1, allocInfo);

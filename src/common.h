@@ -162,6 +162,13 @@ internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
 #define F64_E                   ((f64)F80_E)
 #define F32_E                   ((f32)F80_E)
 
+//
+// NOTE(michiel): Constants _borrowed_ from cephes library
+#define F32_FOUR_OVER_PI     1.27323954473516f
+#define F32_PI_OVER_2        1.5707963267948966192f
+#define F32_PI_OVER_4        0.7853981633974483096f
+//
+
 #define enum8(name)             u8
 #define enum16(name)            u16
 #define enum32(name)            u32

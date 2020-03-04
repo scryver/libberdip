@@ -15,6 +15,7 @@ default_memory_alloc(void)
 {
     MemoryAllocInfo result = {};
     result.alignSize = 4;
+    return result;
 }
 
 internal MemoryAllocInfo
@@ -22,6 +23,7 @@ no_clear_memory_alloc(void)
 {
     MemoryAllocInfo result = default_memory_alloc();
     result.flags |= Memory_NoClear;
+    return result;
 }
 
 internal MemoryAllocInfo
@@ -29,6 +31,7 @@ debug_memory_alloc(void)
 {
     MemoryAllocInfo result = default_memory_alloc();
     result.flags |= Memory_Debug;
+    return result;
 }
 
 internal MemoryAllocInfo
@@ -37,6 +40,7 @@ align_memory_alloc(u32 alignment)
     i_expect(is_pow2(alignment));
     MemoryAllocInfo result = default_memory_alloc();
     result.alignSize = alignment;
+    return result;
 }
 
 #define ALLOCATE_MEMORY_SIZE(name)    void *name(void *allocator, umm size, MemoryAllocInfo allocInfo)

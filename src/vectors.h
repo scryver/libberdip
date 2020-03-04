@@ -455,8 +455,9 @@ internal v2
 polar_to_cartesian(f32 r, f32 theta)
 {
     v2 result;
-    result.x = r * cos(theta);
-    result.y = r * sin(theta);
+    v2 sincos = sincos_pi(theta);
+    result.x = r * sincos.y;
+    result.y = r * sincos.x;
     return result;
 }
 
@@ -701,10 +702,9 @@ rotate(v2 a, f32 angle)
 {
     v2 result = {};
 
-    f32 c = cos(angle);
-    f32 s = sin(angle);
-    result.x = a.x * c - a.y * s;
-    result.y = a.x * s + a.y * c;
+    v2 sincos = sincos_pi(angle);
+    result.x = a.x * sincos.y - a.y * sincos.x;
+    result.y = a.x * sincos.x + a.y * sincos.y;
 
     return result;
 }

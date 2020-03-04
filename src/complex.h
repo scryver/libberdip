@@ -136,8 +136,9 @@ internal Complex32
 euler_power(f32 imagPower)
 {
     Complex32 result;
-    result.real = cos(imagPower);
-    result.imag = sin(imagPower);
+    v2 sincos = sincos_pi(imagPower);
+    result.real = sincos.y;
+    result.imag = sincos.x;
     return result;
 }
 
@@ -165,7 +166,7 @@ magnitude_angle(Complex32 c, f32 epsilon = 0.00001f)
     }
     else
     {
-        result.y = atan2(c.imag, c.real);
+        result.y = atan2_pi(c.imag, c.real);
     }
     return result;
 }
