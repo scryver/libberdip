@@ -225,3 +225,31 @@ tan_pi(f32 angle)
 
     return result;
 }
+
+internal f32
+asin_pi(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)asinf(angle);
+#elif __has_builtin(__builtin_asinf)
+    result = (f32)__builtin_asinf(angle);
+#else
+#error No asinf builtin!
+#endif
+    return result;
+}
+
+internal f32
+acos_pi(f32 angle)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)acosf(angle);
+#elif __has_builtin(__builtin_acosf)
+    result = (f32)__builtin_acosf(angle);
+#else
+#error No acosf builtin!
+#endif
+    return result;
+}
