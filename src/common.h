@@ -310,12 +310,21 @@ copy_single(umm size, u32 value, void *dst)
     }
 }
 
-internal inline f32
+internal f32
 clamp01(f32 value)
 {
     f32 result = clamp(0.0f, value, 1.0f);
     return result;
 }
+
+#ifdef __cplusplus
+internal f64
+clamp01(f64 value)
+{
+    f64 result = clamp(0.0, value, 1.0);
+    return result;
+}
+#endif
 
 // TODO(michiel): Add a types.h
 typedef struct DivModU32
@@ -349,6 +358,24 @@ typedef struct Buffer
     u8 *data;
 } Buffer;
 typedef Buffer String;
+
+internal Buffer
+advance(Buffer b, u32 amount)
+{
+    Buffer result = b;
+    result.size -= amount;
+    result.data += amount;
+    return result;
+}
+
+internal Buffer
+save_advance(Buffer b, u32 amount)
+{
+    if (amount > b.size) {
+        amount = b.size;
+    }
+    return advance(b, amount);
+}
 
 // NOTE(michiel): Stretchy buffer header (prepended to keep track of num items etc)
 #define BUF_MAGIC 0xB0FFE20F20F78D1E
