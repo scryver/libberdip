@@ -35,10 +35,15 @@ debug_memory_alloc(void)
 }
 
 internal MemoryAllocInfo
-align_memory_alloc(u32 alignment)
+align_memory_alloc(u32 alignment, b32 clear = true)
 {
     i_expect(is_pow2(alignment));
     MemoryAllocInfo result = default_memory_alloc();
+    if (clear) {
+        result.flags &= ~Memory_NoClear;
+    } else {
+        result.flags |= Memory_NoClear;
+    }
     result.alignSize = alignment;
     return result;
 }

@@ -38,6 +38,7 @@ remainingSrc   += 64;
 
 u8 chunk[64];
 sha1_padding(&sha1Context, remainingCount, remainingSrc, chunk, dataCount);
+sha1_process_chunk(&sha1Context, chunk);
 
 u32 output[5];
 sha1_finish(&sha1Context, output);
@@ -47,6 +48,8 @@ u32 output[5];
 sha1_digest(dataCount, data, output);
 
 */
+
+#define SHA256_OUTPUT_COUNT      8
 
 struct Sha256Context
 {

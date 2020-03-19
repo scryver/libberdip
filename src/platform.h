@@ -18,6 +18,21 @@ struct TicketMutex
     u64 volatile serving;
 };
 
+internal void
+begin_ticket_mutex(TicketMutex *mutex)
+{
+    u64 ticket = atomic_add_u64(&mutex->ticket, 1);
+    while (ticket != mutex->serving) {
+        _mm_pause();
+    }
+}
+
+internal void
+end_ticket_mutex(TicketMutex *mutex)
+{
+    atomic_add_u64(&mutex->serving, 1);
+}
+
 struct WorkQueue;
 #define WORK_QUEUE_CALLBACK(name)      void name(WorkQueue *queue, void *data)
 typedef WORK_QUEUE_CALLBACK(WorkQueueCallback);
@@ -106,10 +121,21 @@ is_modified(Keyboard *keyboard, KeyModifiers mod)
     return result;
 }
 
+// TODO(michiel): Handle memory uniformly
+struct PlatformMemoryBlock;
+#define PLATFORM_ALLOCATE_MEMORY(name) PlatformMemoryBlock *name(umm size, u64 flags)
+typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
+
+#define PLATFORM_DEALLOCATE_MEMORY(name) void name(PlatformMemoryBlock *block)
+typedef PLATFORM_DEALLOCATE_MEMORY(PlatformDeallocateMemory);
+
 struct API
 {
     FileAPI file;
     //MemoryContext memoryCtx;
+
+    PlatformAllocateMemory *allocate_memory;
+    PlatformDeallocateMemory *deallocate_memory;
 
     b32 closeProgram;
 
