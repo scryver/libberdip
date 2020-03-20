@@ -230,6 +230,10 @@ OPEN_NEXT_FILE(linux_open_next_file)
     if (linuxFileGroup->findData.dir)
     {
         s32 dirFd = dirfd(linuxFileGroup->findData.dir);
+
+        char pathBuffer[1024];
+        char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
+
         fchdir(dirFd);
         if (linuxFileGroup->fileAvailable)
         {
@@ -252,7 +256,7 @@ OPEN_NEXT_FILE(linux_open_next_file)
                 linuxFileGroup->fileAvailable = false;
             }
         }
-        chdir("-");
+        chdir(currentPath);
     }
 
     return result;
@@ -261,6 +265,7 @@ OPEN_NEXT_FILE(linux_open_next_file)
 internal
 OPEN_FILE(linux_open_file)
 {
+    // TODO(michiel): Make it save to call to_cstring()
     ApiFile result = {};
 
     LinuxFileHandle *handle = (LinuxFileHandle *)
@@ -283,12 +288,12 @@ OPEN_FILE(linux_open_file)
         }
         else if (flags == FileOpen_Write)
         {
-            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
         }
         else
         {
             i_expect(flags == FileOpen_Append);
-            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_APPEND, S_IRUSR | S_IWUSR);
+            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
         }
         result.noErrors = (handle->linuxHandle >= 0);
     }
