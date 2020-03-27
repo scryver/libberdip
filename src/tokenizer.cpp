@@ -3,6 +3,7 @@ global String gTokenKindName[TokenCount] =
     [Token_None]         = static_string("NONE"),
     [Token_Name]         = static_string("name"),
     [Token_Integer]      = static_string("integer"),
+    [Token_Float]        = static_string("float"),
     [Token_String]       = static_string("string"),
     [Token_Dot]          = static_string("dot"),
     [Token_Comma]        = static_string("comma"),
@@ -303,6 +304,7 @@ get_token(Tokenizer *tokenizer)
 
             if ((tokenizer->scanner.data[0] == 'E') ||
                 (tokenizer->scanner.data[0] == 'e')) {
+                result.kind = Token_Float;
                 ++result.value.size;
                 advance_scanner(tokenizer);
 

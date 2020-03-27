@@ -426,3 +426,55 @@ atan2_pi(f32 y, f32 x)
 #endif
     return result;
 }
+
+internal f32
+sinh(f32 x)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)sinhf(x);
+#elif __has_builtin(__builtin_sinhf)
+    result = (f32)__builtin_sinhf(x);
+#else
+#error No sinhf builtin!
+#endif
+    return result;
+}
+
+internal f32
+cosh(f32 x)
+{
+    f32 result;
+#if NO_INTRINSICS
+    result = (f32)coshf(x);
+#elif __has_builtin(__builtin_coshf)
+    result = (f32)__builtin_coshf(x);
+#else
+#error No coshf builtin!
+#endif
+    return result;
+}
+
+internal f64
+sinh(f64 x)
+{
+    f64 result;
+#if !NO_INTRINSICS && __has_builtin(__builtin_sinh)
+    result = __builtin_sinh(x);
+#else
+#error No sinh builtin!
+#endif
+    return result;
+}
+
+internal f64
+cosh(f64 x)
+{
+    f64 result;
+#if !NO_INTRINSICS && __has_builtin(__builtin_cosh)
+    result = (f64)__builtin_cosh(x);
+#else
+#error No cosh builtin!
+#endif
+    return result;
+}

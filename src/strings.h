@@ -554,7 +554,7 @@ str_intern_(Interns *interns, String str)
 #ifdef __cplusplus
         if (itStr == str)
 #else
-            if (strings_are_equal(itStr, str))
+        if (strings_are_equal(itStr, str))
 #endif
         {
             return it;
@@ -653,7 +653,7 @@ str_intern_c(Interns *interns, const char *str)
 internal f64
 float_from_string(String s)
 {
-    // TODO(michiel): Exponent support
+    // TODO(michiel): Exponent support | DONE(simon): exponentennnnnnnn
     f64 result = 0.0;
 
     String scanner = s;
@@ -678,6 +678,34 @@ float_from_string(String s)
             ++scanner.data;
             --scanner.size;
         }
+    }
+
+    if(scanner.size && to_lower_case(scanner.data[0]) == 'e')
+    {
+        ++scanner.data;
+        --scanner.size;
+
+        bool negative = false;
+
+        if(scanner.size && scanner.data[0] == '-')
+        {
+            negative = true;
+
+            ++scanner.data;
+            --scanner.size;
+        }
+
+        u8 power = 0;
+
+        for(u8 i = 0; i < scanner.size; --scanner.size, ++scanner.data)
+        {
+            f64 num = (f64)(scanner.data[0] & 0xF);
+            f64 numMultiplied = num * pow(10.0, scanner.size - 1);
+
+            power += numMultiplied;
+        }
+
+        result *= negative ? pow(10.0, -power) : pow(10.0, power);
     }
 
     return result;
