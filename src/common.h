@@ -86,28 +86,7 @@
 #define INVALID_CODE_PATH    i_expect(0 && "Invalid code path")
 #define INVALID_DEFAULT_CASE default: { i_expect(0 && "Invalid default case"); } break
 
-typedef uint8_t  u8;
-typedef uint16_t u16;
-typedef uint32_t u32;
-typedef uint64_t u64;
-
-typedef int8_t   s8;
-typedef int16_t  s16;
-typedef int32_t  s32;
-typedef int64_t  s64;
-
-typedef int8_t   b8;
-typedef int16_t  b16;
-typedef int32_t  b32;
-typedef int64_t  b64;
-
-typedef float    f32;
-typedef double   f64;
-typedef long double f80;
-
-typedef unsigned long int umm;
-typedef signed long int   smm;
-compile_expect(sizeof(umm) == sizeof(size_t));
+#include "types.h"
 
 #define U8_MAX   0xFF
 #define U16_MAX  0xFFFF
@@ -168,11 +147,6 @@ internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
 #define F32_PI_OVER_2        1.5707963267948966192f
 #define F32_PI_OVER_4        0.7853981633974483096f
 //
-
-#define enum8(name)             u8
-#define enum16(name)            u16
-#define enum32(name)            u32
-
 
 #define offset_of(type, member) (umm)&(((type *)0)->member)
 
@@ -327,37 +301,6 @@ clamp01(f64 value)
 #endif
 
 // TODO(michiel): Add a types.h
-typedef struct DivModU32
-{
-    u32 div;
-    u32 mod;
-} DivModU32;
-
-typedef struct DivModS32
-{
-    s32 div;
-    s32 mod;
-} DivModS32;
-
-typedef struct DivModU64
-{
-    u64 div;
-    u64 mod;
-} DivModU64;
-
-typedef struct DivModS64
-{
-    s64 div;
-    s64 mod;
-} DivModS64;
-
-// NOTE(michiel): Generic buffer (memory data and a size)
-typedef struct Buffer
-{
-    umm size;
-    u8 *data;
-} Buffer;
-typedef Buffer String;
 
 internal Buffer
 advance(Buffer b, u32 amount)
@@ -417,22 +360,6 @@ typedef struct TempMemory
     u8 *origAt;
     u8 *origEnd;
 } TempMemory;
-
-// NOTE(michiel): Image buffer (32bit pixels assumed)
-typedef struct Image
-{
-    u32 width;
-    u32 height;
-    u32 *pixels;
-} Image;
-
-// NOTE(michiel): Image buffer (8bit pixels, grey/alpha), as used in some font instances
-typedef struct Image8
-{
-    u32 width;
-    u32 height;
-    u8 *pixels;
-} Image8;
 
 
 
