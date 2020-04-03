@@ -120,6 +120,19 @@ is_snake_case(String name)
 }
 
 internal String
+get_line(String input)
+{
+    String result = {0, input.data};
+
+    while (input.size && !is_end_of_line(result.data[result.size])) {
+        ++result.size;
+        --input.size;
+    }
+
+    return result;
+}
+
+internal String
 normalize(String str, u32 maxDestSize, u8 *dest)
 {
     // NOTE(michiel): Remove all non alpha-numeric chars except single spaces,
@@ -554,7 +567,7 @@ str_intern_(Interns *interns, String str)
 #ifdef __cplusplus
         if (itStr == str)
 #else
-        if (strings_are_equal(itStr, str))
+            if (strings_are_equal(itStr, str))
 #endif
         {
             return it;
@@ -657,6 +670,20 @@ float_from_string(String s)
     f64 result = 0.0;
 
     String scanner = s;
+
+    f64 sign = 1.0;
+    if (scanner.size && (scanner.data[0] == '-'))
+    {
+        sign = -1.0;
+        ++scanner.data;
+        --scanner.size;
+    }
+    else if (scanner.size && (scanner.data[0] == '+'))
+    {
+        ++scanner.data;
+        --scanner.size;
+    }
+
     while (scanner.size && is_digit(scanner.data[0]))
     {
         result *= 10.0;
@@ -685,16 +712,32 @@ float_from_string(String s)
         ++scanner.data;
         --scanner.size;
 
-        bool negative = false;
+        f64 exponentSign = 1.0;
 
         if(scanner.size && scanner.data[0] == '-')
         {
-            negative = true;
+            exponentSign = -1.0;
 
             ++scanner.data;
             --scanner.size;
         }
+        else if (scanner.size && scanner.data[0] == '+')
+        {
+            ++scanner.data;
+            --scanner.size;
+        }
 
+#if 1
+        f64 exponent = 0;
+        while (scanner.size && is_digit(scanner.data[0])) {
+            f64 addend = (f64)(scanner.data[0] & 0xF);
+            exponent = exponent * 10.0 + addend;
+            ++scanner.data;
+            --scanner.size;
+        }
+
+        result *= pow(10.0, exponentSign * exponent);
+#else
         u8 power = 0;
 
         for(u8 i = 0; i < scanner.size; --scanner.size, ++scanner.data)
@@ -705,10 +748,11 @@ float_from_string(String s)
             power += numMultiplied;
         }
 
-        result *= negative ? pow(10.0, -power) : pow(10.0, power);
+        result *= pow(10.0, exponentSign * power);
+#endif
     }
 
-    return result;
+    return result * sign;
 }
 
 internal u32

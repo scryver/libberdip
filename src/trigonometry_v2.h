@@ -253,3 +253,21 @@ acos_pi(f32 angle)
 #endif
     return result;
 }
+
+internal f64
+sin_pi(f64 angle)
+{
+    return __builtin_sin(angle);
+}
+
+internal f64
+cos_pi(f64 angle)
+{
+    return __builtin_cos(angle);
+}
+
+internal f64
+atan2_pi(f64 y, f64 x)
+{
+    return __builtin_atan2(y, x);
+}

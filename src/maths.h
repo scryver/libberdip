@@ -413,6 +413,20 @@ square_root(f32 value)
     return result;
 }
 
+internal f64
+square_root(f64 value)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = sqrt(value);
+#elif __has_builtin(__builtin_sqrt)
+    result = __builtin_sqrt(value);
+#else
+#error No sqrt builtin!
+#endif
+    return result;
+}
+
 internal f32
 log(f32 x)
 {
