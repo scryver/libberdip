@@ -327,15 +327,15 @@ inner(Complex64 a, Complex64 b)
     return a.real * b.real + a.imag * b.imag;
 }
 
-internal v2
+internal v2d
 magnitude_angle(Complex64 c, f64 epsilon = 0.00000001)
 {
-    v2 result;
+    v2d result;
     result.x = absolute(c);
     if ((c.real > -epsilon) && (c.real < epsilon) &&
         (c.imag > -epsilon) && (c.imag < epsilon))
     {
-        result.y = 0.0f;
+        result.y = 0.0;
     }
     else
     {
@@ -344,3 +344,27 @@ magnitude_angle(Complex64 c, f64 epsilon = 0.00000001)
     return result;
 }
 
+internal Complex64
+complex_square_root(f64 value)
+{
+    Complex64 result = {};
+    if (value < 0)
+    {
+        result.imag = square_root(-value);
+    }
+    else
+    {
+        result.real = square_root(value);
+    }
+    return result;
+}
+
+internal Complex64
+exp(Complex64 c)
+{
+    Complex64 result;
+    f64 magnitude = exp(c.real);
+    result.real = cos_pi(c.imag) * magnitude;
+    result.imag = sin_pi(c.imag) * magnitude;
+    return result;
+}
