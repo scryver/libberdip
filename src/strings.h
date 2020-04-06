@@ -567,7 +567,7 @@ str_intern_(Interns *interns, String str)
 #ifdef __cplusplus
         if (itStr == str)
 #else
-            if (strings_are_equal(itStr, str))
+        if (strings_are_equal(itStr, str))
 #endif
         {
             return it;
@@ -666,7 +666,6 @@ str_intern_c(Interns *interns, const char *str)
 internal f64
 float_from_string(String s)
 {
-    // TODO(michiel): Exponent support | DONE(simon): exponentennnnnnnn
     f64 result = 0.0;
 
     String scanner = s;
@@ -687,7 +686,6 @@ float_from_string(String s)
     while (scanner.size && is_digit(scanner.data[0]))
     {
         result *= 10.0;
-        //result += (f64)(scanner.data[0] - '0');
         result += (f64)(scanner.data[0] & 0xF);
         ++scanner.data;
         --scanner.size;
@@ -727,7 +725,6 @@ float_from_string(String s)
             --scanner.size;
         }
 
-#if 1
         f64 exponent = 0;
         while (scanner.size && is_digit(scanner.data[0])) {
             f64 addend = (f64)(scanner.data[0] & 0xF);
@@ -737,19 +734,6 @@ float_from_string(String s)
         }
 
         result *= pow(10.0, exponentSign * exponent);
-#else
-        u8 power = 0;
-
-        for(u8 i = 0; i < scanner.size; --scanner.size, ++scanner.data)
-        {
-            f64 num = (f64)(scanner.data[0] & 0xF);
-            f64 numMultiplied = num * pow(10.0, scanner.size - 1);
-
-            power += numMultiplied;
-        }
-
-        result *= pow(10.0, exponentSign * power);
-#endif
     }
 
     return result * sign;
