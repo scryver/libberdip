@@ -6,26 +6,26 @@
 
 internal inline u32 atomic_compare_exchange_u32(u32 volatile *value, u32 new_value, u32 expected)
 {
-    u32 result = _InterlockedCompareExchange((long *)value, new_value, expected);
+    u32 result = _InterlockedCompareExchange((long volatile *)value, new_value, expected);
     return (result);
 }
 
 internal inline u64 atomic_compare_exchange_u64(u64 volatile *value, u64 new_value, u64 expected)
 {
-    u64 result = _InterlockedCompareExchange64((long *)value, new_value, expected);
+    u64 result = _InterlockedCompareExchange64((__int64  volatile *)value, new_value, expected);
     return (result);
 }
 
 internal inline u64 atomic_exchange_u64(u64 volatile *value, u64 new_value)
 {
-    u64 result = _InterlockedExchange64((__int64 *)value, new_value);
+    u64 result = _InterlockedExchange64((__int64 volatile *)value, new_value);
     return result;
 }
 
 internal inline u64 atomic_add_u64(u64 volatile *value, u64 addend)
 {
     // NOTE(michiel): Returns the original value _prior_ to adding
-    u64 result = _InterlockedExchangeAdd64((__int64 *)value, addend);
+    u64 result = _InterlockedExchangeAdd64((__int64 volatile *)value, addend);
     return result;
 }
 

@@ -252,6 +252,8 @@ fraction(f64 value)
     return result;
 }
 
+#if !COMPILER_MSVC
+// TODO(michiel): Add windows variant
 // TODO(michiel): Profile this vs compile implementation
 internal DivModU32
 divmod(u32 a, u32 b)
@@ -296,6 +298,7 @@ divmod(s64 a, s64 b)
          : "cc");
     return result;
 }
+#endif
 
 internal f32
 modulus01(f32 f)
@@ -384,20 +387,20 @@ pow(f32 x, f32 y)
     return result;
 }
 
+#if !NO_INTRINSICS
 internal f64
 pow(f64 x, f64 y)
 {
     // TODO(michiel): pow(x, y) = e^(y * ln(x))
     f64 result;
-#if NO_INTRINSICS
-    result = pow(x, y);
-#elif __has_builtin(__builtin_pow)
+#if __has_builtin(__builtin_pow)
     result = __builtin_pow(x, y);
 #else
 #error No pow builtin!
 #endif
     return result;
 }
+#endif
 
 internal f32
 square_root(f32 value)

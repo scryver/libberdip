@@ -257,17 +257,41 @@ acos_pi(f32 angle)
 internal f64
 sin_pi(f64 angle)
 {
-    return __builtin_sin(angle);
+    f64 result;
+#if NO_INTRINSICS
+    result = sin(angle);
+#elif __has_builtin(__builtin_sin)
+    result = __builtin_sin(angle);
+#else
+#error No sin builtin!
+#endif
+    return result;
 }
 
 internal f64
 cos_pi(f64 angle)
 {
-    return __builtin_cos(angle);
+    f64 result;
+#if NO_INTRINSICS
+    result = cos(angle);
+#elif __has_builtin(__builtin_cos)
+    result = __builtin_cos(angle);
+#else
+#error No cos builtin!
+#endif
+    return result;
 }
 
 internal f64
 atan2_pi(f64 y, f64 x)
 {
-    return __builtin_atan2(y, x);
+    f64 result;
+#if NO_INTRINSICS
+    result = atan2(y, x);
+#elif __has_builtin(__builtin_atan2)
+    result = __builtin_atan2(y, x);
+#else
+#error No atan2 builtin!
+#endif
+    return result;
 }
