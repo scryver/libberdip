@@ -240,7 +240,7 @@ internal f32
 fraction(f32 value)
 {
     f32 result;
-    result = value - truncate(value);
+    result = value - floor(value);
     return result;
 }
 
@@ -248,7 +248,7 @@ internal f64
 fraction(f64 value)
 {
     f64 result;
-    result = value - truncate(value);
+    result = value - floor(value);
     return result;
 }
 
@@ -407,9 +407,9 @@ square_root(f32 value)
 {
     f32 result;
 #if NO_INTRINSICS
-    result = (f32)sqrtf(value);
+    result = sqrtf(value);
 #elif __has_builtin(__builtin_sqrtf)
-    result = (f32)__builtin_sqrtf(value);
+    result = __builtin_sqrtf(value);
 #else
 #error No sqrtf builtin!
 #endif

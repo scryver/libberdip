@@ -108,8 +108,12 @@ internal v4
 alpha_blend_colours(v4 src, v4 overlay)
 {
     v4 result;
+#if 0
     result.rgb = src.rgb * (1.0f - overlay.a) + overlay.rgb;
     result.a = overlay.a;
+#else
+    result = overlay + (1.0f - overlay.a) * src;
+#endif
     return result;
 }
 
