@@ -70,6 +70,14 @@ lerp(f32 min, f32 t, f32 max)
     return result;
 }
 
+internal f64
+lerp(f64 min, f64 t, f64 max)
+{
+    f64 result = min;
+    result += (max - min) * t;
+    return result;
+}
+
 internal f32
 map(f32 value, f32 fromMin, f32 fromMax, f32 toMin, f32 toMax)
 {
@@ -358,17 +366,17 @@ exp(f32 f)
 #endif
 }
 
-#if 0
-internal f32
-log(f32 value)
+#if __has_builtin(__builtin_exp)
+internal f64
+exp(f64 f)
 {
-
-}
-
-internal f32
-log10(f32 value)
-{
-
+    f64 result;
+#if __has_builtin(__builtin_exp)
+    result = __builtin_exp(f);
+#else
+#error No exp builtin!
+#endif
+    return result;
 }
 #endif
 
@@ -443,6 +451,20 @@ log(f32 x)
 #endif
     return result;
 }
+
+#if !NO_INTRINSICS
+internal f64
+log(f64 x)
+{
+    f64 result;
+#if __has_builtin(__builtin_log)
+    result = __builtin_log(x);
+#else
+#error No log builtin!
+#endif
+    return result;
+}
+#endif
 
 internal u32
 rotate_left(u32 value, s32 amount)
