@@ -508,17 +508,6 @@ string_concat(String a, String b, umm destSize, char *dest)
 }
 
 internal String
-append_string(String base, String suffix, u32 maxCount)
-{
-    for (u32 i = 0; i < suffix.size; ++i) {
-        if (base.size < maxCount) {
-            base.data[base.size++] = suffix.data[i];
-        }
-    }
-    return base;
-}
-
-internal String
 vstring_fmt(u32 maxDestCount, u8 *dest, const char *fmt, va_list args)
 {
     umm printed = vsnprintf((char *)dest, maxDestCount, fmt, args);
@@ -535,6 +524,30 @@ string_fmt(u32 maxDestCount, u8 *dest, const char *fmt, ...)
     va_start(args, fmt);
     String result = vstring_fmt(maxDestCount, dest, fmt, args);
     va_end(args);
+    return result;
+}
+
+internal String
+append_string(String base, String suffix, u32 maxCount)
+{
+    for (u32 i = 0; i < suffix.size; ++i) {
+        if (base.size < maxCount) {
+            base.data[base.size++] = suffix.data[i];
+        }
+    }
+    return base;
+}
+
+internal String
+append_string_fmt(String base, u32 maxCount, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+
+    String result = base;
+    String appended = vstring_fmt(maxCount - base.size, base.data + base.size, fmt, args);
+    result.size += appended.size;
+
     return result;
 }
 
@@ -955,3 +968,132 @@ match_pattern_c(char *pattern, char *str)
                            string(string_length(str), str));
     return result;
 }
+
+internal String
+string_from_ip4(u32 ip4addr, u32 maxDataCount, u8 *data)
+{
+    String result = string_fmt(maxDataCount, data, "%u.%u.%u.%u",
+                               (ip4addr >>  0) & 0xFF,
+                               (ip4addr >>  8) & 0xFF,
+                               (ip4addr >> 16) & 0xFF,
+                               (ip4addr >> 24) & 0xFF);
+    return result;
+}
+
+internal String
+string_from_ip6(void *ip6src, u32 maxDataCount, u8 *data)
+{
+    u8 *ip6ptr = (u8 *)ip6src;
+
+    u16 ipBlocks[8];
+    ipBlocks[0] = ((u16)ip6ptr[ 0] << 8) | ip6ptr[ 1];
+    ipBlocks[1] = ((u16)ip6ptr[ 2] << 8) | ip6ptr[ 3];
+    ipBlocks[2] = ((u16)ip6ptr[ 4] << 8) | ip6ptr[ 5];
+    ipBlocks[3] = ((u16)ip6ptr[ 6] << 8) | ip6ptr[ 7];
+    ipBlocks[4] = ((u16)ip6ptr[ 8] << 8) | ip6ptr[ 9];
+    ipBlocks[5] = ((u16)ip6ptr[10] << 8) | ip6ptr[11];
+    ipBlocks[6] = ((u16)ip6ptr[12] << 8) | ip6ptr[13];
+    ipBlocks[7] = ((u16)ip6ptr[14] << 8) | ip6ptr[15];
+
+    u32 maxZeroRange = 0;
+    u32 zeroRangeStart = 0;
+
+    u32 zeroRangeCount = 0;
+    u32 zeroRangeTest = 0;
+    for (u32 idx = 0; idx < 8; ++idx)
+    {
+        if (ipBlocks[idx] == 0)
+        {
+            if (zeroRangeCount == 0)
+            {
+                zeroRangeTest = idx;
+            }
+            ++zeroRangeCount;
+        }
+        else if (zeroRangeCount > 1)
+        {
+            if (maxZeroRange < zeroRangeCount)
+            {
+                maxZeroRange = zeroRangeCount;
+                zeroRangeStart = zeroRangeTest;
+            }
+            zeroRangeCount = 0;
+        }
+        else
+        {
+            zeroRangeCount = 0;
+        }
+    }
+
+    if (zeroRangeCount > 1)
+    {
+        if (maxZeroRange < zeroRangeCount)
+        {
+            maxZeroRange = zeroRangeCount;
+            zeroRangeStart = zeroRangeTest;
+        }
+    }
+
+    String result = {0, data};
+    if (maxZeroRange)
+    {
+        b32 doIp4 = false;
+
+#if 0
+        if (((zeroRangeStart == 0) && (maxZeroRange == 5) && (ipBlocks[5] == 0xFFFF)) ||
+            ((zeroRangeStart == 0) && (maxZeroRange == 4) && (ipBlocks[4] == 0xFFFF) && (ipBlocks[5] == 0)))
+        {
+            doIp4 = true;
+        }
+#else
+        if ((zeroRangeStart == 0) && (maxZeroRange == 5) && (ipBlocks[5] == 0xFFFF))
+        {
+            doIp4 = true;
+        }
+#endif
+
+        u32 maxCount = doIp4 ? 6 : 8;
+
+        for (u32 idx = 0; idx < maxCount; ++idx)
+        {
+            if (idx == zeroRangeStart)
+            {
+                result = append_string(result, string("::"), maxDataCount);
+            }
+            else if ((idx > zeroRangeStart) &&
+                     (idx < (zeroRangeStart + maxZeroRange)))
+            {
+                continue;
+            }
+            else
+            {
+                if ((idx > 0) && (result.data[result.size - 1] != ':'))
+                {
+                    result = append_string(result, string(":"), maxDataCount);
+                }
+                result = append_string_fmt(result, maxDataCount, "%x", ipBlocks[idx]);
+            }
+        }
+
+        if (doIp4)
+        {
+            u8 buf[16];
+            String ip4 = string_from_ip4(*(u32 *)(ip6ptr + 12), array_count(buf), buf);
+            result = append_string_fmt(result, maxDataCount, ":%.*s", STR_FMT(ip4));
+        }
+
+        if (result.size < maxDataCount)
+        {
+            result.data[result.size] = 0;
+        }
+    }
+    else
+    {
+        result = string_fmt(maxDataCount, (u8 *)data, "%x:%x:%x:%x:%x:%x:%x:%x",
+                            ipBlocks[0], ipBlocks[1], ipBlocks[2], ipBlocks[3],
+                            ipBlocks[4], ipBlocks[5], ipBlocks[6], ipBlocks[7]);
+    }
+
+    return result;
+}
+
