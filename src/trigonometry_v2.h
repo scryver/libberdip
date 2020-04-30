@@ -295,3 +295,45 @@ atan2_pi(f64 y, f64 x)
 #endif
     return result;
 }
+
+internal f64
+tan_pi(f64 angle)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = tan(angle);
+#elif __has_builtin(__builtin_tan)
+    result = __builtin_tan(angle);
+#else
+#error No tan builtin!
+#endif
+    return result;
+}
+
+internal f64
+asin_pi(f64 angle)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = asin(angle);
+#elif __has_builtin(__builtin_asin)
+    result = __builtin_asin(angle);
+#else
+#error No asin builtin!
+#endif
+    return result;
+}
+
+internal f64
+acos_pi(f64 angle)
+{
+    f64 result;
+#if NO_INTRINSICS
+    result = acos(angle);
+#elif __has_builtin(__builtin_acos)
+    result = __builtin_acos(angle);
+#else
+#error No acos builtin!
+#endif
+    return result;
+}
