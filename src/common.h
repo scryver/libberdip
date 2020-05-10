@@ -302,6 +302,16 @@ clamp01(f64 value)
 
 // TODO(michiel): Add a types.h
 
+#ifdef __cplusplus
+internal Buffer
+advance(Buffer b, u32 amount = 1)
+{
+    Buffer result = b;
+    result.size -= amount;
+    result.data += amount;
+    return result;
+}
+#else
 internal Buffer
 advance(Buffer b, u32 amount)
 {
@@ -310,6 +320,7 @@ advance(Buffer b, u32 amount)
     result.data += amount;
     return result;
 }
+#endif
 
 internal Buffer
 save_advance(Buffer b, u32 amount)

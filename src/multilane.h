@@ -126,6 +126,14 @@ F32_4x(f32 *f)
 }
 
 internal f32_4x
+F32_4x(__m128 m)
+{
+    f32_4x result;
+    result.m = m;
+    return result;
+}
+
+internal f32_4x
 S32_4x(s32 s)
 {
     f32_4x result;
@@ -318,6 +326,22 @@ floor(f32_4x f4)
 }
 
 internal f32_4x
+ceil(f32_4x f4)
+{
+    f32_4x result;
+    result.m = _mm_ceil_ps(f4.m);
+    return result;
+}
+
+internal f32_4x
+round(f32_4x f4)
+{
+    f32_4x result;
+    result.m = _mm_round_ps(f4.m, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    return result;
+}
+
+internal f32_4x
 fraction(f32_4x a)
 {
     f32_4x result;
@@ -378,6 +402,14 @@ select(f32_4x op0, f32_4x mask, f32_4x op1)
     f32_4x result;
     result.m = _mm_or_ps(_mm_andnot_ps(mask.m, op0.m),
                          _mm_and_ps(mask.m, op1.m));
+    return result;
+}
+
+internal f32_4x
+byte_shuffle(f32_4x a, f32_4x shuffler)
+{
+    f32_4x result;
+    result.mi = _mm_shuffle_epi8(a.mi, shuffler.mi);
     return result;
 }
 
@@ -932,6 +964,17 @@ V4_4x(v4 vec0, v4 vec1, v4 vec2, v4 vec3)
 }
 
 internal v4_4x
+V4_4x(v4 vec)
+{
+    v4_4x result;
+    result.x.m = _mm_set1_ps(vec.x);
+    result.y.m = _mm_set1_ps(vec.y);
+    result.z.m = _mm_set1_ps(vec.z);
+    result.w.m = _mm_set1_ps(vec.w);
+    return result;
+}
+
+internal v4_4x
 V4_4x(f32 *f, b32 interleaved = true)
 {
     v4_4x result;
@@ -941,18 +984,35 @@ V4_4x(f32 *f, b32 interleaved = true)
     result.w.m = _mm_load_ps(f + 12);
     if (interleaved)
     {
+        // NOTE(michiel): This is the same as a 4x4 matrix transpose
+        // [x0, y0, z0, w0] => [x0, x1, x2, x3]
+        // [x1, y1, z1, w1] => [y0, y1, y2, y3]
+        // [x2, y2, z2, w2] => [z0, z1, z2, z3]
+        // [x3, y3, z3, w3] => [w0, w1, w2, w3]
         f32_4x temp0;
         f32_4x temp1;
         f32_4x temp2;
         f32_4x temp3;
-        temp0.m = _mm_shuffle_ps(result.x.m, result.y.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-        temp1.m = _mm_shuffle_ps(result.x.m, result.y.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-        temp2.m = _mm_shuffle_ps(result.z.m, result.w.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-        temp3.m = _mm_shuffle_ps(result.z.m, result.w.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
+        // TODO(michiel): Test which is faster...
+#if 0
+        temp0.m = _mm_shuffle_ps(result.x.m, result.y.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1)); // NOTE(michiel): x0, y0, x1, y1
+        temp1.m = _mm_shuffle_ps(result.x.m, result.y.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3)); // NOTE(michiel): z0, w0, z1, w1
+        temp2.m = _mm_shuffle_ps(result.z.m, result.w.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1)); // NOTE(michiel): x2, y2, x3, y3
+        temp3.m = _mm_shuffle_ps(result.z.m, result.w.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3)); // NOTE(michiel): z2, w2, z3, w3
         result.x.m = _mm_shuffle_ps(temp0.m, temp2.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
         result.y.m = _mm_shuffle_ps(temp0.m, temp2.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
         result.z.m = _mm_shuffle_ps(temp1.m, temp3.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
         result.w.m = _mm_shuffle_ps(temp1.m, temp3.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
+#else
+        temp0.m = _mm_unpacklo_ps(result.x.m, result.y.m); // NOTE(michiel): x0, x1, y0, y1
+        temp1.m = _mm_unpacklo_ps(result.z.m, result.w.m); // NOTE(michiel): x2, x3, y2, y3
+        temp2.m = _mm_unpackhi_ps(result.x.m, result.y.m); // NOTE(michiel): z0, z1, w0, w1
+        temp3.m = _mm_unpackhi_ps(result.z.m, result.w.m); // NOTE(michiel): z2, z3, w2, w3
+        result.x.m = _mm_movelh_ps(temp0.m, temp1.m);
+        result.y.m = _mm_movehl_ps(temp1.m, temp0.m);
+        result.z.m = _mm_movelh_ps(temp2.m, temp3.m);
+        result.w.m = _mm_movehl_ps(temp3.m, temp2.m);
+#endif
     }
     return result;
 }

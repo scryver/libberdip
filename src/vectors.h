@@ -1860,6 +1860,15 @@ pack_colour(v4 colour)
 //
 
 internal Rectangle2u
+inverted_max_rectangle2(void)
+{
+    Rectangle2u result = {};
+    result.min.x = U32_MAX;
+    result.min.y = U32_MAX;
+    return result;
+}
+
+internal Rectangle2u
 rect_from_dim(u32 x, u32 y, u32 w, u32 h)
 {
     Rectangle2u result = {0};
@@ -1886,7 +1895,9 @@ rect_min_dim(u32 minX, u32 minY, u32 dimX, u32 dimY)
 internal Rectangle2u
 rect_min_dim(v2u min, v2u dim)
 {
-    Rectangle2u result = rect_min_dim(min.x, min.y, dim.x, dim.y);
+    Rectangle2u result;
+    result.min = min;
+    result.max = min + dim;
     return result;
 }
 
@@ -1914,6 +1925,28 @@ internal v2u
 get_dim(Rectangle2u rect)
 {
     v2u result = rect.max - rect.min;
+    return result;
+}
+
+internal Rectangle2u
+rect_grow(Rectangle2u a, v2u border)
+{
+    Rectangle2u result;
+    result.min = a.min - border;
+    result.max = a.max + border;
+    return result;
+}
+
+internal Rectangle2u
+rect_union(Rectangle2u a, Rectangle2u b)
+{
+    Rectangle2u result;
+
+    result.min.x = minimum(a.min.x, b.min.x);
+    result.min.y = minimum(a.min.y, b.min.y);
+    result.max.x = maximum(a.max.x, b.max.x);
+    result.max.y = maximum(a.max.y, b.max.y);
+
     return result;
 }
 
@@ -2099,6 +2132,17 @@ rect_union(Rectangle2 a, Rectangle2 b)
     result.max.x = maximum(a.max.x, b.max.x);
     result.max.y = maximum(a.max.y, b.max.y);
 
+    return result;
+}
+
+internal b32
+in_rectangle(Rectangle2 rect, v2 point)
+{
+    b32 result;
+    result = ((point.x >= rect.min.x) &&
+              (point.y >= rect.min.y) &&
+              (point.x < rect.max.x) &&
+              (point.y < rect.max.y));
     return result;
 }
 
