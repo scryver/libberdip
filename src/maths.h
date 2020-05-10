@@ -8,6 +8,10 @@
 #define TRIGONOMETRY_FILE "trigonometry_v2.h"
 #endif
 
+#ifndef MATH_USE_SSE4_FUNC
+#define MATH_USE_SSE4_FUNC 1
+#endif
+
 internal f32
 fast_exp_(f32 x, u32 approx)
 {
@@ -195,53 +199,108 @@ truncate(f64 value)
     return result;
 }
 
+#if MATH_USE_SSE4_FUNC
+union FloatMathVec
+{
+    __m128  mf;
+    __m128d md;
+    __m128i mi;
+    f32 ef32[4];
+    f64 ef64[2];
+    s32 ei32[4];
+    u32 eu32[4];
+};
+#endif
+
 internal f32
 floor(f32 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.mf = _mm_set1_ps(value);
+    result.mf = _mm_floor_ps(result.mf);
+    return result.ef32[0];
+#else
     // TODO(michiel): Precision check
     f32 result;
     result = truncate(value + (value < 0.0f ? -0.9999999f : 0.0));
     return result;
+#endif
 }
 
 internal f64
 floor(f64 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.md = _mm_set1_pd(value);
+    result.md = _mm_floor_pd(result.md);
+    return result.ef64[0];
+#else
     f64 result;
     result = truncate(value + (value < 0.0 ? -0.999999999999999 : 0.0));
     return result;
+#endif
 }
 
 internal f32
 ceil(f32 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.mf = _mm_set1_ps(value);
+    result.mf = _mm_ceil_ps(result.mf);
+    return result.ef32[0];
+#else
     f32 result;
     result = truncate(value + (value < 0.0f ? 0.0f : 0.9999999f));
     return result;
+#endif
 }
 
 internal f64
 ceil(f64 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.md = _mm_set1_pd(value);
+    result.md = _mm_ceil_pd(result.md);
+    return result.ef64[0];
+#else
     f64 result;
     result = truncate(value + (value < 0.0 ? 0.0 : 0.999999999999999));
     return result;
+#endif
 }
 
 internal f32
 round(f32 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.mf = _mm_set1_ps(value);
+    result.mf = _mm_round_ps(result.mf, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    return result.ef32[0];
+#else
     f32 result;
     result = truncate(value + 0.5f * sign_of(value));
     return result;
+#endif
 }
 
 internal f64
 round(f64 value)
 {
+#if MATH_USE_SSE4_FUNC
+    FloatMathVec result;
+    result.md = _mm_set1_pd(value);
+    result.md = _mm_round_pd(result.md, _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC);
+    return result.ef64[0];
+#else
     f64 result;
     result = truncate(value + 0.5 * sign_of(value));
     return result;
+#endif
 }
 
 internal f32
