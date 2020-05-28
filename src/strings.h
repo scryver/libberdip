@@ -450,6 +450,28 @@ string_contains(String str, String subStr)
 
 #endif // __cplusplus
 
+internal b32
+starts_with(String baseString, String expectedPrefix)
+{
+    b32 result = baseString.size >= expectedPrefix.size;
+    if (result)
+    {
+        result = string(expectedPrefix.size, baseString.data) == expectedPrefix;
+    }
+    return result;
+}
+
+internal b32
+ends_with(String baseString, String expectedSuffix)
+{
+    b32 result = baseString.size >= expectedSuffix.size;
+    if (result)
+    {
+        result = string(expectedSuffix.size, baseString.data + baseString.size - expectedSuffix.size) == expectedSuffix;
+    }
+    return result;
+}
+
 internal String
 get_extension(String name)
 {
