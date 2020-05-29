@@ -388,6 +388,28 @@ string_contains(String str, const char *subStr)
     return string_contains(str, string(string_length(subStr), subStr));
 }
 
+internal b32
+starts_with(String baseString, String expectedPrefix)
+{
+    b32 result = baseString.size >= expectedPrefix.size;
+    if (result)
+    {
+        result = string(expectedPrefix.size, baseString.data) == expectedPrefix;
+    }
+    return result;
+}
+
+internal b32
+ends_with(String baseString, String expectedSuffix)
+{
+    b32 result = baseString.size >= expectedSuffix.size;
+    if (result)
+    {
+        result = string(expectedSuffix.size, baseString.data + baseString.size - expectedSuffix.size) == expectedSuffix;
+    }
+    return result;
+}
+
 #else
 
 internal String
@@ -448,15 +470,13 @@ string_contains(String str, String subStr)
     return result;
 }
 
-#endif // __cplusplus
-
 internal b32
 starts_with(String baseString, String expectedPrefix)
 {
     b32 result = baseString.size >= expectedPrefix.size;
     if (result)
     {
-        result = string(expectedPrefix.size, baseString.data) == expectedPrefix;
+        result = strings_are_equal(string(expectedPrefix.size, baseString.data), expectedPrefix);
     }
     return result;
 }
@@ -467,10 +487,12 @@ ends_with(String baseString, String expectedSuffix)
     b32 result = baseString.size >= expectedSuffix.size;
     if (result)
     {
-        result = string(expectedSuffix.size, baseString.data + baseString.size - expectedSuffix.size) == expectedSuffix;
+        result = strings_are_equal(string(expectedSuffix.size, baseString.data + baseString.size - expectedSuffix.size), expectedSuffix);
     }
     return result;
 }
+
+#endif // __cplusplus
 
 internal String
 get_extension(String name)
@@ -602,7 +624,7 @@ str_intern_(Interns *interns, String str)
 #ifdef __cplusplus
         if (itStr == str)
 #else
-        if (strings_are_equal(itStr, str))
+            if (strings_are_equal(itStr, str))
 #endif
         {
             return it;
@@ -1080,7 +1102,7 @@ string_from_ip6(void *ip6src, u32 maxDataCount, u8 *data)
         {
             if (idx == zeroRangeStart)
             {
-                result = append_string(result, string("::"), maxDataCount);
+                result = append_string(result, string(2, "::"), maxDataCount);
             }
             else if ((idx > zeroRangeStart) &&
                      (idx < (zeroRangeStart + maxZeroRange)))
@@ -1091,7 +1113,7 @@ string_from_ip6(void *ip6src, u32 maxDataCount, u8 *data)
             {
                 if ((idx > 0) && (result.data[result.size - 1] != ':'))
                 {
-                    result = append_string(result, string(":"), maxDataCount);
+                    result = append_string(result, string(1, ":"), maxDataCount);
                 }
                 result = append_string_fmt(result, maxDataCount, "%x", ipBlocks[idx]);
             }
