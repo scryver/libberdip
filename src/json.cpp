@@ -1,11 +1,4 @@
 internal void
-advance(String *s)
-{
-    --s->size;
-    ++s->data;
-}
-
-internal void
 strip_whitespace(String *s)
 {
     while (s->size && is_whitespace(s->data[0]))

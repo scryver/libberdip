@@ -311,7 +311,16 @@ advance(Buffer b, u32 amount = 1)
     result.data += amount;
     return result;
 }
+
+internal void
+advance(Buffer *b, u32 amount = 1)
+{
+    b->size -= amount;
+    b->data += amount;
+}
+
 #else
+
 internal Buffer
 advance(Buffer b, u32 amount)
 {
@@ -320,6 +329,14 @@ advance(Buffer b, u32 amount)
     result.data += amount;
     return result;
 }
+
+internal void
+advance(Buffer *b, u32 amount)
+{
+    b->size -= amount;
+    b->data += amount;
+}
+
 #endif
 
 internal Buffer
