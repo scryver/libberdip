@@ -175,22 +175,12 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
     v2 rectMax = V2((f32)image->width - 1, (f32)image->height - 1);
 
     f32 maxLinePoint = 1.0e20f;
-    if (is_neg_nan(start.x) || (start.x < -maxLinePoint))
-    {
-        start.x = -maxLinePoint;
-    }
-    if (is_neg_nan(start.y) || (start.y < -maxLinePoint))
-    {
-        start.y = -maxLinePoint;
-    }
-    if (is_pos_nan(end.x) || (end.x > maxLinePoint))
-    {
-        end.x = maxLinePoint;
-    }
-    if (is_pos_nan(end.y) || (end.y > maxLinePoint))
-    {
-        end.y = maxLinePoint;
-    }
+
+    // NOTE(michiel): Remove nan/inf from the equation
+    start.x = make_real(start.x, maxLinePoint);
+    start.y = make_real(start.y, maxLinePoint);
+    end.x = make_real(end.x, maxLinePoint);
+    end.y = make_real(end.y, maxLinePoint);
 
     u32 startFlag = calculate_point_outside_rect(start, rectMin, rectMax);
     u32 endFlag   = calculate_point_outside_rect(end, rectMin, rectMax);
