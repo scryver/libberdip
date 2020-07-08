@@ -43,7 +43,7 @@ internal inline u32 get_thread_id(void)
     return thread_id;
 }
 
-#elif COMPILER_LLVM || COMPILER_GCC
+#elif COMPILER_LLVM || COMPILER_GCC || COMPILER_TCC
 #include <x86intrin.h>
 
 #define COMPLETE_PREVIOUS_READS_BEFORE_FUTURE_READS     asm volatile("" ::: "memory")

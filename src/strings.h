@@ -273,7 +273,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 // TODO(michiel): Have our own printf with %S to support strings
 #define STR_FMT(s)  safe_truncate_to_u32((s).size), (s).data
 
-#define static_string(c) {sizeof(c) - 1, (u8 *)c}
+#define static_string(c) (String){sizeof(c) - 1, (u8 *)c}
 #define to_cstring(s)    ((char *)s.data)
 
 internal String
@@ -624,7 +624,7 @@ str_intern_(Interns *interns, String str)
 #ifdef __cplusplus
         if (itStr == str)
 #else
-            if (strings_are_equal(itStr, str))
+        if (strings_are_equal(itStr, str))
 #endif
         {
             return it;
@@ -680,7 +680,7 @@ vstr_intern_fmt(Interns *interns, char *fmt, va_list args)
 internal String
 str_intern_fmt(Interns *interns, char *fmt, ...)
 {
-    String result = {};
+    String result = {0};
 
     va_list args;
     va_start(args, fmt);

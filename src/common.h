@@ -28,16 +28,26 @@
 #define COMPILER_GCC 0
 #endif
 
-#if !COMPILER_MSVC && !COMPILER_LLVM && !COMPILER_GCC
+#if !defined(COMPILER_TCC)
+#define COMPILER_TCC 0
+#endif
+
+#if !COMPILER_MSVC && !COMPILER_LLVM && !COMPILER_GCC && !COMPILER_TCC
 #if _MSC_VER
-#undef COMPILER_MSVC
+#undef  COMPILER_MSVC
 #define COMPILER_MSVC 1
 #elif __clang__
-#undef COMPILER_LLVM
+#undef  COMPILER_LLVM
 #define COMPILER_LLVM 1
 #elif __GNUC__
-#undef COMPILER_GCC
+#undef  COMPILER_GCC
 #define COMPILER_GCC 1
+#elif __TINYC__
+#undef  COMPILER_TCC
+#define COMPILER_TCC 1
+// TODO(michiel): - Add default argument values
+//                - Add function overload
+//                - Make structs typedeffed by default
 #else
 #error Unknown compiler
 #endif
@@ -204,6 +214,68 @@ reverse_bits(u32 b, u32 msb)
     }
     result <<= msb;
     return result & mask;
+}
+
+typedef struct BitScanResult
+{
+    b32 found;
+    u32 index;
+} BitScanResult;
+
+internal BitScanResult
+find_least_significant_set_bit(u32 value)
+{
+    BitScanResult result = {0};
+
+#if COMPILER_MSVC
+    result.found = _BitScanForward((unsigned long *)&result.index, value);
+#elif __has_builtin(__builtin_ctz)
+    if (value)
+    {
+        result.index = __builtin_ctz(value);
+        result.found = true;
+    }
+#else
+    for(s32 test = 0; test < 32; ++test)
+    {
+        if(value & (1 << test))
+        {
+            result.index = test;
+            result.found = true;
+            break;
+        }
+    }
+#endif
+
+    return result;
+}
+
+internal BitScanResult
+find_most_significant_set_bit(u32 value)
+{
+    BitScanResult result = {0};
+
+#if COMPILER_MSVC
+    result.found = _BitScanReverse((unsigned long *)&result.index, value);
+#elif __has_builtin(__builtin_clz)
+    if (value)
+    {
+        result.index = 31 - __builtin_clz(value);
+        result.found = true;
+    }
+#else
+    for(s32 test = 31; test >= 0; --test)
+    {
+        if(value & (1 << test))
+        {
+            result.index = test;
+            result.found = true;
+            break;
+        }
+    }
+#endif
+
+    return result;
 }
 
 //#define copy(n, s, d)  copy_(n*sizeof(s[0]), s, d)

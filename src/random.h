@@ -1,23 +1,23 @@
-struct RandomSeriesPCG
+typedef struct RandomSeriesPCG
 {
     u64 state;
     u64 selector;
-};
+} RandomSeriesPCG;
 
-struct RandomListEntry
+typedef struct RandomListEntry
 {
     f32 weight;
     u8 *data;
-};
+} RandomListEntry;
 
-struct RandomList
+typedef struct RandomList
 {
     RandomSeriesPCG *series;
     f32 totalWeight;
 
     u32 entryCount;
     RandomListEntry *entries;
-};
+} RandomList;
 
 internal RandomSeriesPCG
 random_seed_pcg(u64 state, u64 selector)
@@ -64,6 +64,7 @@ random_bilateral(RandomSeriesPCG *series)
     return result;
 }
 
+#ifdef __cplusplus
 internal u32
 slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount = 8)
 {
@@ -75,6 +76,19 @@ slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount
     sum /= gaussionCount;
     return sum;
 }
+#else
+internal u32
+slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount)
+{
+    u64 sum = 0;
+    for (u32 i = 0; i < gaussionCount; ++i)
+    {
+        sum += (random_next_u32(series) % choiceCount);
+    }
+    sum /= gaussionCount;
+    return sum;
+}
+#endif
 
 internal f32
 slow_gaussian(RandomSeriesPCG *series)
@@ -119,9 +133,9 @@ random_gaussian(RandomSeriesPCG *series, f32 mean = 0.0f, f32 stdDeviation = 1.0
 internal RandomList
 allocate_rand_list(u32 count)
 {
-    RandomList result = {};
+    RandomList result = {0};
     result.entryCount = count;
-    result.entries = allocate_array(RandomListEntry, count);
+    result.entries = allocate_array(RandomListEntry, count, 0);
 
     return result;
 }
@@ -129,7 +143,7 @@ allocate_rand_list(u32 count)
 internal RandomList
 arena_allocate_rand_list(Arena *arena, u32 count)
 {
-    RandomList result = {};
+    RandomList result = {0};
     result.entryCount = count;
     result.entries = arena_allocate_array(arena, RandomListEntry, count);
 
@@ -159,7 +173,7 @@ init_rand_list_(RandomSeriesPCG *series, RandomList *list,
 internal RandomListEntry
 random_entry(RandomList *list)
 {
-    RandomListEntry result = {};
+    RandomListEntry result = {0};
 
     f32 val = random_unilateral(list->series) * list->totalWeight;
 
