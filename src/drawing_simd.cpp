@@ -2,6 +2,7 @@
 //#include "platform.h"
 //#include "multilane.h"
 
+// TODO(michiel): USE NEW IMAGE ROWSTRIDE!!!
 #if 0
 //
 // TODO(michiel): Move to some kind of line algorithm file (also in drawing.cpp)

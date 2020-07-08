@@ -2,6 +2,8 @@
 #define DRAWING2D_SLOW 0
 #endif
 
+// TODO(michiel): USE NEW IMAGE ROWSTRIDE!!!
+
 struct Vertex2D
 {
     v2 p;  // NOTE(michiel): Position

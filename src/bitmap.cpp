@@ -34,7 +34,7 @@ get_total_pixel_size(Image *image)
 internal u32 *
 get_pixel_pointer(Image *image, u32 x, u32 y)
 {
-    u32 *result = image->pixels + y*image->width + x;
+    u32 *result = image->pixels + y*image->rowStride + x;
     return result;
 }
 
@@ -50,6 +50,7 @@ load_bitmap(Buffer data, b32 preMultiplyAlpha = false)
         result.pixels = pixels;
         result.width = header->width;
         result.height = header->height;
+        result.rowStride = header->width;
 
         i_expect(result.height >= 0);
         i_expect(header->compression == 3);
@@ -163,7 +164,12 @@ write_bitmap(FileAPI *api, Image *image, char *outputFilename)
     if (no_file_errors(&file))
     {
         api->write_to_file(&file, sizeof(header), &header);
-        api->write_to_file(&file, outputPixelSize, image->pixels);
+        u32 *writeData = image->pixels;
+        for (u32 yLine = 0; y < image->height; ++y)
+        {
+            api->write_to_file(&file, image->width * sizeof(u32), writeData);
+            writeData += image->rowStride;
+        }
         api->close_file(&file);
     }
 }

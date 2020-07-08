@@ -69,6 +69,7 @@ typedef struct Image
 {
     u32 width;
     u32 height;
+    u32 rowStride; // NOTE(michiel): mostly just width, but can be used for subimages
     u32 *pixels;
 } Image;
 
@@ -77,5 +78,6 @@ typedef struct Image8
 {
     u32 width;
     u32 height;
+    u32 rowStride;
     u8 *pixels;
 } Image8;

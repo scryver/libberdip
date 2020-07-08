@@ -162,8 +162,16 @@ push_image(Renderer2D *renderer, v2 offset, Image *image,
     push_vertex(renderer, (Vertex2D){offset, colour});
     drawImage->bitmap.width = image->width;
     drawImage->bitmap.height = image->height;
+    drawImage->bitmap.rowStride = image->width;
     drawImage->bitmap.pixels = push_texture(renderer, imageByteSize);
-    copy(imageByteSize, image->pixels, drawImage->bitmap.pixels);
+    u32 *srcRow = image->pixels;
+    u32 *dstRow = drawImage->bitmap.pixels;
+    for (u32 y = 0; y < image->height; ++y)
+    {
+        copy(sizeof(u32)*image->width, srcRow, dstRow);
+        srcRow += image->rowStride;
+        dstRow += drawImage->bitmap.rowStride;
+    }
 }
 
 #if 0

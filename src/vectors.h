@@ -709,6 +709,33 @@ rotate(v2 a, f32 angle)
     return result;
 }
 
+internal v2
+round(v2 a)
+{
+    v2 result;
+    result.x = round(a.x);
+    result.y = round(a.y);
+    return result;
+}
+
+internal v2
+floor(v2 a)
+{
+    v2 result;
+    result.x = floor(a.x);
+    result.y = floor(a.y);
+    return result;
+}
+
+internal v2
+ceil(v2 a)
+{
+    v2 result;
+    result.x = ceil(a.x);
+    result.y = ceil(a.y);
+    return result;
+}
+
 //
 //
 //
@@ -2040,7 +2067,7 @@ get_height(Rectangle2s a)
 // NOTE(michiel): Rectangle2
 //
 
-inline Rectangle2
+internal Rectangle2
 inverted_infinity_rectangle2(void)
 {
     Rectangle2 result;
@@ -2053,7 +2080,7 @@ inverted_infinity_rectangle2(void)
     return result;
 }
 
-inline Rectangle2
+internal Rectangle2
 rect_min_dim(f32 minX, f32 minY, f32 dimX, f32 dimY)
 {
     Rectangle2 result;
@@ -2066,7 +2093,7 @@ rect_min_dim(f32 minX, f32 minY, f32 dimX, f32 dimY)
     return result;
 }
 
-inline Rectangle2
+internal Rectangle2
 rect_min_dim(v2 min, v2 dim)
 {
     Rectangle2 result;
@@ -2074,6 +2101,26 @@ rect_min_dim(v2 min, v2 dim)
     result.min = min;
     result.max = min + dim;
 
+    return result;
+}
+
+internal Rectangle2
+rect_min_max(f32 minX, f32 minY, f32 maxX, f32 maxY)
+{
+    Rectangle2 result;
+
+    result.min.x = minX;
+    result.min.y = minY;
+    result.max.x = maxX;
+    result.max.y = maxY;
+
+    return result;
+}
+
+internal Rectangle2
+rect_min_max(v2 min, v2 max)
+{
+    Rectangle2 result = rect_min_max(min.x, min.y, max.x, max.y);
     return result;
 }
 

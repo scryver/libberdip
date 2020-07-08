@@ -2,6 +2,8 @@
 #define DRAWING_SLOW 0
 #endif
 
+internal void fill_rectangle(Image *image, v2 start, v2 dim, v4 colour);
+
 //
 // TODO(michiel): Move to some kind of line algorithm file (also in drawing_simd.cpp)
 //
@@ -70,26 +72,28 @@ calculate_intersection(v2 start, v2 end, v2 rectMin, v2 rectMax, u32 flags)
 //
 
 internal void
-clear(Image *image)
-{
-    copy_single(image->width * image->height * sizeof(u32), 0, image->pixels);
-}
-
-internal void
 clear_region(Image *image, s32 startX, s32 startY, s32 width, s32 height)
 {
+    u32 endX = minimum(image->width, startX + width);
+    u32 endY = minimum(image->height, startY + height);
     startX = maximum(0, startX);
     startY = maximum(0, startY);
-    u32 *destRow = image->pixels + startY * image->width;
-    for (u32 y = 0; (y < height) && ((startY + y) < image->height); ++y)
+    u32 *destRow = image->pixels + startY * image->rowStride;
+    for (u32 y = startY; y < endY; ++y)
     {
         u32 *dest = destRow + startX;
-        for (u32 x = 0; (x < width) && ((startX + x) < image->width); ++x)
+        for (u32 x = startX; x < endX; ++x)
         {
             *dest++ = 0;
         }
-        destRow += image->width;
+        destRow += image->rowStride;
     }
+}
+
+internal void
+clear(Image *image)
+{
+    clear_region(image, 0, 0, image->width, image->height);
 }
 
 //
@@ -138,9 +142,9 @@ draw_pixel(Image *image, u32 x, u32 y, v4 colour)
     i_expect(y < image->height);
 #endif // DRAWING_SLOW
 
-    v4 source = unpack_colour(image->pixels[y * image->width + x]);
+    v4 source = unpack_colour(image->pixels[y * image->rowStride + x]);
     source = alpha_blend_colours(source, colour);
-    image->pixels[y * image->width + x] = pack_colour(source);
+    image->pixels[y * image->rowStride + x] = pack_colour(source);
 }
 
 internal void
@@ -640,13 +644,13 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixel2.rgb = pixel2.a * colourEnd.rgb;
                 pixel3.rgb = pixel3.a * colourEnd.rgb;
 
-                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
-                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+                u32 *basePixels1 = image->pixels + yPixel1 * image->rowStride + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->rowStride + xPixel2;
 
                 v4 source0 = unpack_colour(basePixels1[0]);
-                v4 source1 = unpack_colour(basePixels1[image->width]);
+                v4 source1 = unpack_colour(basePixels1[image->rowStride]);
                 v4 source2 = unpack_colour(basePixels2[0]);
-                v4 source3 = unpack_colour(basePixels2[image->width]);
+                v4 source3 = unpack_colour(basePixels2[image->rowStride]);
 
                 source0.rgb = source0.rgb * (1.0f - pixel0.a) + pixel0.rgb;
                 source1.rgb = source1.rgb * (1.0f - pixel1.a) + pixel1.rgb;
@@ -659,9 +663,9 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 source3.a = pixel3.a;
 
                 basePixels1[0] = pack_colour(source0);
-                basePixels1[image->width] = pack_colour(source1);
+                basePixels1[image->rowStride] = pack_colour(source1);
                 basePixels2[0] = pack_colour(source2);
-                basePixels2[image->width] = pack_colour(source3);
+                basePixels2[image->rowStride] = pack_colour(source3);
 
                 for (s32 x = xPixel1 + 1; x < xPixel2; x += 4)
                 {
@@ -718,14 +722,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                     pixelsB[2].rgb = pixelsB[2].a * lerpColour2;
                     pixelsB[3].rgb = pixelsB[3].a * lerpColour3;
 
-                    u32 offsetA0 = (s32)intery0 * image->width + x + 0;
-                    u32 offsetA1 = (s32)intery1 * image->width + x + 1;
-                    u32 offsetA2 = (s32)intery2 * image->width + x + 2;
-                    u32 offsetA3 = (s32)intery3 * image->width + x + 3;
-                    u32 offsetB0 = ((s32)intery0 + 1) * image->width + x + 0;
-                    u32 offsetB1 = ((s32)intery1 + 1) * image->width + x + 1;
-                    u32 offsetB2 = ((s32)intery2 + 1) * image->width + x + 2;
-                    u32 offsetB3 = ((s32)intery3 + 1) * image->width + x + 3;
+                    u32 offsetA0 = (s32)intery0 * image->rowStride + x + 0;
+                    u32 offsetA1 = (s32)intery1 * image->rowStride + x + 1;
+                    u32 offsetA2 = (s32)intery2 * image->rowStride + x + 2;
+                    u32 offsetA3 = (s32)intery3 * image->rowStride + x + 3;
+                    u32 offsetB0 = ((s32)intery0 + 1) * image->rowStride + x + 0;
+                    u32 offsetB1 = ((s32)intery1 + 1) * image->rowStride + x + 1;
+                    u32 offsetB2 = ((s32)intery2 + 1) * image->rowStride + x + 2;
+                    u32 offsetB3 = ((s32)intery3 + 1) * image->rowStride + x + 3;
                     if ((x + 3) < xPixel2)
                     {
                         v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
@@ -887,8 +891,8 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixels[2].rgb = pixels[2].a * colourEnd.rgb;
                 pixels[3].rgb = pixels[3].a * colourEnd.rgb;
 
-                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
-                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+                u32 *basePixels1 = image->pixels + yPixel1 * image->rowStride + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->rowStride + xPixel2;
 
                 v4 source0 = unpack_colour(basePixels1[0]);
                 v4 source1 = unpack_colour(basePixels1[1]);
@@ -965,14 +969,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                     pixelsB[2].rgb = pixelsB[2].a * lerpColour2;
                     pixelsB[3].rgb = pixelsB[3].a * lerpColour3;
 
-                    u32 offsetA0 = (y + 0) * image->width + (s32)intery0;
-                    u32 offsetB0 = (y + 0) * image->width + (s32)intery0 + 1;
-                    u32 offsetA1 = (y + 1) * image->width + (s32)intery1;
-                    u32 offsetB1 = (y + 1) * image->width + (s32)intery1 + 1;
-                    u32 offsetA2 = (y + 2) * image->width + (s32)intery2;
-                    u32 offsetB2 = (y + 2) * image->width + (s32)intery2 + 1;
-                    u32 offsetA3 = (y + 3) * image->width + (s32)intery3;
-                    u32 offsetB3 = (y + 3) * image->width + (s32)intery3 + 1;
+                    u32 offsetA0 = (y + 0) * image->rowStride + (s32)intery0;
+                    u32 offsetB0 = (y + 0) * image->rowStride + (s32)intery0 + 1;
+                    u32 offsetA1 = (y + 1) * image->rowStride + (s32)intery1;
+                    u32 offsetB1 = (y + 1) * image->rowStride + (s32)intery1 + 1;
+                    u32 offsetA2 = (y + 2) * image->rowStride + (s32)intery2;
+                    u32 offsetB2 = (y + 2) * image->rowStride + (s32)intery2 + 1;
+                    u32 offsetA3 = (y + 3) * image->rowStride + (s32)intery3;
+                    u32 offsetB3 = (y + 3) * image->rowStride + (s32)intery3 + 1;
                     if ((y + 3) < yPixel2)
                     {
                         v4 sourceA0 = unpack_colour(image->pixels[offsetA0]);
@@ -1193,13 +1197,13 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixel2.rgb = pixel2.a * colourEnd.rgb;
                 pixel3.rgb = pixel3.a * colourEnd.rgb;
 
-                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
-                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+                u32 *basePixels1 = image->pixels + yPixel1 * image->rowStride + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->rowStride + xPixel2;
 
                 v4 source0 = unpack_colour(basePixels1[0]);
-                v4 source1 = unpack_colour(basePixels1[image->width]);
+                v4 source1 = unpack_colour(basePixels1[image->rowStride]);
                 v4 source2 = unpack_colour(basePixels2[0]);
-                v4 source3 = unpack_colour(basePixels2[image->width]);
+                v4 source3 = unpack_colour(basePixels2[image->rowStride]);
 
                 source0.rgb = source0.rgb * (1.0f - pixel0.a) + pixel0.rgb;
                 source1.rgb = source1.rgb * (1.0f - pixel1.a) + pixel1.rgb;
@@ -1212,9 +1216,9 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 source3.a = pixel3.a;
 
                 basePixels1[0] = pack_colour(source0);
-                basePixels1[image->width] = pack_colour(source1);
+                basePixels1[image->rowStride] = pack_colour(source1);
                 basePixels2[0] = pack_colour(source2);
-                basePixels2[image->width] = pack_colour(source3);
+                basePixels2[image->rowStride] = pack_colour(source3);
 
                 f32_4x interies = F32_4x(intery, intery + 1.0f * gradient,
                                          intery + 2.0f * gradient, intery + 3.0f * gradient);
@@ -1252,14 +1256,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                     pixelsA.rgb = pixelsA.a * lerpColour;
                     pixelsB.rgb = pixelsB.a * lerpColour;
 
-                    u32 offsetA0 = (s32)interies.e[0] * image->width + x + 0;
-                    u32 offsetA1 = (s32)interies.e[1] * image->width + x + 1;
-                    u32 offsetA2 = (s32)interies.e[2] * image->width + x + 2;
-                    u32 offsetA3 = (s32)interies.e[3] * image->width + x + 3;
-                    u32 offsetB0 = ((s32)interies.e[0] + 1) * image->width + x + 0;
-                    u32 offsetB1 = ((s32)interies.e[1] + 1) * image->width + x + 1;
-                    u32 offsetB2 = ((s32)interies.e[2] + 1) * image->width + x + 2;
-                    u32 offsetB3 = ((s32)interies.e[3] + 1) * image->width + x + 3;
+                    u32 offsetA0 = (s32)interies.e[0] * image->rowStride + x + 0;
+                    u32 offsetA1 = (s32)interies.e[1] * image->rowStride + x + 1;
+                    u32 offsetA2 = (s32)interies.e[2] * image->rowStride + x + 2;
+                    u32 offsetA3 = (s32)interies.e[3] * image->rowStride + x + 3;
+                    u32 offsetB0 = ((s32)interies.e[0] + 1) * image->rowStride + x + 0;
+                    u32 offsetB1 = ((s32)interies.e[1] + 1) * image->rowStride + x + 1;
+                    u32 offsetB2 = ((s32)interies.e[2] + 1) * image->rowStride + x + 2;
+                    u32 offsetB3 = ((s32)interies.e[3] + 1) * image->rowStride + x + 3;
 
                     u32 pixelA0 = image->pixels[offsetA0];
                     u32 pixelA1 = 0;
@@ -1409,8 +1413,8 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 pixels[2].rgb = pixels[2].a * colourEnd.rgb;
                 pixels[3].rgb = pixels[3].a * colourEnd.rgb;
 
-                u32 *basePixels1 = image->pixels + yPixel1 * image->width + xPixel1;
-                u32 *basePixels2 = image->pixels + yPixel2 * image->width + xPixel2;
+                u32 *basePixels1 = image->pixels + yPixel1 * image->rowStride + xPixel1;
+                u32 *basePixels2 = image->pixels + yPixel2 * image->rowStride + xPixel2;
 
                 v4 source0 = unpack_colour(basePixels1[0]);
                 v4 source1 = unpack_colour(basePixels1[1]);
@@ -1468,14 +1472,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                     pixelsA.rgb = pixelsA.a * lerpColour;
                     pixelsB.rgb = pixelsB.a * lerpColour;
 
-                    u32 offsetA0 = (y + 0) * image->width + (s32)interies.e[0];
-                    u32 offsetB0 = (y + 0) * image->width + (s32)interies.e[0] + 1;
-                    u32 offsetA1 = (y + 1) * image->width + (s32)interies.e[1];
-                    u32 offsetB1 = (y + 1) * image->width + (s32)interies.e[1] + 1;
-                    u32 offsetA2 = (y + 2) * image->width + (s32)interies.e[2];
-                    u32 offsetB2 = (y + 2) * image->width + (s32)interies.e[2] + 1;
-                    u32 offsetA3 = (y + 3) * image->width + (s32)interies.e[3];
-                    u32 offsetB3 = (y + 3) * image->width + (s32)interies.e[3] + 1;
+                    u32 offsetA0 = (y + 0) * image->rowStride + (s32)interies.e[0];
+                    u32 offsetB0 = (y + 0) * image->rowStride + (s32)interies.e[0] + 1;
+                    u32 offsetA1 = (y + 1) * image->rowStride + (s32)interies.e[1];
+                    u32 offsetB1 = (y + 1) * image->rowStride + (s32)interies.e[1] + 1;
+                    u32 offsetA2 = (y + 2) * image->rowStride + (s32)interies.e[2];
+                    u32 offsetB2 = (y + 2) * image->rowStride + (s32)interies.e[2] + 1;
+                    u32 offsetA3 = (y + 3) * image->rowStride + (s32)interies.e[3];
+                    u32 offsetB3 = (y + 3) * image->rowStride + (s32)interies.e[3] + 1;
 
                     u32 pixelA0 = image->pixels[offsetA0];
                     u32 pixelA1 = 0;
@@ -1625,12 +1629,10 @@ internal void
 draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v4 colour = V4(1, 1, 1, 1))
 {
     i_expect(pointCount);
-    v2 prevP = points[0];
-    prevP += offset;
+    v2 prevP = points[0] + offset;
     for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
     {
-        v2 P = points[pointIdx];
-        P += offset;
+        v2 P = points[pointIdx] + offset;
         draw_line(image, prevP, P, colour);
         prevP = P;
     }
@@ -1641,16 +1643,10 @@ draw_lines(Image *image, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1,
            v4 colour = V4(1, 1, 1, 1))
 {
     i_expect(pointCount);
-    v2 prevP = points[0];
-    prevP.x *= scale.x;
-    prevP.y *= scale.y;
-    prevP += offset;
+    v2 prevP = hadamard(points[0], scale) + offset;
     for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
     {
-        v2 P = points[pointIdx];
-        P.x *= scale.x;
-        P.y *= scale.y;
-        P += offset;
+        v2 P = hadamard(points[pointIdx], scale) + offset;
         draw_line(image, prevP, P, colour);
         prevP = P;
     }
@@ -1660,16 +1656,10 @@ internal void
 draw_lines(Image *image, u32 pointCount, v2 *points, v4 *colours, v2 offset, v2 scale = V2(1, 1))
 {
     i_expect(pointCount);
-    v2 prevP = points[0];
-    prevP.x *= scale.x;
-    prevP.y *= scale.y;
-    prevP += offset;
+    v2 prevP = hadamard(points[0], scale) + offset;
     for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
     {
-        v2 P = points[pointIdx];
-        P.x *= scale.x;
-        P.y *= scale.y;
-        P += offset;
+        v2 P = hadamard(points[pointIdx], scale) + offset;
         draw_line(image, prevP, P, colours[pointIdx - 1], colours[pointIdx]);
         prevP = P;
     }
@@ -1734,6 +1724,55 @@ draw_lines(Image *image, u32 pointCount, v3 *points, v3 offset, v3 scale = V3(1,
         prevP = P;
     }
 }
+
+internal void
+draw_lines(Image *image, u32 pointCount, f32 *xValues, f32 *yValues, v2 offset, v2 scale = V2(1, 1),
+           v4 colour = V4(1, 1, 1, 1))
+{
+    i_expect(pointCount);
+    v2 prevP = V2(xValues[0], yValues[0]);
+    prevP = hadamard(prevP, scale) + offset;
+    for (u32 pointIdx = 1; pointIdx < pointCount; ++pointIdx)
+    {
+        v2 P = hadamard(V2(xValues[pointIdx], yValues[pointIdx]), scale) + offset;
+        draw_line(image, prevP, P, colour);
+        prevP = P;
+    }
+}
+
+internal void
+draw_stems(Image *image, v2 pointSize, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1, 1),
+           v4 colour = V4(1, 1, 1, 1))
+{
+    i_expect(pointCount);
+
+    v2 pointOffset = 0.5f * (pointSize - V2(1, 1));
+
+    for (u32 pointIdx = 0; pointIdx < pointCount; ++pointIdx)
+    {
+        v2 point = points[pointIdx];
+        v2 P = hadamard(point, scale) + offset;
+        v2 zeroPoint = hadamard(V2(point.x, 0), scale) + offset;
+        draw_line(image, zeroPoint, P, colour);
+        fill_rectangle(image, P - pointOffset, pointSize, colour);
+    }
+}
+
+#if 0
+internal void
+draw_stems(Image *image, u32 pointCount, v3 *points, v3 offset, v3 scale = V3(1, 1, 1),
+           v4 colourA = V4(1, 1, 1, 1), v4 colourB = V4(0.7f, 0.7f, 0.7f, 1))
+{
+    i_expect(pointCount);
+    for (u32 pointIdx = 0; pointIdx < pointCount; ++pointIdx)
+    {
+        v3 zeroPoint = hadamard(V3(0, 0, 0), scale) + offset;
+        v3 P = hadamard(points[pointIdx], scale) + offset;
+        draw_line(image, zeroPoint.xy, P.xy, colourA);
+        draw_line(image, V2(zeroPoint.x, zeroPoint.z), V2(P.x, P.z), colourB);
+    }
+}
+#endif
 
 //
 // NOTE(michiel): Outlines
@@ -1926,8 +1965,85 @@ fill_rectangle(Image *image, u32 xStart, u32 yStart, u32 width, u32 height, u32 
 internal void
 fill_rectangle(Image *image, v2 pos, v2 dim, v4 colour)
 {
-    fill_rectangle(image, s32_from_f32_round(pos.x), s32_from_f32_round(pos.y),
-                   u32_from_f32_round(dim.x), u32_from_f32_round(dim.y), colour);
+    // NOTE(michiel): Non-optimized way to handle subpixels
+    v2 endPos = pos + dim;
+
+    v2 minP = floor(pos);
+    v2 fullMaxP = floor(endPos);
+    v2 fractMin = pos - minP;
+    v2 fractMax = endPos - fullMaxP;
+    v2 fullMinP = V2(fractMin.x ? minP.x + 1.0f : minP.x,
+                     fractMin.y ? minP.y + 1.0f : minP.y);
+    v2 maxP = V2(fractMax.x ? fullMaxP.x + 1.0f : fullMaxP.x,
+                 fractMax.y ? fullMaxP.y + 1.0f : fullMaxP.y);
+
+    u32 minDrawX = (u32)maximum(0, minP.x);
+    u32 maxDrawX = (u32)minimum(image->width, maxP.x);
+    u32 fullMinDrawX = (u32)maximum(0, fullMinP.x);
+    u32 fullMaxDrawX = (u32)minimum(image->width, fullMaxP.x);
+
+    f32 startXAlpha = 1.0f - fractMin.x;
+    f32 endXAlpha = fractMax.x;
+
+    u32 minDrawY = (u32)maximum(0, minP.y);
+    u32 maxDrawY = (u32)minimum(image->height, maxP.y);
+    u32 fullMinDrawY = (u32)maximum(0, fullMinP.y);
+    u32 fullMaxDrawY = (u32)minimum(image->height, fullMaxP.y);
+
+    f32 startYAlpha = 1.0f - fractMin.y;
+    f32 endYAlpha = fractMax.y;
+
+    // NOTE(michiel): First row
+    if (minDrawY < fullMinDrawY)
+    {
+        for (u32 x = minDrawX; x < maxDrawX; ++x)
+        {
+            v4 p = colour;
+            if (x < fullMinDrawX) {
+                p.a *= startYAlpha * startXAlpha;
+            } else if (x < fullMaxDrawX) {
+                p.a *= startYAlpha;
+            } else {
+                p.a *= startYAlpha * endXAlpha;
+            }
+            p.rgb *= p.a;
+            draw_pixel(image, x, minDrawY, p);
+        }
+    }
+
+    // NOTE(michiel): Mid
+    for (u32 y = fullMinDrawY; y < fullMaxDrawY; ++y)
+    {
+        for (u32 x = minDrawX; x < maxDrawX; ++x)
+        {
+            v4 p = colour;
+            if (x < fullMinDrawX) {
+                p.a *= startXAlpha;
+            } else if (x >= fullMaxDrawX) {
+                p.a *= endXAlpha;
+            }
+            p.rgb *= p.a;
+            draw_pixel(image, x, y, p);
+        }
+    }
+
+    // NOTE(michiel): End row
+    if (fullMaxDrawY < maxDrawY)
+    {
+        for (u32 x = minDrawX; x < maxDrawX; ++x)
+        {
+            v4 p = colour;
+            if (x < fullMinDrawX) {
+                p.a *= endYAlpha * startXAlpha;
+            } else if (x < fullMaxDrawX) {
+                p.a *= endYAlpha;
+            } else {
+                p.a *= endYAlpha * endXAlpha;
+            }
+            p.rgb *= p.a;
+            draw_pixel(image, x, fullMaxDrawY, p);
+        }
+    }
 }
 
 internal void
@@ -1947,7 +2063,7 @@ fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
     f32 maxDistSqr = square(radius);
     f32 edgeFactor = 1.0f / maxDistSqr;
 
-    u32 *dstRow = image->pixels + yStart * image->width + xStart;
+    u32 *dstRow = image->pixels + yStart * image->rowStride + xStart;
     for (s32 y = 0;
          (y < h) && ((y + yStart) < image->height);
          ++y)
@@ -1959,7 +2075,7 @@ fill_tube(Image *image, u32 xStart, u32 yStart, u32 w, u32 h,
         for (u32 x = 0; (x < w) && ((x + xStart) < image->width); ++x) {
             dst = draw_pixel(dst, pixel);
         }
-        dstRow += image->width;
+        dstRow += image->rowStride;
     }
 }
 
@@ -2224,17 +2340,21 @@ internal void
 draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V4(1, 1, 1, 1))
 {
     modColour.rgb *= modColour.a;
+    u32 xEnd = minimum(screen->width, xStart + image->width);
+    u32 yEnd = minimum(screen->height, yStart + image->height);
+    xStart = maximum(0, xStart);
+    yStart = maximum(0, yStart);
     u32 *imageAt = image->pixels;
-    for (u32 y = yStart; (y < (yStart + image->height)) && (y < screen->height); ++y)
+    for (u32 y = yStart; y < yEnd; ++y)
     {
         u32 *imageRow = imageAt;
-        for (u32 x = xStart; (x < (xStart + image->width)) && (x < screen->width); ++x)
+        for (u32 x = xStart; x < xEnd; ++x)
         {
             v4 pixel = unpack_colour(*imageRow++);
             pixel = mix_colours(pixel, modColour);
             draw_pixel(screen, x, y, pixel);
         }
-        imageAt += image->width;
+        imageAt += image->rowStride;
     }
 }
 
@@ -2262,7 +2382,7 @@ draw_clipped_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangl
             pixel = mix_colours(pixel, modColour);
             draw_pixel(screen, x, y, pixel);
         }
-        imageAt += image->width;
+        imageAt += image->rowStride;
     }
 }
 
@@ -2280,7 +2400,7 @@ draw_image(Image *screen, u32 xStart, u32 yStart, Image8 *image, v4 modColour = 
             pixel = mix_colours(pixel, modColour);
             draw_pixel(screen, x, y, pixel);
         }
-        imageAt += image->width;
+        imageAt += image->rowStride;
     }
 }
 

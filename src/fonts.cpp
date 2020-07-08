@@ -57,6 +57,7 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
 
     result.width = width;
     result.height = height;
+    result.rowStride = width;
 
     s32 pitch = sizeof(u32) * width;
 
