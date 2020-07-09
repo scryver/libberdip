@@ -391,10 +391,19 @@ advance(Buffer *b, u32 amount = 1)
     b->data += amount;
 }
 
+internal Buffer
+save_advance(Buffer b, u32 amount)
+{
+    if (amount > b.size) {
+        amount = b.size;
+    }
+    return advance(b, amount);
+}
+
 #else
 
 internal Buffer
-advance(Buffer b, u32 amount)
+advance_sub(Buffer b, u32 amount)
 {
     Buffer result = b;
     result.size -= amount;
@@ -409,16 +418,16 @@ advance(Buffer *b, u32 amount)
     b->data += amount;
 }
 
-#endif
-
 internal Buffer
 save_advance(Buffer b, u32 amount)
 {
     if (amount > b.size) {
         amount = b.size;
     }
-    return advance(b, amount);
+    return advance_sub(b, amount);
 }
+
+#endif
 
 // NOTE(michiel): Stretchy buffer header (prepended to keep track of num items etc)
 #define BUF_MAGIC 0xB0FFE20F20F78D1E
