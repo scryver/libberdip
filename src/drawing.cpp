@@ -2228,8 +2228,6 @@ fill_circle(Image *image, s32 xStart, s32 yStart, u32 radius, u32 colour)
 internal void
 fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1))
 {
-    f32 diameter = 2.0f * radius;
-
     f32 maxDistSqr = square(radius - 0.5f);
     f32 edgeDistSqr = square(radius + 0.5f);
 
@@ -2237,8 +2235,8 @@ fill_circle(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1)
 
     s32 xMin = (s32)(x0 - radius);
     s32 yMin = (s32)(y0 - radius);
-    s32 xMax = s32_from_f32_ceil(x0 + diameter);
-    s32 yMax = s32_from_f32_ceil(y0 + diameter);
+    s32 xMax = s32_from_f32_ceil(x0 + radius);
+    s32 yMax = s32_from_f32_ceil(y0 + radius);
 
     xMin = clamp(0, xMin, (s32)image->width);
     yMin = clamp(0, yMin, (s32)image->height);
@@ -2281,8 +2279,6 @@ fill_circle(Image *image, v2 pos, f32 radius, v4 colour = V4(1, 1, 1, 1))
 internal void
 fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1), f32 innerRadius = 0.0f)
 {
-    f32 diameter = 2.0f * radius;
-
     f32 maxDistSqr = square(radius - 0.5f);
     f32 edgeDistSqr = square(radius + 0.5f);
     f32 innerDistSqr = square(innerRadius);
@@ -2293,8 +2289,118 @@ fill_circle_gradient(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1,
 
     s32 xMin = (s32)(x0 - radius);
     s32 yMin = (s32)(y0 - radius);
-    s32 xMax = s32_from_f32_ceil(x0 + diameter);
-    s32 yMax = s32_from_f32_ceil(y0 + diameter);
+    s32 xMax = s32_from_f32_ceil(x0 + radius);
+    s32 yMax = s32_from_f32_ceil(y0 + radius);
+
+    xMin = clamp(0, xMin, (s32)image->width);
+    yMin = clamp(0, yMin, (s32)image->height);
+    xMax = clamp(0, xMax, (s32)image->width);
+    yMax = clamp(0, yMax, (s32)image->height);
+
+    for (s32 y = yMin; y < yMax; ++y)
+    {
+        f32 fY = (f32)y - y0;
+        f32 fYSqr = square(fY);
+        for (s32 x = xMin; x < xMax; ++x)
+        {
+            f32 fX = (f32)x - x0;
+            f32 distSqr = square(fX) + fYSqr;
+
+            if (distSqr <= innerDistSqr)
+            {
+                v4 pixel = colour;
+                pixel.rgb *= pixel.a;
+                draw_pixel(image, x, y, pixel);
+            }
+            else if (distSqr <= edgeDistSqr)
+            {
+                f32 colourFactor = clamp01((distSqr - innerDistSqr) * edgeFactor);
+                v4 pixel = lerp(colour, colourFactor, edgeColour);
+
+                if (distSqr > maxDistSqr)
+                {
+                    // adjust alpha for anti-aliasing
+                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
+                    pixel.a = clamp01(pixel.a);
+                }
+                pixel.rgb *= pixel.a;
+
+                draw_pixel(image, x, y, pixel);
+            }
+        }
+    }
+}
+
+internal void
+fill_circle_gradient_left(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1), f32 innerRadius = 0.0f)
+{
+    f32 maxDistSqr = square(radius - 0.5f);
+    f32 edgeDistSqr = square(radius + 0.5f);
+    f32 innerDistSqr = square(innerRadius);
+
+    f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
+
+    f32 edgeFactor = 1.0f / (maxDistSqr - innerDistSqr);
+
+    s32 xMin = (s32)(x0 - radius);
+    s32 yMin = (s32)(y0 - radius);
+    s32 xMax = s32_from_f32_ceil(x0);
+    s32 yMax = s32_from_f32_ceil(y0 + radius);
+
+    xMin = clamp(0, xMin, (s32)image->width);
+    yMin = clamp(0, yMin, (s32)image->height);
+    xMax = clamp(0, xMax, (s32)image->width);
+    yMax = clamp(0, yMax, (s32)image->height);
+
+    for (s32 y = yMin; y < yMax; ++y)
+    {
+        f32 fY = (f32)y - y0;
+        f32 fYSqr = square(fY);
+        for (s32 x = xMin; x < xMax; ++x)
+        {
+            f32 fX = (f32)x - x0;
+            f32 distSqr = square(fX) + fYSqr;
+
+            if (distSqr <= innerDistSqr)
+            {
+                v4 pixel = colour;
+                pixel.rgb *= pixel.a;
+                draw_pixel(image, x, y, pixel);
+            }
+            else if (distSqr <= edgeDistSqr)
+            {
+                f32 colourFactor = clamp01((distSqr - innerDistSqr) * edgeFactor);
+                v4 pixel = lerp(colour, colourFactor, edgeColour);
+
+                if (distSqr > maxDistSqr)
+                {
+                    // adjust alpha for anti-aliasing
+                    pixel.a -= (distSqr - maxDistSqr) * edgeDiff;
+                    pixel.a = clamp01(pixel.a);
+                }
+                pixel.rgb *= pixel.a;
+
+                draw_pixel(image, x, y, pixel);
+            }
+        }
+    }
+}
+
+internal void
+fill_circle_gradient_right(Image *image, f32 x0, f32 y0, f32 radius, v4 colour = V4(1, 1, 1, 1), v4 edgeColour = V4(0, 0, 0, 1), f32 innerRadius = 0.0f)
+{
+    f32 maxDistSqr = square(radius - 0.5f);
+    f32 edgeDistSqr = square(radius + 0.5f);
+    f32 innerDistSqr = square(innerRadius);
+
+    f32 edgeDiff = 1.0f / (edgeDistSqr - maxDistSqr);
+
+    f32 edgeFactor = 1.0f / (maxDistSqr - innerDistSqr);
+
+    s32 xMin = (s32)(x0);
+    s32 yMin = (s32)(y0 - radius);
+    s32 xMax = s32_from_f32_ceil(x0 + radius);
+    s32 yMax = s32_from_f32_ceil(y0 + radius);
 
     xMin = clamp(0, xMin, (s32)image->width);
     yMin = clamp(0, yMin, (s32)image->height);
@@ -2383,6 +2489,41 @@ draw_clipped_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangl
         {
             v4 pixel = unpack_colour(*imageRow++);
             pixel = mix_colours(pixel, modColour);
+            draw_pixel(screen, x, y, pixel);
+        }
+        imageAt += image->rowStride;
+    }
+}
+
+internal void
+draw_clipped_faded_image(Image *screen, u32 xStart, u32 yStart, Image *image, Rectangle2u clipRect, u32 fadePixels,
+                         v4 modColour = V4(1, 1, 1, 1))
+{
+    i_expect(fadePixels);
+    //modColour.rgb *= modColour.a;
+    u32 *imageAt = image->pixels + clipRect.min.y * image->rowStride + clipRect.min.x;
+    v2u dimRect = get_dim(clipRect);
+    u32 xFadeStart = xStart + dimRect.x - fadePixels;
+    for (u32 y = yStart;
+         (y < (yStart + dimRect.height)) &&
+         (y < (yStart + image->height)) &&
+         (y < screen->height);
+         ++y)
+    {
+        u32 *imageRow = imageAt;
+        for (u32 x = xStart;
+             (x < (xStart + dimRect.width)) &&
+             (x < (xStart + image->width)) &&
+             (x < screen->width);
+             ++x)
+        {
+            v4 pixel = unpack_colour(*imageRow++);
+            v4 textColour = modColour;
+
+            textColour.a = 1.0f - clamp01((f32)((f32)x - (f32)xFadeStart)/(f32)fadePixels);
+            textColour.rgb *= textColour.a;
+
+            pixel = mix_colours(pixel, textColour);
             draw_pixel(screen, x, y, pixel);
         }
         imageAt += image->rowStride;

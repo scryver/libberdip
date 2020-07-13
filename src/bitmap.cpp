@@ -165,7 +165,7 @@ write_bitmap(FileAPI *api, Image *image, char *outputFilename)
     {
         api->write_to_file(&file, sizeof(header), &header);
         u32 *writeData = image->pixels;
-        for (u32 yLine = 0; y < image->height; ++y)
+        for (u32 yLine = 0; yLine < image->height; ++yLine)
         {
             api->write_to_file(&file, image->width * sizeof(u32), writeData);
             writeData += image->rowStride;
