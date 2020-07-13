@@ -1967,18 +1967,31 @@ fill_rectangle(Image *image, v2 pos, v2 dim, v4 colour)
     v2 maxP = V2(fractMax.x ? fullMaxP.x + 1.0f : fullMaxP.x,
                  fractMax.y ? fullMaxP.y + 1.0f : fullMaxP.y);
 
-    u32 minDrawX = (u32)maximum(0, minP.x);
-    u32 maxDrawX = (u32)minimum(image->width, maxP.x);
-    u32 fullMinDrawX = (u32)maximum(0, fullMinP.x);
-    u32 fullMaxDrawX = (u32)minimum(image->width, fullMaxP.x);
+#if 0
+    // NOTE(michiel): Remove nan/inf from the equation
+    f32 maxLinePoint = 1.0e20f;
+    minP.x = make_real(minP.x, maxLinePoint);
+    minP.y = make_real(minP.y, maxLinePoint);
+    maxP.x = make_real(maxP.x, maxLinePoint);
+    maxP.y = make_real(maxP.y, maxLinePoint);
+    fullMinP.x = make_real(fullMinP.x, maxLinePoint);
+    fullMinP.y = make_real(fullMinP.y, maxLinePoint);
+    fullMaxP.x = make_real(fullMaxP.x, maxLinePoint);
+    fullMaxP.y = make_real(fullMaxP.y, maxLinePoint);
+#endif
+
+    u32 minDrawX = (u32)clamp(0, minP.x, image->width);
+    u32 maxDrawX = (u32)clamp(0, maxP.x, image->width);
+    u32 fullMinDrawX = (u32)clamp(0, fullMinP.x, image->width);
+    u32 fullMaxDrawX = (u32)clamp(0, fullMaxP.x, image->width);
 
     f32 startXAlpha = 1.0f - fractMin.x;
     f32 endXAlpha = fractMax.x;
 
-    u32 minDrawY = (u32)maximum(0, minP.y);
-    u32 maxDrawY = (u32)minimum(image->height, maxP.y);
-    u32 fullMinDrawY = (u32)maximum(0, fullMinP.y);
-    u32 fullMaxDrawY = (u32)minimum(image->height, fullMaxP.y);
+    u32 minDrawY = (u32)clamp(0, minP.y, image->height);
+    u32 maxDrawY = (u32)clamp(0, maxP.y, image->height);
+    u32 fullMinDrawY = (u32)clamp(0, fullMinP.y, image->height);
+    u32 fullMaxDrawY = (u32)clamp(0, fullMaxP.y, image->height);
 
     f32 startYAlpha = 1.0f - fractMin.y;
     f32 endYAlpha = fractMax.y;
