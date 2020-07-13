@@ -149,7 +149,7 @@ internal
 WRITE_ENTIRE_FILE(linux_write_entire_file)
 {
     b32 result = false;
-    s32 fd = open(to_cstring(filename), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+    s32 fd = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
     if (fd >= 0)
     {
         ssize_t fileBytesWritten = write(fd, buffer.data, buffer.size);
