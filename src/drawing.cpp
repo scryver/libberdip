@@ -2445,6 +2445,30 @@ fill_circle_gradient_right(Image *image, f32 x0, f32 y0, f32 radius, v4 colour =
 // NOTE(michiel): Image drawing
 //
 
+// TODO(michiel): Do a float version
+
+internal void
+draw_greyscale_image(Image *screen, u32 xStart, u32 yStart, Image *image, f32 modIntensity = 1.0f)
+{
+    u32 xEnd = minimum(screen->width, xStart + image->width);
+    u32 yEnd = minimum(screen->height, yStart + image->height);
+    xStart = maximum(0, xStart);
+    yStart = maximum(0, yStart);
+    u32 *imageAt = image->pixels;
+    for (u32 y = yStart; y < yEnd; ++y)
+    {
+        u32 *imageRow = imageAt;
+        for (u32 x = xStart; x < xEnd; ++x)
+        {
+            v4 pixel = unpack_colour(*imageRow++);
+            f32 sum = ((pixel.r + pixel.g + pixel.b) / 3.0f) * pixel.a;
+            sum *= modIntensity;
+            draw_pixel(screen, x, y, V4(sum, sum, sum, sum));
+        }
+        imageAt += image->rowStride;
+    }
+}
+
 internal void
 draw_image(Image *screen, u32 xStart, u32 yStart, Image *image, v4 modColour = V4(1, 1, 1, 1))
 {
