@@ -1141,3 +1141,157 @@ string_from_ip6(void *ip6src, u32 maxDataCount, u8 *data)
     return result;
 }
 
+internal u32
+utf8_codepoint_size(String str)
+{
+    u32 result = 0;
+
+    if (str.size)
+    {
+        if ((str.data[0] & 0xF8) == 0xF0)
+        {
+            result = 4;
+        }
+        else if ((str.data[0] & 0xF0) == 0xE0)
+        {
+            result = 3;
+        }
+        else if ((str.data[0] & 0xE0) == 0xC0)
+        {
+            result = 2;
+        }
+        else
+        {
+            result = 1;
+        }
+    }
+
+    return result;
+}
+
+internal u32
+codepoint_from_utf8(String str)
+{
+    u32 result = 0;
+
+    if (str.size) {
+        result = (u32)str.data[0];
+        if ((result & 0xF8) == 0xF0)
+        {
+            if ((str.size > 3) &&
+                (((str.data[1] & 0xC0) &
+                  (str.data[2] & 0xC0) &
+                  (str.data[3] & 0xC0)) == 0x80))
+            {
+                result = ((result & ~0xF8) << 6) | (str.data[1] & ~0xC0);
+                result = (result << 6) | (str.data[2] & ~0xC0);
+                result = (result << 6) | (str.data[3] & ~0xC0);
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if ((result & 0xF0) == 0xE0)
+        {
+            if ((str.size > 2) &&
+                (((str.data[1] & 0xC0) &
+                  (str.data[2] & 0xC0)) == 0x80))
+            {
+                result = ((result & ~0xF0) << 6) | (str.data[1] & ~0xC0);
+                result = (result << 6) | (str.data[2] & ~0xC0);
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if ((result & 0xE0) == 0xC0)
+        {
+            if ((str.size > 1) &&
+                ((str.data[1] & 0xC0) == 0x80))
+            {
+                result = ((result & ~0xE0) << 6) | (str.data[1] & ~0xC0);
+            }
+            else
+            {
+                result = 0;
+            }
+        }
+        else if ((result & 0x80) != 0x00)
+        {
+            result = 0;
+        }
+    }
+
+    return result;
+}
+
+internal u32
+codepoint_from_utf8_advance(String *str)
+{
+    u32 result = 0;
+
+    if (str->size) {
+        result = (u32)str->data[0];
+        if ((result & 0xF8) == 0xF0)
+        {
+            if ((str->size > 3) &&
+                (((str->data[1] & 0xC0) &
+                  (str->data[2] & 0xC0) &
+                  (str->data[3] & 0xC0)) == 0x80))
+            {
+                result = ((result & ~0xF8) << 6) | (str->data[1] & ~0xC0);
+                result = (result << 6) | (str->data[2] & ~0xC0);
+                result = (result << 6) | (str->data[3] & ~0xC0);
+                advance(str, 4);
+            }
+            else
+            {
+                result = 0;
+                advance(str, 1);
+            }
+        }
+        else if ((result & 0xF0) == 0xE0)
+        {
+            if ((str->size > 2) &&
+                (((str->data[1] & 0xC0) &
+                  (str->data[2] & 0xC0)) == 0x80))
+            {
+                result = ((result & ~0xF0) << 6) | (str->data[1] & ~0xC0);
+                result = (result << 6) | (str->data[2] & ~0xC0);
+                advance(str, 3);
+            }
+            else
+            {
+                result = 0;
+                advance(str, 1);
+            }
+        }
+        else if ((result & 0xE0) == 0xC0)
+        {
+            if ((str->size > 1) &&
+                ((str->data[1] & 0xC0) == 0x80))
+            {
+                result = ((result & ~0xE0) << 6) | (str->data[1] & ~0xC0);
+                advance(str, 2);
+            }
+            else
+            {
+                result = 0;
+                advance(str, 1);
+            }
+        }
+        else if ((result & 0x80) != 0x00)
+        {
+            advance(str, 1);
+            result = 0;
+        }
+        else
+        {
+            advance(str, 1);
+        }
+    }
+
+    return result;
+}

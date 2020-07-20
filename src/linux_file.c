@@ -20,7 +20,7 @@ typedef struct LinuxFileGroup
     String wildcard;
     b32 fileAvailable;
     LinuxFindFile findData;
-    s32 lastFileHandle;
+    LinuxFileHandle *lastFileHandle;
 } LinuxFileGroup;
 
 internal b32
@@ -171,10 +171,8 @@ GET_ALL_FILE_OF_TYPE_BEGIN(linux_get_all_files_of_type_begin)
 {
     ApiFileGroup result = {};
 
-    // TODO(michiel): Fix memory
-    LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)
-        mmap(0, sizeof(LinuxFileGroup),
-             PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    Buffer allocated = linux_allocate_size(sizeof(LinuxFileGroup), 0);
+    LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)allocated.data;
     result.platform = linuxFileGroup;
     result.fileCount = 0;
     linuxFileGroup->wildcard = matchPattern;
@@ -201,14 +199,20 @@ GET_ALL_FILE_OF_TYPE_END(linux_get_all_files_of_type_end)
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)fileGroup->platform;
     if (linuxFileGroup)
     {
+        if (linuxFileGroup->lastFileHandle)
+        {
+            close(linuxFileGroup->lastFileHandle->linuxHandle);
+            Buffer deallocateMem = {sizeof(LinuxFileHandle), (u8 *)linuxFileGroup->lastFileHandle};
+            linux_deallocate_size(deallocateMem);
+        }
         if (linuxFileGroup->findData.dir)
         {
             closedir(linuxFileGroup->findData.dir);
             linuxFileGroup->findData.dir = 0;
         }
 
-        // TODO(michiel): Fix memory
-        munmap(linuxFileGroup, sizeof(LinuxFileGroup));
+        Buffer deallocateMem = {sizeof(LinuxFileGroup), (u8 *)linuxFileGroup};
+        linux_deallocate_size(deallocateMem);
         linuxFileGroup = 0;
     }
 }
@@ -221,10 +225,12 @@ OPEN_NEXT_FILE(linux_open_next_file)
 
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)fileGroup->platform;
 
-    if (linuxFileGroup->lastFileHandle >= 0)
+    LinuxFileHandle *useHandle = 0;
+    if (linuxFileGroup->lastFileHandle)
     {
-        close(linuxFileGroup->lastFileHandle);
-        linuxFileGroup->lastFileHandle = -1;
+        close(linuxFileGroup->lastFileHandle->linuxHandle);
+        useHandle = linuxFileGroup->lastFileHandle;
+        linuxFileGroup->lastFileHandle = 0;
     }
 
     if (linuxFileGroup->findData.dir)
@@ -237,18 +243,20 @@ OPEN_NEXT_FILE(linux_open_next_file)
         fchdir(dirFd);
         if (linuxFileGroup->fileAvailable)
         {
-            LinuxFileHandle *handle = (LinuxFileHandle *)
-                mmap(0, sizeof(LinuxFileHandle),
-                     PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-            result.platform = handle;
+            if (!useHandle)
+            {
+                Buffer allocated = linux_allocate_size(sizeof(LinuxFileHandle), 0);
+                useHandle = (LinuxFileHandle *)allocated.data;
+            }
+            result.platform = useHandle;
 
-            if (handle)
+            if (useHandle)
             {
                 result.filename = string(linuxFileGroup->findData.fileData->d_name);
-                handle->linuxHandle = open(to_cstring(result.filename), O_RDONLY);
-                result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
-                result.noErrors = (handle->linuxHandle >= 0);
-                linuxFileGroup->lastFileHandle = handle->linuxHandle;
+                useHandle->linuxHandle = open(to_cstring(result.filename), O_RDONLY);
+                result.fileSize = safe_truncate_to_u32(linux_file_size(useHandle->linuxHandle));
+                result.noErrors = (useHandle->linuxHandle >= 0);
+                linuxFileGroup->lastFileHandle = useHandle;
             }
 
             if (!linux_find_file_in_folder(linuxFileGroup->wildcard, &linuxFileGroup->findData))
@@ -265,12 +273,17 @@ OPEN_NEXT_FILE(linux_open_next_file)
 internal
 OPEN_FILE(linux_open_file)
 {
-    // TODO(michiel): Make it save to call to_cstring()
+    // NOTE(michiel): Make it save to call to_cstring()
+    i_expect(filename.size < 1024);
+    u8 filenameBuf[1024];
+    copy(filename.size, filename.data, filenameBuf);
+    filenameBuf[filename.size] = 0;
+    filename.data = filenameBuf;
+
     ApiFile result = {};
 
-    LinuxFileHandle *handle = (LinuxFileHandle *)
-        mmap(0, sizeof(LinuxFileHandle),
-             PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    Buffer allocated = linux_allocate_size(sizeof(LinuxFileHandle), 0);
+    LinuxFileHandle *handle = (LinuxFileHandle *)allocated.data;
     result.platform = handle;
     result.filename = filename;
 
@@ -304,9 +317,13 @@ OPEN_FILE(linux_open_file)
 internal
 CLOSE_FILE(linux_close_file)
 {
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    close(linuxHandle->linuxHandle);
-    munmap(linuxHandle, sizeof(LinuxFileHandle));
+    if (apiFile->platform)
+    {
+        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+        close(linuxHandle->linuxHandle);
+        Buffer deallocateMem = {sizeof(LinuxFileHandle), (u8 *)apiFile->platform};
+        linux_deallocate_size(deallocateMem);
+    }
     apiFile->platform = 0;
 }
 

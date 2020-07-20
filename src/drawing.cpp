@@ -1731,8 +1731,26 @@ draw_lines(Image *image, u32 pointCount, f32 *xValues, f32 *yValues, v2 offset, 
 }
 
 internal void
+draw_stems(Image *image, v2 pointSize, u32 pointCount, f32 *xValues, f32 *yValues, v2 offset, v2 scale = V2(1, 1),
+           v4 colour = V4(1, 1, 1, 1), f32 zeroY = 0.0f)
+{
+    i_expect(pointCount);
+
+    v2 pointOffset = 0.5f * (pointSize - V2(1, 1));
+
+    for (u32 pointIdx = 0; pointIdx < pointCount; ++pointIdx)
+    {
+        v2 point = V2(xValues[pointIdx], yValues[pointIdx]);
+        v2 P = hadamard(point, scale) + offset;
+        v2 zeroPoint = hadamard(V2(point.x, zeroY), scale) + offset;
+        draw_line(image, zeroPoint, P, colour);
+        fill_rectangle(image, P - pointOffset, pointSize, colour);
+    }
+}
+
+internal void
 draw_stems(Image *image, v2 pointSize, u32 pointCount, v2 *points, v2 offset, v2 scale = V2(1, 1),
-           v4 colour = V4(1, 1, 1, 1))
+           v4 colour = V4(1, 1, 1, 1), f32 zeroY = 0.0f)
 {
     i_expect(pointCount);
 
@@ -1742,7 +1760,7 @@ draw_stems(Image *image, v2 pointSize, u32 pointCount, v2 *points, v2 offset, v2
     {
         v2 point = points[pointIdx];
         v2 P = hadamard(point, scale) + offset;
-        v2 zeroPoint = hadamard(V2(point.x, 0), scale) + offset;
+        v2 zeroPoint = hadamard(V2(point.x, zeroY), scale) + offset;
         draw_line(image, zeroPoint, P, colour);
         fill_rectangle(image, P - pointOffset, pointSize, colour);
     }

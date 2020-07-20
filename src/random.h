@@ -34,7 +34,7 @@ internal u32
 random_next_u32(RandomSeriesPCG *series)
 {
     u64 state = series->state;
-    state = state * 6364136223846793005ULL + series->selector;
+    state = state * 6364136223846793005ULL + series->selector; // 0x5851f42d4c957f2d
     series->state = state;
 
     u32 preRotate = (u32)((state ^ (state >> 18)) >> 27);

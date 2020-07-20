@@ -12,27 +12,6 @@
 // NOTE(michiel): Threading
 //
 
-struct TicketMutex
-{
-    u64 volatile ticket;
-    u64 volatile serving;
-};
-
-internal void
-begin_ticket_mutex(TicketMutex *mutex)
-{
-    u64 ticket = atomic_add_u64(&mutex->ticket, 1);
-    while (ticket != mutex->serving) {
-        _mm_pause();
-    }
-}
-
-internal void
-end_ticket_mutex(TicketMutex *mutex)
-{
-    atomic_add_u64(&mutex->serving, 1);
-}
-
 struct WorkQueue;
 #define WORK_QUEUE_CALLBACK(name)      void name(WorkQueue *queue, void *data)
 typedef WORK_QUEUE_CALLBACK(WorkQueueCallback);

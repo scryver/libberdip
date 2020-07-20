@@ -10,7 +10,7 @@ flags="-O2 -g -ggdb -Wall -Werror -pedantic -std=c++11"
 
 exceptions="-Wno-unused-function -Wno-writable-strings -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-nested-anon-types"
 
-echo "Building..."
+echo "Building LIBBERDIP"
 
 mkdir -p "$buildDir"
 

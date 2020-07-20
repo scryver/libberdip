@@ -372,8 +372,6 @@ clamp01(f64 value)
 }
 #endif
 
-// TODO(michiel): Add a types.h
-
 #ifdef __cplusplus
 internal Buffer
 advance(Buffer b, u32 amount = 1)
@@ -451,7 +449,7 @@ typedef struct ArenaBlock
     u8 *mem;
 } ArenaBlock;
 
-// TODO(michiel): Random freeing of allocated data
+// TODO(michiel): Random freeing of allocated data, or rename to ArenaStack or something
 // NOTE(michiel): This is the arena, which has a current and end pointer of the currently used
 // ArenaBlock.
 typedef struct Arena

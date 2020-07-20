@@ -1,3 +1,9 @@
+struct TicketMutex
+{
+    u64 volatile ticket;
+    u64 volatile serving;
+};
+
 #if COMPILER_MSVC
 #include <intrin.h>
 
@@ -98,3 +104,33 @@ internal inline u32 get_thread_id(void)
 #else
 #error SSE/NEON optimizations are not available for this compiler yet!!!!
 #endif
+
+internal void
+atomic_lock(u32 volatile *lock)
+{
+    while (atomic_compare_exchange_u32(lock, 1, 0) != 0) {
+        _mm_pause();
+    }
+}
+
+internal void
+atomic_unlock(u32 volatile *lock)
+{
+    COMPLETE_PREVIOUS_WRITES_BEFORE_FUTURE_WRITES;
+    *lock = 0;
+}
+
+internal void
+begin_ticket_mutex(TicketMutex *mutex)
+{
+    u64 ticket = atomic_add_u64(&mutex->ticket, 1);
+    while (ticket != mutex->serving) {
+        _mm_pause();
+    }
+}
+
+internal void
+end_ticket_mutex(TicketMutex *mutex)
+{
+    atomic_add_u64(&mutex->serving, 1);
+}
