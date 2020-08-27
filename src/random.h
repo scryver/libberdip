@@ -64,6 +64,20 @@ random_bilateral(RandomSeriesPCG *series)
     return result;
 }
 
+internal f64
+random_unilateral64(RandomSeriesPCG *series)
+{
+    f64 result = (f64)random_next_u32(series) / (f64)U32_MAX;
+    return result;
+}
+
+internal f64
+random_bilateral64(RandomSeriesPCG *series)
+{
+    f64 result = random_unilateral64(series) * 2.0 - 1.0;
+    return result;
+}
+
 #ifdef __cplusplus
 internal u32
 slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount = 8)

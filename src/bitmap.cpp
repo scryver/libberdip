@@ -6,6 +6,7 @@ struct BitmapHeader
     u16 reserved1;
     u16 reserved2;
     u32 bitmapOffset;
+    // NOTE(michiel): Rest is DIB
     u32 size;
     s32 width;
     s32 height;
@@ -21,6 +22,40 @@ struct BitmapHeader
     u32 redMask;
     u32 greenMask;
     u32 blueMask;
+};
+
+// TODO(michiel): Multitype...
+struct BitmapHeader_v5 {
+    u16 fileType;
+    u32 fileSize;
+    u16 reserved1;
+    u16 reserved2;
+    u32 bitmapOffset;
+    // NOTE(michiel): Rest is DIB
+    u32       size;
+    s32       width;
+    s32       height;
+    u16       planes;
+    u16       bitsPerPixel;
+    u32       compression;
+    u32       sizeOfBitmap;
+    s32       horzResolution;
+    s32       vertResolution;
+    u32       coloursUsed;
+    u32       coloursImportant;
+    u32       redMask;
+    u32       greenMask;
+    u32       blueMask;
+    u32       alphaMask;
+    u32       csType;
+    u32       endpoints[9];
+    u32       gammaRed;
+    u32       gammaGreen;
+    u32       gammaBlue;
+    u32       intent;
+    u32       profileData;
+    u32       profileSize;
+    u32       reserved;
 };
 #pragma pack(pop)
 
@@ -131,20 +166,26 @@ load_bitmap(Buffer data, b32 preMultiplyAlpha = false)
 }
 
 internal Image
-load_bitmap(FileAPI *api, char *filename, b32 preMultiplyAlpha = false)
+load_bitmap(FileAPI *api, String filename, b32 preMultiplyAlpha = false)
 {
     Image result = {};
-    Buffer readResult = api->read_entire_file(string(filename));
+    Buffer readResult = api->read_entire_file(filename);
     result = load_bitmap(readResult, preMultiplyAlpha);
     return result;
 }
 
+internal Image
+load_bitmap(FileAPI *api, char *filename, b32 preMultiplyAlpha = false)
+{
+    return load_bitmap(api, string(filename), preMultiplyAlpha);
+}
+
 internal void
-write_bitmap(FileAPI *api, Image *image, char *outputFilename)
+write_bitmap(FileAPI *api, Image *image, String outputFilename)
 {
     u32 outputPixelSize = get_total_pixel_size(image);
 
-    BitmapHeader header = {};
+    BitmapHeader_v5 header = {};
     header.fileType = 0x4D42;
     header.fileSize = sizeof(header) + outputPixelSize;
     header.bitmapOffset = sizeof(header);
@@ -153,14 +194,14 @@ write_bitmap(FileAPI *api, Image *image, char *outputFilename)
     header.height = image->height;
     header.planes = 1;
     header.bitsPerPixel = 32;
-    header.compression = 0;
-    header.sizeOfBitmap = outputPixelSize;
-    header.horzResolution = 0;
-    header.vertResolution = 0;
-    header.coloursUsed = 0;
-    header.coloursImportant = 0;
+    //header.compression = 0;
+    //header.sizeOfBitmap = outputPixelSize;
+    //header.horzResolution = 72;
+    //header.vertResolution = 72;
+    //header.coloursUsed = 0;
+    //header.coloursImportant = 0;
 
-    ApiFile file = api->open_file(string(outputFilename), FileOpen_Write);
+    ApiFile file = api->open_file(outputFilename, FileOpen_Write);
     if (no_file_errors(&file))
     {
         api->write_to_file(&file, sizeof(header), &header);
@@ -172,4 +213,10 @@ write_bitmap(FileAPI *api, Image *image, char *outputFilename)
         }
         api->close_file(&file);
     }
+}
+
+internal void
+write_bitmap(FileAPI *api, Image *image, char *outputFilename)
+{
+    write_bitmap(api, image, string(outputFilename));
 }

@@ -33,40 +33,66 @@ internal WRITE_ENTIRE_FILE(write_entire_file)
     return result;
 }
 
+internal umm
+get_std_file_size(FILE *file)
+{
+    umm result = 0;
+    if (file) {
+        umm oldPos = ftell(file);
+        fseek(file, 0, SEEK_END);
+        result = ftell(file);
+        fseek(file, oldPos, SEEK_SET);
+    }
+    return result;
+}
+
 internal GET_FILE_SIZE(get_file_size)
 {
-    umm size = 0;
     FILE *stdFile = (FILE *)apiFile->platform;
-    if (stdFile) {
-        umm oldPos = ftell(stdFile);
-        fseek(stdFile, 0, SEEK_END);
-        size = ftell(stdFile);
-        fseek(stdFile, oldPos, SEEK_SET);
-    }
-    return size;
+    return get_std_file_size(stdFile);
 }
 
 internal OPEN_FILE(open_file)
 {
     ApiFile result = {0};
-
-    char *openMode = "rb";
-    if (flags & FileOpen_Write)
-    {
-        if (flags & FileOpen_Read)
-        {
-            i_expect(!"R/W Not yet supported!");
-        }
-        else
-        {
-            openMode = "wb";
-        }
-    }
-
-    FILE *f = fopen(to_cstring(filename), openMode);
-    result.platform = f;
     result.filename = filename;
-    result.fileSize = get_file_size(&result);
+
+    if (filename == string("stdin"))
+    {
+        i_expect(flags == FileOpen_Read);
+        result.platform = stdin;
+        result.noErrors = (flags == FileOpen_Read);
+    }
+    if (filename == string("stdout"))
+    {
+        i_expect(flags == FileOpen_Write);
+        result.platform = stdout;
+        result.noErrors = (flags == FileOpen_Write);
+    }
+    else if (filename == string("stderr"))
+    {
+        i_expect(flags == FileOpen_Write);
+        result.platform = stderr;
+        result.noErrors = (flags == FileOpen_Write);
+    }
+    else
+    {
+        char *openMode = "rb";
+        if (flags & FileOpen_Write)
+        {
+            if (flags & FileOpen_Read)
+            {
+                i_expect(!"R/W Not yet supported!");
+            }
+            else
+            {
+                openMode = "wb";
+            }
+        }
+        result.platform = fopen(to_cstring(filename), openMode);
+        result.fileSize = get_file_size(&result);
+        result.noErrors = result.platform != 0;
+    }
 
     return result;
 }
@@ -75,7 +101,10 @@ internal READ_FROM_FILE(read_from_file)
 {
     umm result = 0;
     FILE *inFile = (FILE *)apiFile->platform;
-    result = fread(buffer, 1, size, inFile);
+    if (inFile && no_file_errors(apiFile))
+    {
+        result = fread(buffer, 1, size, inFile);
+    }
     return result;
 }
 
@@ -83,21 +112,30 @@ internal READ_FROM_FILE_OFFSET(read_from_file_offset)
 {
     umm result = 0;
     FILE *inFile = (FILE *)apiFile->platform;
-    fseek(inFile, offset, SEEK_SET);
-    result = fread(buffer, 1, size, inFile);
+    if (inFile && no_file_errors(apiFile))
+    {
+        fseek(inFile, offset, SEEK_SET);
+        result = fread(buffer, 1, size, inFile);
+    }
     return result;
 }
 
 internal WRITE_TO_FILE(write_to_file)
 {
     FILE *outFile = (FILE *)apiFile->platform;
-    fwrite(data, 1, size, outFile);
+    if (outFile && no_file_errors(apiFile))
+    {
+        fwrite(data, 1, size, outFile);
+    }
 }
 
 internal WRITE_VFMT_TO_FILE(write_vfmt_to_file)
 {
     FILE *outFile = (FILE *)apiFile->platform;
-    vfprintf(outFile, fmt, args);
+    if (outFile && no_file_errors(apiFile))
+    {
+        vfprintf(outFile, fmt, args);
+    }
 }
 
 internal WRITE_FMT_TO_FILE(write_fmt_to_file)

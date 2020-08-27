@@ -77,9 +77,12 @@ GET_FILE_SIZE(linux_get_file_size)
 {
     LinuxFileHandle *handle = (LinuxFileHandle *)apiFile->platform;
     umm result = 0;
-    s64 size = linux_file_size(handle->linuxHandle);
-    if (size > 0) {
-        result = (umm)size;
+    if (handle)
+    {
+        s64 size = linux_file_size(handle->linuxHandle);
+        if (size > 0) {
+            result = (umm)size;
+        }
     }
     return result;
 }
@@ -88,17 +91,22 @@ internal
 GET_FILE_POSITION(linux_get_file_position)
 {
     LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    off_t position = lseek(linuxHandle->linuxHandle, 0, SEEK_CUR);
+    off_t position = 0;
+    if (linuxHandle && no_file_errors(apiFile))
+    {
+        i_expect(linuxHandle->linuxHandle >= 0);
+        position = lseek(linuxHandle->linuxHandle, 0, SEEK_CUR);
+    }
     return (u64)position;
 }
 
 internal
 SET_FILE_POSITION(linux_set_file_position)
 {
-    if(no_file_errors(apiFile))
+    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    if(linuxHandle && no_file_errors(apiFile))
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-
+        i_expect(linuxHandle->linuxHandle >= 0);
         switch (type)
         {
             case FileCursor_StartOfFile: {
@@ -126,6 +134,7 @@ READ_ENTIRE_FILE(linux_read_entire_file)
         s64 size = linux_file_size(fileHandle);
         if (size > 0)
         {
+            // TODO(michiel): Api allocate
             Buffer allocated = linux_allocate_size(size, Alloc_NoClear);
             result.data = allocated.data;
             if (result.data)
@@ -331,10 +340,10 @@ internal
 READ_FROM_FILE(linux_read_from_file)
 {
     umm result = 0;
-    if(no_file_errors(apiFile))
+    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    if(linuxHandle && no_file_errors(apiFile))
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-
+        i_expect(linuxHandle->linuxHandle >= 0);
         s64 bytesRead = read(linuxHandle->linuxHandle, buffer, size);
         if ((s64)size == bytesRead)
         {
@@ -353,10 +362,10 @@ internal
 READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 {
     umm result = 0;
-    if(no_file_errors(apiFile))
+    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    if(linuxHandle && no_file_errors(apiFile))
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-
+        i_expect(linuxHandle->linuxHandle >= 0);
 #if 0
         linux_set_file_position(apiFile, 0, FileCursor_StartOfFile);
         linux_set_file_position(apiFile, offset, FileCursor_CurrentPos);
@@ -380,10 +389,9 @@ READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 internal
 WRITE_TO_FILE(linux_write_to_file)
 {
-    if(no_file_errors(apiFile))
+    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    if(linuxHandle && no_file_errors(apiFile))
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-
         i_expect(linuxHandle->linuxHandle >= 0);
 
         ssize_t fileBytesWritten = write(linuxHandle->linuxHandle, data, size);
@@ -401,10 +409,9 @@ WRITE_TO_FILE(linux_write_to_file)
 internal
 WRITE_VFMT_TO_FILE(linux_write_vfmt_to_file)
 {
-    if(no_file_errors(apiFile))
+    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    if(linuxHandle && no_file_errors(apiFile))
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-
         i_expect(linuxHandle->linuxHandle >= 0);
 
         char buffer[4096];

@@ -517,6 +517,28 @@ s32_4x_greater(f32_4x a, f32_4x b)
 // End of s32_4x stuff
 //
 
+// TODO(michiel): Do we want this
+internal f32_4x
+mul_s64_2x(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+
+    f32_4x x0;
+    f32_4x x1;
+
+    x0.mi = _mm_mul_epu32(a.mi, b.mi);
+    x1.mi = _mm_srli_epi64(a.mi, 32);
+    x1.mi = _mm_mul_epu32(x1.mi, b.mi);
+
+    result.mi = _mm_srli_epi64(b.mi, 32);
+    result.mi = _mm_mul_epu32(result.mi, a.mi);
+    result.mi = _mm_add_epi64(result.mi, x1.mi);
+    result.mi = _mm_slli_epi64(result.mi, 32);
+    result.mi = _mm_add_epi64(result.mi, x0.mi);
+
+    return result;
+}
+
 //
 //
 // NOTE(michiel): Vectors

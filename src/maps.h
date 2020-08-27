@@ -36,6 +36,30 @@ map_free(Map *map)
     deallocate(map->values);
 }
 
+internal b32
+map_u64_has_key_u64(Map *map, u64 key)
+{
+    b32 result = false;
+    if (map->len > 0)
+    {
+        i_expect(is_pow2(map->cap));
+        i_expect(map->len < map->cap);
+
+        umm hash = (umm)hash_u64(key);
+        for (;;) {
+            hash &= map->cap - 1;
+            if (map->keys[hash] == key) {
+                result = true;
+                break;
+            } else if (map->keys[hash] == MAP_EMPTY_KEY) {
+                break;
+            }
+            ++hash;
+        }
+    }
+    return result;
+}
+
 internal inline u64
 map_u64_get_u64(Map *map, u64 key)
 {
