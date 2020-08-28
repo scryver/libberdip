@@ -10,8 +10,8 @@ random_seed_pcg(f32_4x state, f32_4x selector)
     RandomSeriesPCG_4x result = {};
 
     result.state = state;
-    result.selector.mi = _mm_bslli_si128(selector.mi, 1);
-    result.selector = result.selector | S32_4x(0, 0, 0, 1);
+    result.selector.mi = _mm_slli_epi64(selector.mi, 1);
+    result.selector = result.selector | S32_4x(1, 0, 1, 0);
 
     return result;
 }
@@ -25,7 +25,7 @@ random_next_u32_4x(RandomSeriesPCG_4x *series)
     multiplier.u[2] = 0x4c957f2d;
     multiplier.u[3] = 0x5851f42d;
 
-    f32 mask = S32_4x(-1, 0, -1, 0);
+    f32_4x mask = S32_4x(-1, 0, -1, 0);
 
     f32_4x state0 = series->state;
     state0 = mul_s64_2x(state0, multiplier);
@@ -41,13 +41,13 @@ random_next_u32_4x(RandomSeriesPCG_4x *series)
     preRotate0.mi = _mm_srli_epi64(state0.mi, 18);
     preRotate0.mi = _mm_xor_si128(preRotate0.mi, state0.mi);
     preRotate0.mi = _mm_srli_epi64(preRotate0.mi, 27);
-    preRotate0.mi = _mm_and_ps(preRotate0.mi, mask);
+    preRotate0.mi = _mm_and_si128(preRotate0.mi, mask.mi);
 
     f32_4x preRotate1;
     preRotate1.mi = _mm_srli_epi64(state1.mi, 18);
     preRotate1.mi = _mm_xor_si128(preRotate1.mi, state1.mi);
     preRotate1.mi = _mm_srli_epi64(preRotate1.mi, 27);
-    preRotate1.mi = _mm_and_ps(preRotate1.mi, mask);
+    preRotate1.mi = _mm_and_si128(preRotate1.mi, mask.mi);
 
     preRotate0.mi = _mm_shuffle_epi32(preRotate0.mi, MULTILANE_SHUFFLE_MASK(0, 0, 2, 2));
     preRotate1.mi = _mm_shuffle_epi32(preRotate1.mi, MULTILANE_SHUFFLE_MASK(0, 0, 2, 2));
@@ -56,17 +56,14 @@ random_next_u32_4x(RandomSeriesPCG_4x *series)
     rotate0.mi = _mm_srli_epi64(state0.mi, 59);
     f32_4x rotate1;
     rotate1.mi = _mm_srli_epi64(state1.mi, 59);
-    rotate0.mi = _mm_shuffle_epi32(rotate0.mi, MULTILANE_SHUFFLE_MASK(0, 0, 2, 2));
-    rotate1.mi = _mm_shuffle_epi32(rotate1.mi, MULTILANE_SHUFFLE_MASK(0, 0, 2, 2));
-
     rotate0.mi = _mm_srl_epi64(preRotate0.mi, rotate0.mi);
     rotate1.mi = _mm_srl_epi64(preRotate1.mi, rotate1.mi);
 
+    rotate0.mi = _mm_and_si128(rotate0.mi, mask.mi);
     rotate1.mi = _mm_slli_epi64(rotate1.mi, 32);
 
     f32_4x result;
-    result.mi = _mm_or_si128(_mm_andnot_si128(mask.mi, rotate1.mi),
-                             _mm_and_si128(mask.mi, rotate0.mi));
+    result.mi = _mm_or_si128(rotate0.mi, rotate1.mi);
     return result;
 }
 
