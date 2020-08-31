@@ -279,9 +279,13 @@ find_most_significant_set_bit(u32 value)
 }
 
 //#define copy(n, s, d)  copy_(n*sizeof(s[0]), s, d)
+#define copy_struct(s, d)    copy(sizeof(*(s)), s, d)
+#define copy_array(c, s, d)  copy(sizeof(*(s))*c, s, d)
+
 internal umm
 copy(umm size, const void *src, void *dst)
 {
+#if 0
     if (size > 3)
     {
         if(((u8 *)dst < ((u8 *)src - 4)) ||
@@ -335,6 +339,26 @@ copy(umm size, const void *src, void *dst)
             *(--d) = *(--s);
         }
     }
+#else
+    u8 *s = src;
+    u8 *d = dst;
+    if (d < s)
+    {
+        while (size--)
+        {
+            *d++ = *s++;
+        }
+    }
+    else if (d > s)
+    {
+        s += size;
+        d += size;
+        while (size--)
+        {
+            *(--d) = *(--s);
+        }
+    }
+#endif
 
     return size;
 }
