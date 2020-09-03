@@ -51,6 +51,18 @@ log2_up(u32 value)
 }
 
 internal u32
+log2(u32 value)
+{
+    u32 result = 0;
+    while (value > 1)
+    {
+        value /= 2;
+        ++result;
+    }
+    return result;
+}
+
+internal u32
 lerp(u32 min, f32 t, u32 max)
 {
     u32 result = min;
