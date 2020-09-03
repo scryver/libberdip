@@ -340,8 +340,8 @@ copy(umm size, const void *src, void *dst)
         }
     }
 #else
-    u8 *s = src;
-    u8 *d = dst;
+    u8 *s = (u8 *)src;
+    u8 *d = (u8 *)dst;
     if (d < s)
     {
         while (size--)
