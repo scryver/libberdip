@@ -5,10 +5,10 @@
 internal void
 std_deallocate_memory_block(StdMemoryBlock *block)
 {
-    begin_ticket_mutex(&gLinuxMemory.mutex);
+    begin_ticket_mutex(&gStdMemory.mutex);
     block->next->prev = block->prev;
     block->prev->next = block->next;
-    end_ticket_mutex(&gLinuxMemory.mutex);
+    end_ticket_mutex(&gStdMemory.mutex);
 
     free(block);
 }
@@ -66,7 +66,7 @@ internal PLATFORM_REALLOCATE_MEMORY(std_reallocate_memory)
     }
     else
     {
-        result = linux_allocate_memory(newSize, flags);
+        result = std_allocate_memory(newSize, flags);
     }
     return result;
 }

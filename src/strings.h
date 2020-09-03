@@ -1,5 +1,5 @@
 //
-// NOTE(michiel): Strings and string interning
+// NOTE(michiel): Strings
 //
 
 global const char gDecimalChars[]  = "0123456789";
@@ -19,13 +19,6 @@ string_length(const char *cString)
 }
 
 // TODO(michiel): Proper UTF8 support
-
-// NOTE(michiel): String interning
-typedef struct Interns
-{
-    Arena arena;
-    Map map;
-} Interns;
 
 internal b32
 is_digit(u32 n)
@@ -594,131 +587,6 @@ append_string_fmt(String base, u32 maxCount, const char *fmt, ...)
 
     return result;
 }
-
-internal void
-str_interns_free(Interns *interns)
-{
-    arena_free(&interns->arena);
-    map_free(&interns->map);
-}
-
-// NOTE(michiel): This struct is used internly to speed up the mapping process (->next)
-//   and store the string data so every string.data pointer points to the same memory,
-//   if they are the same string of course.
-typedef struct InternedString
-{
-    struct InternedString *next;
-    u32 size;
-    char data[1]; // NOTE(michiel): Placeholder for the string data
-} InternedString;
-
-internal InternedString *
-str_intern_(Interns *interns, String str)
-{
-    u64 hash = hash_bytes(str.data, str.size);
-    u64 key = hash ? hash : 1;
-    InternedString *intern = (InternedString *)map_u64_get(&interns->map, key);
-    InternedString *it = intern;
-    while (it) {
-        String itStr = string(it->size, it->data);
-#ifdef __cplusplus
-        if (itStr == str)
-#else
-        if (strings_are_equal(itStr, str))
-#endif
-        {
-            return it;
-        }
-        it = it->next;
-    }
-
-    // NOTE(michiel): No matching string found in the map, so add it
-    umm newSize = offset_of(InternedString, data) + str.size + 1; // Add one for the 0-term
-    InternedString *newInterned = (InternedString *)arena_allocate(&interns->arena, newSize);
-    newInterned->next = intern;
-    newInterned->size = str.size;
-    copy(str.size, str.data, newInterned->data);
-    newInterned->data[str.size] = 0;
-    map_u64_put(&interns->map, key, newInterned);
-    return newInterned;
-}
-
-internal InternedString *
-str_intern_fmt_(Interns *interns, char *fmt, ...)
-{
-    static char buffer[4096];
-
-    va_list args;
-    va_start(args, fmt);
-    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
-    va_end(args);
-    buffer[total] = 0;
-
-    return str_intern_(interns, string(total, buffer));
-}
-
-internal String
-str_intern(Interns *interns, String str)
-{
-    if (!str.size) {
-        String result = {0, 0};
-        return result;
-    }
-    InternedString *intStr = str_intern_(interns, str);
-    return string(intStr->size, intStr->data);
-}
-
-internal String
-vstr_intern_fmt(Interns *interns, char *fmt, va_list args)
-{
-    static char buffer[4096];
-    u32 total = vsnprintf(buffer, sizeof(buffer), fmt, args);
-    buffer[total] = 0;
-    return str_intern(interns, string(total, buffer));
-}
-
-internal String
-str_intern_fmt(Interns *interns, char *fmt, ...)
-{
-    String result = {0};
-
-    va_list args;
-    va_start(args, fmt);
-    result = vstr_intern_fmt(interns, fmt, args);
-    va_end(args);
-
-    return result;
-}
-
-#ifdef __cplusplus
-
-internal InternedString *
-str_intern_(Interns *interns, const char *str)
-{
-    return str_intern_(interns, string(str));
-}
-
-internal String
-str_intern(Interns *interns, const char *str)
-{
-    return str_intern(interns, string(str));
-}
-
-#else
-
-internal InternedString *
-str_intern_c_(Interns *interns, const char *str)
-{
-    return str_intern_(interns, stringc(str));
-}
-
-internal String
-str_intern_c(Interns *interns, const char *str)
-{
-    return str_intern(interns, stringc(str));
-}
-
-#endif
 
 internal f64
 float_from_string(String s)

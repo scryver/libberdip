@@ -29,7 +29,7 @@ struct BitmapFont
 // NOTE(michiel): Make sure you have an allocate_array(type, count) macro, this will wants some
 // memory allocations for the unicodeMap, because it is wasteful to put that into the file
 internal void
-unpack_font(u8 *fontData, BitmapFont *result)
+unpack_font(MemoryAllocator *allocator, u8 *fontData, BitmapFont *result)
 {
     result->info = *(FontInfo *)fontData;
     umm offset = sizeof(FontInfo);
@@ -44,7 +44,7 @@ unpack_font(u8 *fontData, BitmapFont *result)
     }
     result->horizontalAdvance = (f32 *)(fontData + offset);
 
-    result->unicodeMap = allocate_array(u16, result->info.onePastHighestCodePoint);
+    result->unicodeMap = allocate_array(allocator, u16, result->info.onePastHighestCodePoint, 0);
 
     for (u32 glyphIndex = 1; glyphIndex < result->info.glyphCount; ++glyphIndex)
     {

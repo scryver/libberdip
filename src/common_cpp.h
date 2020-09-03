@@ -80,5 +80,3 @@ internal f32 make_real(f32 f, f32 maxVal = F32_MAX)
     }
     return result;
 }
-
-internal void *allocate_size(u32 size) { return allocate_size(size, 0); }

@@ -1,7 +1,7 @@
 #include "./common.h"
 #include "./intrinsics.h"
-#include "./maps.h"
 #include "./maths.h"
+#include "./memory.h"
 #include "./strings.h"
 #include "./vectors.h"
 #include "./keys.h"
@@ -99,14 +99,6 @@ is_modified(Keyboard *keyboard, KeyModifiers mod)
     b32 result = keyboard->modifiers & (u32)mod;
     return result;
 }
-
-// TODO(michiel): Handle memory uniformly
-struct PlatformMemoryBlock;
-#define PLATFORM_ALLOCATE_MEMORY(name) PlatformMemoryBlock *name(umm size, u64 flags)
-typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
-
-#define PLATFORM_DEALLOCATE_MEMORY(name) void name(PlatformMemoryBlock *block)
-typedef PLATFORM_DEALLOCATE_MEMORY(PlatformDeallocateMemory);
 
 struct API
 {

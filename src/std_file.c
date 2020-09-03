@@ -9,7 +9,7 @@ internal READ_ENTIRE_FILE(read_entire_file)
         result.size = ftell(input);
         fseek(input, 0, SEEK_SET);
 
-        result.data = (u8 *)allocate_size(result.size, 0);
+        result.data = (u8 *)allocate_size(allocator, result.size, 0);
         i_expect(result.data);
         // TODO(michiel): Checking read size
         fread(result.data, 1, result.size, input);

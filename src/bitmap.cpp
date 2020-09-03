@@ -166,18 +166,18 @@ load_bitmap(Buffer data, b32 preMultiplyAlpha = false)
 }
 
 internal Image
-load_bitmap(FileAPI *api, String filename, b32 preMultiplyAlpha = false)
+load_bitmap(FileAPI *api, MemoryAllocator *allocator, String filename, b32 preMultiplyAlpha = false)
 {
     Image result = {};
-    Buffer readResult = api->read_entire_file(filename);
+    Buffer readResult = api->read_entire_file(allocator, filename);
     result = load_bitmap(readResult, preMultiplyAlpha);
     return result;
 }
 
 internal Image
-load_bitmap(FileAPI *api, char *filename, b32 preMultiplyAlpha = false)
+load_bitmap(FileAPI *api, MemoryAllocator *allocator, char *filename, b32 preMultiplyAlpha = false)
 {
-    return load_bitmap(api, string(filename), preMultiplyAlpha);
+    return load_bitmap(api, allocator, string(filename), preMultiplyAlpha);
 }
 
 internal void

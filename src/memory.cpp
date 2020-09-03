@@ -24,6 +24,11 @@ get_aligned_size_for(MemoryArena *arena, umm size, u32 flags)
 
 internal ALLOCATE_MEMORY_SIZE(arena_allocate_size)
 {
+    if (!(flags & Memory_AlignMask))
+    {
+        flags |= MEMORY_DEFAULT_ALIGN;
+    }
+
     u32 alignment = (flags & Memory_AlignMask);
     i_expect(alignment <= 128);
     i_expect(is_pow2(alignment));

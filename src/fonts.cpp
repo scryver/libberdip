@@ -2,6 +2,9 @@
 #include <stdio.h>
 
 #include "platform.h"
+#include "std_memory.h"
+
+global MemoryAPI gMemoryApi;
 //#include "base.h"
 
 #define STBTT_ifloor(x)  ((int)__builtin_floor(x))
@@ -32,6 +35,8 @@ struct FontLoader
     u32 *unicodeMap;
 };
 
+#include "memory.cpp"
+#include "std_memory.cpp"
 #include "std_file.c"
 #include "bitmap.cpp"
 #include "fonts_gb2312.cpp"
@@ -46,7 +51,7 @@ print_usage(char *progName)
 }
 
 internal Image
-load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32 glyphIndex, s32 *xOffset, s32 *yOffset)
+load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32 glyphIndex, s32 *xOffset, s32 *yOffset)
 {
     Image result = {};
 
@@ -61,7 +66,7 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
 
     s32 pitch = sizeof(u32) * width;
 
-    result.pixels = allocate_array(u32, result.height * result.width, Alloc_NoClear);
+    result.pixels = allocate_array(allocator, u32, result.height * result.width, Memory_NoClear);
 
     fprintf(stderr, "Bitmap '%c' size: %d x %d\n", codePoint, result.width, result.height);
 
@@ -110,7 +115,7 @@ load_glyph_bitmap(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint, u32
 }
 
 internal void
-add_character(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint)
+add_character(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint)
 {
     if (stbtt_FindGlyphIndex(fontInfo, codePoint))
     {
@@ -120,7 +125,7 @@ add_character(stbtt_fontinfo *fontInfo, FontLoader *font, u32 codePoint)
         FontGlyph *glyph = font->glyphs + glyphIndex;
         glyph->unicodeCodePoint = codePoint;
         s32 xOffset, yOffset;
-        glyph->bitmap = load_glyph_bitmap(fontInfo, font, codePoint, glyphIndex, &xOffset, &yOffset);
+        glyph->bitmap = load_glyph_bitmap(allocator, fontInfo, font, codePoint, glyphIndex, &xOffset, &yOffset);
         glyph->yOffset = yOffset;
         font->unicodeMap[codePoint] = glyphIndex;
         if (font->info.onePastHighestCodePoint <= codePoint)
@@ -146,7 +151,12 @@ int main(int argc, char **argv)
             pixelHeight = number_from_string(string(argv[3]));
         }
 
-        Buffer inFile = read_entire_file(string(inputFilename));
+        MemoryAllocator arenaAllocator = {};
+        MemoryArena arena = {};
+        std_memory_api(&gMemoryApi);
+        initialize_arena_allocator(&arena, &arenaAllocator);
+
+        Buffer inFile = read_entire_file(&arenaAllocator, string(inputFilename));
         if (inFile.size != 0)
         {
             stbtt_fontinfo fontInfo = {};
@@ -177,11 +187,11 @@ int main(int argc, char **argv)
                 makeFont.maxGlyphCount = 0x4000;
                 makeFont.info.glyphCount = 0;
 
-                makeFont.unicodeMap = allocate_array(u32, ONE_PAST_MAX_FONT_CODEPOINT);
+                makeFont.unicodeMap = allocate_array(&arenaAllocator, u32, ONE_PAST_MAX_FONT_CODEPOINT, 0);
 
-                makeFont.glyphs = allocate_array(FontGlyph, makeFont.maxGlyphCount, Alloc_NoClear);
+                makeFont.glyphs = allocate_array(&arenaAllocator, FontGlyph, makeFont.maxGlyphCount, Memory_NoClear);
                 umm horizontalAdvances = makeFont.maxGlyphCount * makeFont.maxGlyphCount;
-                makeFont.horizontalAdvance = allocate_array(f32, horizontalAdvances);
+                makeFont.horizontalAdvance = allocate_array(&arenaAllocator, f32, horizontalAdvances, 0);
 
                 makeFont.info.onePastHighestCodePoint = 0;
 
@@ -190,25 +200,25 @@ int main(int argc, char **argv)
                 makeFont.glyphs[0].unicodeCodePoint = 0;
                 makeFont.glyphs[0].bitmap = {};
 
-                add_character(&fontInfo, &makeFont, ' ');
+                add_character(&arenaAllocator, &fontInfo, &makeFont, ' ');
 #if 0
                 // TODO(michiel): For now it includes UTF-8 latin and greek
                 //for (u32 character = '!'; character <= '~'; ++character)
                 for (u32 character = '!'; character < 0x400; ++character)
                 {
-                    add_character(&fontInfo, &makeFont, character);
+                    add_character(&arenaAllocator, &fontInfo, &makeFont, character);
                 }
 #else
                 // TODO(michiel): CJK support
                 for (u32 character = '!'; character <= '~'; ++character)
                 {
-                    add_character(&fontInfo, &makeFont, character);
+                    add_character(&arenaAllocator, &fontInfo, &makeFont, character);
                 }
 
 #if 0
                 for (u32 charIdx = 0; charIdx < array_count(gGB2312CodePoints); ++charIdx)
                 {
-                    add_character(&fontInfo, &makeFont, gGB2312CodePoints[charIdx]);
+                    add_character(&arenaAllocator, &fontInfo, &makeFont, gGB2312CodePoints[charIdx]);
                 }
 #endif
 
@@ -216,7 +226,7 @@ int main(int argc, char **argv)
                 //for (u32 character = 0x4E00; character < 0x9FEF; ++character)
                 for (u32 character = 0x4E00; character < 0x8E00; ++character)
                 {
-                    add_character(&fontInfo, &makeFont, character);
+                    add_character(&arenaAllocator, &fontInfo, &makeFont, character);
                 }
 #endif
 #endif
@@ -264,7 +274,7 @@ int main(int argc, char **argv)
                 }
 
                 close_file(&outFile);
-                deallocate(inFile.data);
+                deallocate_all(&arenaAllocator);
             }
             else
             {

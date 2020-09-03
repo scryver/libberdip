@@ -143,10 +143,10 @@ deallocate_all(MemoryAllocator *alloc)
     alloc->deallocate_all(alloc->allocator);
 }
 
-#define allocate_struct(a, t, i)            (t *)a->allocate_size(a->allocator, sizeof(t), i)
-#define allocate_array(a, t, c, i)          (t *)a->allocate_size(a->allocator, sizeof(t)*c, i)
-#define allocate_copy_struct(a, t, s, i)    (t *)a->allocate_copy(a->allocator, s, sizeof(t), i)
-#define allocate_copy_array(a, t, c, s, i)  (t *)a->allocate_copy(a->allocator, s, sizeof(t)*c, i)
+#define allocate_struct(a, t, i)            (t *)(a)->allocate_size((a)->allocator, sizeof(t), i)
+#define allocate_array(a, t, c, i)          (t *)(a)->allocate_size((a)->allocator, sizeof(t)*c, i)
+#define allocate_copy_struct(a, t, s, i)    (t *)(a)->allocate_copy((a)->allocator, s, sizeof(t), i)
+#define allocate_copy_array(a, t, c, s, i)  (t *)(a)->allocate_copy((a)->allocator, s, sizeof(t)*c, i)
 
 //
 //
@@ -209,6 +209,11 @@ struct TempArenaMemory
 //
 // NOTE(michiel): Stretchy buf, supported by a platform allocator (so a minimum of MEMORY_MINIMUM_PLATFORM_BLOCK_SIZE)
 //
+// See Sean Barrett (stb libs) for credits (stretchy_buffer.h).
+//   Can be used as simple growing array, for fast prototyping.
+//
+//
+
 #define MEMORY_BUF_MAGIC 0xB0FFE20123456789
 struct MemoryBuffer
 {

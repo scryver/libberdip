@@ -55,7 +55,7 @@ FileCursorReference type)
 typedef SET_FILE_POSITION(SetFilePosition);
 
 // NOTE(michiel): All in one operation. Read the whole file and allocate the buffer
-#define READ_ENTIRE_FILE(name) Buffer name(String filename)
+#define READ_ENTIRE_FILE(name) Buffer name(MemoryAllocator *allocator, String filename)
 typedef READ_ENTIRE_FILE(ReadEntireFile);
 
 // NOTE(michiel): All in one operation. Write the whole file.
