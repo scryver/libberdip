@@ -70,3 +70,15 @@ internal String sub_alloc_string(SubAllocator *allocator, String s);
 internal String sub_alloc_string_fmt(SubAllocator *allocator, char *fmt, ...);
 // NOTE(michiel): To deallocate a string
 internal String sub_dealloc_string(SubAllocator *allocator, String s);
+
+internal INIT_ALLOCATOR(initialize_sub_allocator)
+{
+    dest->allocator = allocator;
+    dest->bootstrap_alloc = 0;
+    dest->allocate_size = sub_alloc;
+    dest->allocate_copy = sub_alloc_copy;
+    dest->allocate_stringz = sub_alloc_string;
+    dest->reallocate_size = sub_realloc;
+    dest->deallocate = sub_dealloc;
+    dest->deallocate_all = 0;
+}

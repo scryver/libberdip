@@ -1,4 +1,6 @@
-// NOTE(michiel): Uses <fcntl.h> and <dirent.h>, and <sys/mman.h> but that should go away
+
+//#include <fcntl.h>
+//#include <dirent.h>
 
 #ifndef LIBBERDIP_FILE_DEBUG
 #define LIBBERDIP_FILE_DEBUG 0
@@ -10,17 +12,12 @@ typedef struct LinuxFindFile
     struct dirent *fileData;
 } LinuxFindFile;
 
-typedef struct LinuxFileHandle
-{
-    s32 linuxHandle;
-} LinuxFileHandle;
-
 typedef struct LinuxFileGroup
 {
     String wildcard;
     b32 fileAvailable;
     LinuxFindFile findData;
-    LinuxFileHandle *lastFileHandle;
+    s32 lastFileHandle;
 } LinuxFileGroup;
 
 internal b32
@@ -75,11 +72,11 @@ linux_file_size(s32 fileHandle)
 internal
 GET_FILE_SIZE(linux_get_file_size)
 {
-    LinuxFileHandle *handle = (LinuxFileHandle *)apiFile->platform;
+    s32 handle = (s32)apiFile->platform;
     umm result = 0;
     if (handle)
     {
-        s64 size = linux_file_size(handle->linuxHandle);
+        s64 size = linux_file_size(handle);
         if (size > 0) {
             result = (umm)size;
         }
@@ -90,12 +87,11 @@ GET_FILE_SIZE(linux_get_file_size)
 internal
 GET_FILE_POSITION(linux_get_file_position)
 {
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
+    linuxHandle = (s32)apiFile->platform;
     off_t position = 0;
-    if (linuxHandle && no_file_errors(apiFile))
+    if ((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
-        position = lseek(linuxHandle->linuxHandle, 0, SEEK_CUR);
+        position = lseek(linuxHandle, 0, SEEK_CUR);
     }
     return (u64)position;
 }
@@ -103,20 +99,19 @@ GET_FILE_POSITION(linux_get_file_position)
 internal
 SET_FILE_POSITION(linux_set_file_position)
 {
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    if(linuxHandle && no_file_errors(apiFile))
+    s32 linuxHandle = (s32)apiFile->platform;
+    if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
         switch (type)
         {
             case FileCursor_StartOfFile: {
-                lseek(linuxHandle->linuxHandle, offset, SEEK_SET);
+                lseek(linuxHandle, offset, SEEK_SET);
             } break;
             case FileCursor_CurrentPos: {
-                lseek(linuxHandle->linuxHandle, offset, SEEK_CUR);
+                lseek(linuxHandle, offset, SEEK_CUR);
             } break;
             case FileCursor_EndOfFile: {
-                lseek(linuxHandle->linuxHandle, offset, SEEK_END);
+                lseek(linuxHandle, offset, SEEK_END);
             } break;
             INVALID_DEFAULT_CASE;
         }
@@ -134,8 +129,7 @@ READ_ENTIRE_FILE(linux_read_entire_file)
         s64 size = linux_file_size(fileHandle);
         if (size > 0)
         {
-            // TODO(michiel): Api allocate
-            Buffer allocated = linux_allocate_size(size, Alloc_NoClear);
+            Buffer allocated = allocate_size(allocator, size, Alloc_NoClear);
             result.data = allocated.data;
             if (result.data)
             {
@@ -143,7 +137,7 @@ READ_ENTIRE_FILE(linux_read_entire_file)
                 s64 bytesRead = read(fileHandle, result.data, result.size);
                 if (bytesRead != result.size)
                 {
-                    linux_deallocate_size(allocated);
+                    deallocate(allocator, allocated);
                     result.size = 0;
                 }
             }
@@ -180,8 +174,8 @@ GET_ALL_FILE_OF_TYPE_BEGIN(linux_get_all_files_of_type_begin)
 {
     ApiFileGroup result = {};
 
-    Buffer allocated = linux_allocate_size(sizeof(LinuxFileGroup), 0);
-    LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)allocated.data;
+    void *allocated = allocate_size(allocator, sizeof(LinuxFileGroup), 0);
+    LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)allocated;
     result.platform = linuxFileGroup;
     result.fileCount = 0;
     linuxFileGroup->wildcard = matchPattern;
@@ -208,11 +202,10 @@ GET_ALL_FILE_OF_TYPE_END(linux_get_all_files_of_type_end)
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)fileGroup->platform;
     if (linuxFileGroup)
     {
-        if (linuxFileGroup->lastFileHandle)
+        if (linuxFileGroup->lastFileHandle >= 0)
         {
-            close(linuxFileGroup->lastFileHandle->linuxHandle);
-            Buffer deallocateMem = {sizeof(LinuxFileHandle), (u8 *)linuxFileGroup->lastFileHandle};
-            linux_deallocate_size(deallocateMem);
+            close(linuxFileGroup->lastFileHandle);
+            linuxFileGroup->lastFileHandle = -1;
         }
         if (linuxFileGroup->findData.dir)
         {
@@ -220,12 +213,9 @@ GET_ALL_FILE_OF_TYPE_END(linux_get_all_files_of_type_end)
             linuxFileGroup->findData.dir = 0;
         }
 
-        Buffer deallocateMem = {sizeof(LinuxFileGroup), (u8 *)linuxFileGroup};
-        linux_deallocate_size(deallocateMem);
-        linuxFileGroup = 0;
+        linuxFileGroup = deallocate(fileGroup->allocator, linuxFileGroup);
     }
 }
-
 
 internal
 OPEN_NEXT_FILE(linux_open_next_file)
@@ -234,12 +224,10 @@ OPEN_NEXT_FILE(linux_open_next_file)
 
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)fileGroup->platform;
 
-    LinuxFileHandle *useHandle = 0;
-    if (linuxFileGroup->lastFileHandle)
+    if (linuxFileGroup->lastFileHandle >= 0)
     {
-        close(linuxFileGroup->lastFileHandle->linuxHandle);
-        useHandle = linuxFileGroup->lastFileHandle;
-        linuxFileGroup->lastFileHandle = 0;
+        close(linuxFileGroup->lastFileHandle);
+        linuxFileGroup->lastFileHandle = -1;
     }
 
     if (linuxFileGroup->findData.dir)
@@ -252,21 +240,12 @@ OPEN_NEXT_FILE(linux_open_next_file)
         fchdir(dirFd);
         if (linuxFileGroup->fileAvailable)
         {
-            if (!useHandle)
-            {
-                Buffer allocated = linux_allocate_size(sizeof(LinuxFileHandle), 0);
-                useHandle = (LinuxFileHandle *)allocated.data;
-            }
-            result.platform = useHandle;
-
-            if (useHandle)
-            {
-                result.filename = string(linuxFileGroup->findData.fileData->d_name);
-                useHandle->linuxHandle = open(to_cstring(result.filename), O_RDONLY);
-                result.fileSize = safe_truncate_to_u32(linux_file_size(useHandle->linuxHandle));
-                result.noErrors = (useHandle->linuxHandle >= 0);
-                linuxFileGroup->lastFileHandle = useHandle;
-            }
+            result.filename = string(linuxFileGroup->findData.fileData->d_name);
+            s32 linuxHandle = open(to_cstring(result.filename), O_RDONLY);
+            result.platform = (void *)linuxHandle;
+            result.fileSize = safe_truncate_to_u32(linux_file_size(linuxHandle));
+            result.noErrors = (linuxHandle >= 0);
+            linuxFileGroup->lastFileHandle = linuxHandle;
 
             if (!linux_find_file_in_folder(linuxFileGroup->wildcard, &linuxFileGroup->findData))
             {
@@ -290,35 +269,30 @@ OPEN_FILE(linux_open_file)
     filename.data = filenameBuf;
 
     ApiFile result = {};
-
-    Buffer allocated = linux_allocate_size(sizeof(LinuxFileHandle), 0);
-    LinuxFileHandle *handle = (LinuxFileHandle *)allocated.data;
-    result.platform = handle;
     result.filename = filename;
 
-    if (handle)
+    s32 linuxHandle = -1;
+    if (flags == (FileOpen_Read | FileOpen_Write))
     {
-        if (flags == (FileOpen_Read | FileOpen_Write))
-        {
-            handle->linuxHandle = open(to_cstring(filename), O_RDWR);
-            result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
-        }
-        else if (flags == FileOpen_Read)
-        {
-            handle->linuxHandle = open(to_cstring(filename), O_RDONLY);
-            result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
-        }
-        else if (flags == FileOpen_Write)
-        {
-            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-        }
-        else
-        {
-            i_expect(flags == FileOpen_Append);
-            handle->linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-        }
-        result.noErrors = (handle->linuxHandle >= 0);
+        linuxHandle = open(to_cstring(filename), O_RDWR);
+        result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
     }
+    else if (flags == FileOpen_Read)
+    {
+        linuxHandle = open(to_cstring(filename), O_RDONLY);
+        result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
+    }
+    else if (flags == FileOpen_Write)
+    {
+        linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    }
+    else
+    {
+        i_expect(flags == FileOpen_Append);
+        linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+    }
+    result.noErrors = (linuxHandle >= 0);
+    result.platform = (void *)linuxHandle;
 
     return result;
 }
@@ -326,25 +300,22 @@ OPEN_FILE(linux_open_file)
 internal
 CLOSE_FILE(linux_close_file)
 {
-    if (apiFile->platform)
+    if (apiFile->platform >= 0)
     {
-        LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-        close(linuxHandle->linuxHandle);
-        Buffer deallocateMem = {sizeof(LinuxFileHandle), (u8 *)apiFile->platform};
-        linux_deallocate_size(deallocateMem);
+        s32 linuxHandle = (s32)apiFile->platform;
+        close(linuxHandle);
     }
-    apiFile->platform = 0;
+    apiFile->platform = -1;
 }
 
 internal
 READ_FROM_FILE(linux_read_from_file)
 {
     umm result = 0;
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    if(linuxHandle && no_file_errors(apiFile))
+    s32 linuxHandle = (s32)apiFile->platform;
+    if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
-        s64 bytesRead = read(linuxHandle->linuxHandle, buffer, size);
+        s64 bytesRead = read(linuxHandle, buffer, size);
         if ((s64)size == bytesRead)
         {
             // NOTE(michiel): Success!!
@@ -362,16 +333,15 @@ internal
 READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 {
     umm result = 0;
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    if(linuxHandle && no_file_errors(apiFile))
+    s32 linuxHandle = (s32)apiFile->platform;
+    if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
 #if 0
         linux_set_file_position(apiFile, 0, FileCursor_StartOfFile);
         linux_set_file_position(apiFile, offset, FileCursor_CurrentPos);
-        s64 bytesRead = read(linuxHandle->linuxHandle, buffer, size);
+        s64 bytesRead = read(linuxHandle, buffer, size);
 #else
-        s64 bytesRead = pread(linuxHandle->linuxHandle, buffer, size, offset);
+        s64 bytesRead = pread(linuxHandle, buffer, size, offset);
 #endif
         if ((s64)size == bytesRead)
         {
@@ -389,12 +359,10 @@ READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 internal
 WRITE_TO_FILE(linux_write_to_file)
 {
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    if(linuxHandle && no_file_errors(apiFile))
+    s32 linuxHandle = (s32)apiFile->platform;
+    if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
-
-        ssize_t fileBytesWritten = write(linuxHandle->linuxHandle, data, size);
+        ssize_t fileBytesWritten = write(linuxHandle, data, size);
         if (fileBytesWritten == (ssize_t)size)
         {
             // NOTE(michiel): Succes
@@ -409,17 +377,15 @@ WRITE_TO_FILE(linux_write_to_file)
 internal
 WRITE_VFMT_TO_FILE(linux_write_vfmt_to_file)
 {
-    LinuxFileHandle *linuxHandle = (LinuxFileHandle *)apiFile->platform;
-    if(linuxHandle && no_file_errors(apiFile))
+    s32 linuxHandle = (s32)apiFile->platform;
+    if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
-        i_expect(linuxHandle->linuxHandle >= 0);
-
         char buffer[4096];
         // TODO(michiel): Remove snprintf
         vsnprintf(buffer, sizeof(buffer), fmt, args);
 
         ssize_t bufSize = string_length(buffer);
-        ssize_t fileBytesWritten = write(linuxHandle->linuxHandle, buffer, bufSize);
+        ssize_t fileBytesWritten = write(linuxHandle, buffer, bufSize);
         if (fileBytesWritten == (ssize_t)bufSize)
         {
             // NOTE(michiel): Succes

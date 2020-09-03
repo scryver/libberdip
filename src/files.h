@@ -20,6 +20,7 @@ typedef struct ApiFile
 
 typedef struct ApiFileGroup
 {
+    MemoryAllocator *allocator;
     u32 fileCount;
     void *platform;
 } ApiFileGroup;
@@ -63,8 +64,7 @@ typedef READ_ENTIRE_FILE(ReadEntireFile);
 typedef WRITE_ENTIRE_FILE(WriteEntireFile);
 
 // NOTE(michiel): Open all of type
-#define GET_ALL_FILE_OF_TYPE_BEGIN(name) ApiFileGroup name(String directory, \
-String matchPattern)
+#define GET_ALL_FILE_OF_TYPE_BEGIN(name) ApiFileGroup name(MemoryAllocator *allocator, String directory, String matchPattern)
 typedef GET_ALL_FILE_OF_TYPE_BEGIN(GetAllFileOfTypeBegin);
 
 #define GET_ALL_FILE_OF_TYPE_END(name) void name(ApiFileGroup *fileGroup)
