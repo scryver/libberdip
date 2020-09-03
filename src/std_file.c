@@ -63,7 +63,7 @@ internal OPEN_FILE(open_file)
         result.platform = stdin;
         result.noErrors = (flags == FileOpen_Read);
     }
-    if (filename == string("stdout"))
+    else if (filename == string("stdout"))
     {
         i_expect(flags == FileOpen_Write);
         result.platform = stdout;

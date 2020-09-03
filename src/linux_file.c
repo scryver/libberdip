@@ -20,6 +20,14 @@ typedef struct LinuxFileGroup
     s32 lastFileHandle;
 } LinuxFileGroup;
 
+internal s32
+get_linux_handle(ApiFile *apiFile)
+{
+    s32 result;
+    result = (s32)(smm)apiFile->platform;
+    return result;
+}
+
 internal b32
 linux_find_file_in_folder(String wildcard, LinuxFindFile *finder)
 {
@@ -72,11 +80,11 @@ linux_file_size(s32 fileHandle)
 internal
 GET_FILE_SIZE(linux_get_file_size)
 {
-    s32 handle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     umm result = 0;
-    if (handle)
+    if ((linuxHandle >= 0))
     {
-        s64 size = linux_file_size(handle);
+        s64 size = linux_file_size(linuxHandle);
         if (size > 0) {
             result = (umm)size;
         }
@@ -87,7 +95,7 @@ GET_FILE_SIZE(linux_get_file_size)
 internal
 GET_FILE_POSITION(linux_get_file_position)
 {
-    linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     off_t position = 0;
     if ((linuxHandle >= 0) && no_file_errors(apiFile))
     {
@@ -99,7 +107,7 @@ GET_FILE_POSITION(linux_get_file_position)
 internal
 SET_FILE_POSITION(linux_set_file_position)
 {
-    s32 linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
         switch (type)
@@ -129,8 +137,8 @@ READ_ENTIRE_FILE(linux_read_entire_file)
         s64 size = linux_file_size(fileHandle);
         if (size > 0)
         {
-            Buffer allocated = allocate_size(allocator, size, Alloc_NoClear);
-            result.data = allocated.data;
+            void *allocated = allocate_size(allocator, size, Memory_NoClear);
+            result.data = (u8 *)allocated;
             if (result.data)
             {
                 result.size = (umm)size;
@@ -213,7 +221,7 @@ GET_ALL_FILE_OF_TYPE_END(linux_get_all_files_of_type_end)
             linuxFileGroup->findData.dir = 0;
         }
 
-        linuxFileGroup = deallocate(fileGroup->allocator, linuxFileGroup);
+        linuxFileGroup = (LinuxFileGroup *)deallocate(fileGroup->allocator, linuxFileGroup);
     }
 }
 
@@ -242,7 +250,7 @@ OPEN_NEXT_FILE(linux_open_next_file)
         {
             result.filename = string(linuxFileGroup->findData.fileData->d_name);
             s32 linuxHandle = open(to_cstring(result.filename), O_RDONLY);
-            result.platform = (void *)linuxHandle;
+            result.platform = (void *)(smm)linuxHandle;
             result.fileSize = safe_truncate_to_u32(linux_file_size(linuxHandle));
             result.noErrors = (linuxHandle >= 0);
             linuxFileGroup->lastFileHandle = linuxHandle;
@@ -271,28 +279,49 @@ OPEN_FILE(linux_open_file)
     ApiFile result = {};
     result.filename = filename;
 
-    s32 linuxHandle = -1;
-    if (flags == (FileOpen_Read | FileOpen_Write))
+    if (filename == string("stdin"))
     {
-        linuxHandle = open(to_cstring(filename), O_RDWR);
-        result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
+        i_expect(flags == FileOpen_Read);
+        result.platform = 0;
+        result.noErrors = (flags == FileOpen_Read);
     }
-    else if (flags == FileOpen_Read)
+    else if (filename == string("stdout"))
     {
-        linuxHandle = open(to_cstring(filename), O_RDONLY);
-        result.fileSize = safe_truncate_to_u32(linux_file_size(handle->linuxHandle));
+        i_expect(flags == FileOpen_Write);
+        result.platform = (void *)(umm)1;
+        result.noErrors = (flags == FileOpen_Write);
     }
-    else if (flags == FileOpen_Write)
+    else if (filename == string("stderr"))
     {
-        linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        i_expect(flags == FileOpen_Write);
+        result.platform = (void *)(umm)2;
+        result.noErrors = (flags == FileOpen_Write);
     }
     else
     {
-        i_expect(flags == FileOpen_Append);
-        linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+        s32 linuxHandle = -1;
+        if (flags == (FileOpen_Read | FileOpen_Write))
+        {
+            linuxHandle = open(to_cstring(filename), O_RDWR);
+            result.fileSize = safe_truncate_to_u32(linux_file_size(linuxHandle));
+        }
+        else if (flags == FileOpen_Read)
+        {
+            linuxHandle = open(to_cstring(filename), O_RDONLY);
+            result.fileSize = safe_truncate_to_u32(linux_file_size(linuxHandle));
+        }
+        else if (flags == FileOpen_Write)
+        {
+            linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+        }
+        else
+        {
+            i_expect(flags == FileOpen_Append);
+            linuxHandle = open(to_cstring(filename), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+        }
+        result.noErrors = (linuxHandle >= 0);
+        result.platform = (void *)(smm)linuxHandle;
     }
-    result.noErrors = (linuxHandle >= 0);
-    result.platform = (void *)linuxHandle;
 
     return result;
 }
@@ -300,19 +329,19 @@ OPEN_FILE(linux_open_file)
 internal
 CLOSE_FILE(linux_close_file)
 {
-    if (apiFile->platform >= 0)
+    s32 linuxHandle = get_linux_handle(apiFile);
+    if (linuxHandle >= 0)
     {
-        s32 linuxHandle = (s32)apiFile->platform;
         close(linuxHandle);
     }
-    apiFile->platform = -1;
+    apiFile->platform = (void *)(smm)-1;
 }
 
 internal
 READ_FROM_FILE(linux_read_from_file)
 {
     umm result = 0;
-    s32 linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
         s64 bytesRead = read(linuxHandle, buffer, size);
@@ -333,7 +362,7 @@ internal
 READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 {
     umm result = 0;
-    s32 linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
 #if 0
@@ -359,7 +388,7 @@ READ_FROM_FILE_OFFSET(linux_read_from_file_offset)
 internal
 WRITE_TO_FILE(linux_write_to_file)
 {
-    s32 linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
         ssize_t fileBytesWritten = write(linuxHandle, data, size);
@@ -377,7 +406,7 @@ WRITE_TO_FILE(linux_write_to_file)
 internal
 WRITE_VFMT_TO_FILE(linux_write_vfmt_to_file)
 {
-    s32 linuxHandle = (s32)apiFile->platform;
+    s32 linuxHandle = get_linux_handle(apiFile);
     if((linuxHandle >= 0) && no_file_errors(apiFile))
     {
         char buffer[4096];

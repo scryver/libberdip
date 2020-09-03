@@ -89,6 +89,20 @@ internal PLATFORM_DEALLOCATE_ALL_MEMORY(linux_deallocate_all_memory)
     }
 }
 
+internal PLATFORM_EXECUTABLE_MEMORY(linux_executable_memory)
+{
+    b32 result = false;
+
+    if (block)
+    {
+        LinuxMemoryBlock *linuxHandle = (LinuxMemoryBlock *)block;
+        s32 protResult = mprotect(linuxHandle, linuxHandle->block.size + sizeof(LinuxMemoryBlock), PROT_READ|PROT_EXEC);
+        result = protResult == 0;
+    }
+
+    return result;
+}
+
 internal INIT_MEMORY_API(linux_memory_api)
 {
     gLinuxMemory.sentinel.next = gLinuxMemory.sentinel.prev = &gLinuxMemory.sentinel;
@@ -96,5 +110,6 @@ internal INIT_MEMORY_API(linux_memory_api)
     memoryApi->reallocate_memory = linux_reallocate_memory;
     memoryApi->deallocate_memory = linux_deallocate_memory;
     memoryApi->deallocate_all    = linux_deallocate_all_memory;
+    memoryApi->executable_memory = linux_executable_memory;
 }
 

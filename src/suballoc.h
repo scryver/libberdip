@@ -49,7 +49,7 @@ internal void *sub_alloc(SubAllocator *allocator, u32 requestSize, MemoryAllocIn
 // NOTE(michiel): Deallocate memory, allocated with this same interface. It will always
 // return 0, so you can use it to immediatly clear the pointer after this function call.
 internal void *sub_dealloc(SubAllocator *allocator, void *pointer); // , u32 size = 0);
-//internal DEALLOCATE_MEMORY_SIZE(sub_dealloc);
+//internal DEALLOCATE_MEMORY(sub_dealloc);
 
 // NOTE(michiel): Reallocate memory. It will return 0 on out of memory, otherwise a
 // pointer to the newly allocated block, with a copy of the original data.

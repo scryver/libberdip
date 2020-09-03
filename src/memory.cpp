@@ -1,3 +1,98 @@
+//
+// NOTE(michiel): Platform builtin allocator (use for easy platform allocations, used with big data sizes)
+//
+
+internal ALLOCATE_MEMORY_SIZE(platform_allocate_size)
+{
+    if (!(flags & Memory_AlignMask))
+    {
+        flags |= MEMORY_DEFAULT_ALIGN;
+    }
+
+    u32 alignment = (flags & Memory_AlignMask);
+    i_expect(is_pow2(alignment));
+
+    void *result = 0;
+
+    PlatformMemoryBlock *block = gMemoryApi.allocate_memory(size, flags);
+    i_expect(block);
+    //i_expect(((umm)block->base - (umm)block) == sizeof(StdMemoryBlock));
+    //i_expect(((umm)block->base - (umm)block) == sizeof(LinuxMemoryBlock));
+    result = (void *)block->base;
+
+    i_expect(((umm)result & (alignment - 1)) == 0);
+
+    return result;
+}
+
+internal ALLOCATE_MEMORY_COPY(platform_allocate_copy)
+{
+    flags |= Memory_NoClear;
+    void *result = platform_allocate_size(allocator, size, flags);
+    copy(size, source, result);
+    return result;
+}
+
+internal ALLOCATE_MEMORY_STRINGZ(platform_allocate_stringz)
+{
+    String result;
+    result.size = 0;
+    result.data = (u8 *)platform_allocate_size(allocator, source.size + 1, align_memory_alloc(1, false));
+    if (result.data)
+    {
+        result.size = source.size;
+        copy(source.size, source.data, result.data);
+        result.data[result.size] = 0;
+    }
+    return result;
+}
+
+internal REALLOCATE_MEMORY_SIZE(platform_reallocate_size)
+{
+    PlatformMemoryBlock *oldBlock = 0;
+    if (memory)
+    {
+        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
+    }
+    PlatformMemoryBlock *newBlock = gMemoryApi.reallocate_memory(oldBlock, size, flags);
+    i_expect(newBlock);
+    void *result = (void *)newBlock->base;
+    return result;
+}
+
+internal DEALLOCATE_MEMORY(platform_deallocate)
+{
+    PlatformMemoryBlock *oldBlock = 0;
+    if (memory)
+    {
+        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
+        oldBlock = gMemoryApi.deallocate_memory(oldBlock);
+        memory = oldBlock ? oldBlock->base : 0;
+    }
+    return memory;
+}
+
+internal DEALLOCATE_ALL(platform_deallocate_all)
+{
+    gMemoryApi.deallocate_all();
+}
+
+internal INIT_ALLOCATOR(initialize_platform_allocator)
+{
+    dest->allocator = allocator;
+    dest->bootstrap_alloc = 0;
+    dest->allocate_size = platform_allocate_size;
+    dest->allocate_copy = platform_allocate_copy;
+    dest->allocate_stringz = platform_allocate_stringz;
+    dest->reallocate_size = platform_reallocate_size;
+    dest->deallocate = platform_deallocate;
+    dest->deallocate_all = platform_deallocate_all;
+}
+
+//
+// NOTE(michiel): Arenas
+//
+
 internal umm
 get_alignment_offset(MemoryArena *arena, umm alignment)
 {

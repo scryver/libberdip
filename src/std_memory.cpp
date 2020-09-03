@@ -91,6 +91,12 @@ internal PLATFORM_DEALLOCATE_ALL_MEMORY(std_deallocate_all_memory)
     }
 }
 
+internal PLATFORM_EXECUTABLE_MEMORY(std_executable_memory)
+{
+    b32 result = false;
+    return result;
+}
+
 internal INIT_MEMORY_API(std_memory_api)
 {
     gStdMemory.sentinel.next = gStdMemory.sentinel.prev = &gStdMemory.sentinel;
@@ -98,6 +104,7 @@ internal INIT_MEMORY_API(std_memory_api)
     memoryApi->reallocate_memory = std_reallocate_memory;
     memoryApi->deallocate_memory = std_deallocate_memory;
     memoryApi->deallocate_all    = std_deallocate_all_memory;
+    memoryApi->executable_memory = std_executable_memory;
 }
 
 //

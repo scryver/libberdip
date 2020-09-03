@@ -17,10 +17,10 @@ compile_expect((MEMORY_DEFAULT_ALIGN & Memory_AlignMask) == MEMORY_DEFAULT_ALIGN
 
 struct PlatformMemoryBlock
 {
+    PlatformMemoryBlock *prev;
     umm size;
     umm used;
     u8 *base;
-    PlatformMemoryBlock *prev;
 };
 
 // NOTE(michiel):
@@ -43,12 +43,16 @@ typedef PLATFORM_ALLOCATE_MEMORY(PlatformAllocateMemory);
 typedef PLATFORM_REALLOCATE_MEMORY(PlatformReallocateMemory);
 
 // NOTE(michiel): Returns 0 on success, otherwise the old pointer
-#define PLATFORM_DEALLOCATE_MEMORY(name)       void *name(PlatformMemoryBlock *block)
+#define PLATFORM_DEALLOCATE_MEMORY(name)       PlatformMemoryBlock *name(PlatformMemoryBlock *block)
 typedef PLATFORM_DEALLOCATE_MEMORY(PlatformDeallocateMemory);
 
 // NOTE(michiel): Very destructive
 #define PLATFORM_DEALLOCATE_ALL_MEMORY(name)   void name(void)
 typedef PLATFORM_DEALLOCATE_ALL_MEMORY(PlatformDeallocateAllMemory);
+
+// NOTE(michiel): Make the platform allocated memory executable (if possible), returns true on success
+#define PLATFORM_EXECUTABLE_MEMORY(name)       b32 name(PlatformMemoryBlock *block)
+typedef PLATFORM_EXECUTABLE_MEMORY(PlatformExecutableMemory);
 
 //
 // NOTE(michiel): Only allocate_memory_size needs to be defined (others can be 0)
@@ -87,6 +91,7 @@ struct MemoryAPI
     PlatformReallocateMemory *reallocate_memory;
     PlatformDeallocateMemory *deallocate_memory;
     PlatformDeallocateAllMemory *deallocate_all;
+    PlatformExecutableMemory *executable_memory;
 };
 
 struct MemoryAllocator
