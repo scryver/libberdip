@@ -10,5 +10,5 @@ I will in time ask permission for the usage of code, but if you want to do it yo
 - Casey Muratori: https://github.com/cmuratori (arena, platform ideas, random.h, etc.)
 - Per Vognsnen: https://github.com/pervognsen (arena, map, string interning, etc.)
 
-And if you here anything from them, let me know :)
+And if you hear anything from them, let me know :)
 
