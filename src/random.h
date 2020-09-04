@@ -145,21 +145,11 @@ random_gaussian(RandomSeriesPCG *series, f32 mean = 0.0f, f32 stdDeviation = 1.0
 //
 
 internal RandomList
-allocate_rand_list(u32 count)
+allocate_rand_list(MemoryAllocator *allocator, u32 count)
 {
     RandomList result = {0};
     result.entryCount = count;
-    result.entries = allocate_array(RandomListEntry, count, 0);
-
-    return result;
-}
-
-internal RandomList
-arena_allocate_rand_list(Arena *arena, u32 count)
-{
-    RandomList result = {0};
-    result.entryCount = count;
-    result.entries = arena_allocate_array(arena, RandomListEntry, count);
+    result.entries = allocate_array(allocator, RandomListEntry, count, default_memory_alloc());
 
     return result;
 }

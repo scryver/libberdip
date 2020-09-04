@@ -241,7 +241,7 @@ struct MemoryBuffer
 #define mbuf_last(ptr)             ((ptr) ? (ptr) + mbuf_count(ptr) - 1 : 0)
 #define mbuf_sizeof(ptr)           ((ptr) ? buf_len(ptr) * sizeof(*(ptr)) : 0)
 // NOTE(michiel): Interface
-#define mbuf_deallocate(ptr)       ((ptr) ? (gMemoryApi.deallocate_memory(mbuf_hdr(ptr)->block), (ptr) = 0) : 0)
+#define mbuf_deallocate(ptr)       ((ptr) ? (gMemoryApi->deallocate_memory(mbuf_hdr(ptr)->block), (ptr) = 0) : 0)
 #define mbuf_fit(ptr, n)           ((n) <= mbuf_max_count(ptr) ? 0 : (mbuf_grow((ptr), (n)), 0))
 #define mbuf_push(ptr, v)          (mbuf_fit((ptr), mbuf_count(ptr) + 1), (ptr)[mbuf_hdr(ptr)->count++] = (v))
 #define mbuf_pop(ptr)              (mbuf_count(ptr) ? (ptr)[--mbuf_hdr(ptr)->count] : *ptr) // NOTE(michiel): Fails on invalid access

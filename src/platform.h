@@ -102,11 +102,8 @@ is_modified(Keyboard *keyboard, KeyModifiers mod)
 
 struct API
 {
+    MemoryAPI memory;
     FileAPI file;
-    //MemoryContext memoryCtx;
-
-    PlatformAllocateMemory *allocate_memory;
-    PlatformDeallocateMemory *deallocate_memory;
 
     b32 closeProgram;
 

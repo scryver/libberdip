@@ -14,7 +14,7 @@ internal ALLOCATE_MEMORY_SIZE(platform_allocate_size)
 
     void *result = 0;
 
-    PlatformMemoryBlock *block = gMemoryApi.allocate_memory(size, flags);
+    PlatformMemoryBlock *block = gMemoryApi->allocate_memory(size, flags);
     i_expect(block);
     //i_expect(((umm)block->base - (umm)block) == sizeof(StdMemoryBlock));
     //i_expect(((umm)block->base - (umm)block) == sizeof(LinuxMemoryBlock));
@@ -54,7 +54,7 @@ internal REALLOCATE_MEMORY_SIZE(platform_reallocate_size)
     {
         oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
     }
-    PlatformMemoryBlock *newBlock = gMemoryApi.reallocate_memory(oldBlock, size, flags);
+    PlatformMemoryBlock *newBlock = gMemoryApi->reallocate_memory(oldBlock, size, flags);
     i_expect(newBlock);
     void *result = (void *)newBlock->base;
     return result;
@@ -66,7 +66,7 @@ internal DEALLOCATE_MEMORY(platform_deallocate)
     if (memory)
     {
         oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
-        oldBlock = gMemoryApi.deallocate_memory(oldBlock);
+        oldBlock = gMemoryApi->deallocate_memory(oldBlock);
         memory = oldBlock ? oldBlock->base : 0;
     }
     return memory;
@@ -74,7 +74,7 @@ internal DEALLOCATE_MEMORY(platform_deallocate)
 
 internal DEALLOCATE_ALL(platform_deallocate_all)
 {
-    gMemoryApi.deallocate_all();
+    gMemoryApi->deallocate_all();
 }
 
 internal INIT_ALLOCATOR(initialize_platform_allocator)
@@ -142,7 +142,7 @@ internal ALLOCATE_MEMORY_SIZE(arena_allocate_size)
     {
         totalSize = size;
         umm blockSize = maximum(totalSize, MEMORY_MINIMUM_PLATFORM_BLOCK_SIZE);
-        PlatformMemoryBlock *nextBlock = gMemoryApi.allocate_memory(blockSize, flags);
+        PlatformMemoryBlock *nextBlock = gMemoryApi->allocate_memory(blockSize, flags);
         nextBlock->prev = arena->currentBlock;
         arena->currentBlock = nextBlock;
     }
@@ -201,7 +201,7 @@ free_last_block(MemoryArena *arena)
     i_expect(arena->currentBlock);
     PlatformMemoryBlock *free = arena->currentBlock;
     arena->currentBlock = free->prev;
-    gMemoryApi.deallocate_memory(free);
+    gMemoryApi->deallocate_memory(free);
 }
 
 internal DEALLOCATE_ALL(arena_deallocate_all)
@@ -324,7 +324,7 @@ mbuf_grow_(void **bufferAddress, umm newCount, umm elemSize)
     {
         block = mbuf_hdr(buf)->block;
     }
-    PlatformMemoryBlock *newBlock = gMemoryApi.reallocate_memory(block, newSize, default_memory_alloc());
+    PlatformMemoryBlock *newBlock = gMemoryApi->reallocate_memory(block, newSize, default_memory_alloc());
     i_expect(newBlock && newBlock->base);
 
     MemoryBuffer *memBuf = (MemoryBuffer *)newBlock->base;
@@ -377,7 +377,7 @@ mbuf_printf_(void **bufferAddress, char *fmt, ...)
 internal void
 mmap_deallocate(MemoryMap *map)
 {
-    gMemoryApi.deallocate_memory(map->block);
+    gMemoryApi->deallocate_memory(map->block);
 }
 
 internal void
@@ -390,7 +390,7 @@ mmap_grow(MemoryMap *map, umm newMaxCount)
 
     umm newSize = 2 * newMaxCount * sizeof(u64);
 
-    PlatformMemoryBlock *newBlock = gMemoryApi.allocate_memory(newSize, no_clear_memory_alloc());
+    PlatformMemoryBlock *newBlock = gMemoryApi->allocate_memory(newSize, no_clear_memory_alloc());
 
     MemoryMap newMap = {};
     newMap.block = newBlock;
