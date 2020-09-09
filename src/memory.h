@@ -51,7 +51,7 @@ typedef PLATFORM_DEALLOCATE_MEMORY(PlatformDeallocateMemory);
 typedef PLATFORM_DEALLOCATE_ALL_MEMORY(PlatformDeallocateAllMemory);
 
 // NOTE(michiel): Make the platform allocated memory executable (if possible), returns true on success
-#define PLATFORM_EXECUTABLE_MEMORY(name)       b32 name(PlatformMemoryBlock *block)
+#define PLATFORM_EXECUTABLE_MEMORY(name)       b32 name(PlatformMemoryBlock *block, umm offset)
 typedef PLATFORM_EXECUTABLE_MEMORY(PlatformExecutableMemory);
 
 //

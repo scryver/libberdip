@@ -276,6 +276,42 @@ find_most_significant_set_bit(u32 value)
     return result;
 }
 
+internal BitScanResult
+find_least_significant_set_bit(u64 value)
+{
+    BitScanResult result = {0};
+
+    for(s32 test = 0; test < 64; ++test)
+    {
+        if(value & (1LL << test))
+        {
+            result.index = test;
+            result.found = true;
+            break;
+        }
+    }
+
+    return result;
+}
+
+internal BitScanResult
+find_most_significant_set_bit(u64 value)
+{
+    BitScanResult result = {0};
+
+    for(s32 test = 63; test >= 0; --test)
+    {
+        if(value & (1LL << test))
+        {
+            result.index = test;
+            result.found = true;
+            break;
+        }
+    }
+
+    return result;
+}
+
 //#define copy(n, s, d)  copy_(n*sizeof(s[0]), s, d)
 #define copy_struct(s, d)    copy(sizeof(*(s)), s, d)
 #define copy_array(c, s, d)  copy(sizeof(*(s))*c, s, d)

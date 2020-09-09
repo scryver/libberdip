@@ -95,8 +95,12 @@ internal PLATFORM_EXECUTABLE_MEMORY(linux_executable_memory)
 
     if (block)
     {
+        s64 pageSize = sysconf(_SC_PAGESIZE);
+        umm pageOffset = offset ? offset + sizeof(LinuxMemoryBlock) : 0;
+        pageOffset = align_up(pageOffset, pageSize);
+
         LinuxMemoryBlock *linuxHandle = (LinuxMemoryBlock *)block;
-        s32 protResult = mprotect(linuxHandle, linuxHandle->block.size + sizeof(LinuxMemoryBlock), PROT_READ|PROT_EXEC);
+        s32 protResult = mprotect((u8 *)linuxHandle + pageOffset, linuxHandle->block.size + sizeof(LinuxMemoryBlock) - pageOffset, PROT_READ|PROT_EXEC);
         result = protResult == 0;
     }
 
