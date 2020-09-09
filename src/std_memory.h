@@ -6,6 +6,7 @@
 
 struct StdMemoryBlock
 {
+    // TODO(michiel): Maybe move this to the end, so it is easier for usage code to get from memory to the platform block
     PlatformMemoryBlock block;
     StdMemoryBlock *prev;
     StdMemoryBlock *next;

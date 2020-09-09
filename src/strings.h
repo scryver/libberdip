@@ -5,6 +5,24 @@
 global const char gDecimalChars[]  = "0123456789";
 global const char gLowerHexChars[] = "0123456789abcdef";
 global const char gUpperHexChars[] = "0123456789ABCDEF";
+global const u32 gNumFromHex[256] = {
+    ['0'] = 0,
+    ['1'] = 1,
+    ['2'] = 2,
+    ['3'] = 3,
+    ['4'] = 4,
+    ['5'] = 5,
+    ['6'] = 6,
+    ['7'] = 7,
+    ['8'] = 8,
+    ['9'] = 9,
+    ['a'] = 10, ['A'] = 10,
+    ['b'] = 11, ['B'] = 11,
+    ['c'] = 12, ['C'] = 12,
+    ['d'] = 13, ['D'] = 13,
+    ['e'] = 14, ['E'] = 14,
+    ['f'] = 15, ['F'] = 15,
+};
 
 internal inline u32
 string_length(const char *cString)
@@ -668,11 +686,7 @@ internal u32
 parse_half_hex_byte(char c)
 {
     i_expect(is_hex_digit(c));
-    u32 result = c & 0xF;
-    if (!is_digit(c))
-    {
-        result += 9;
-    }
+    u32 result = gNumFromHex[(u8)c];
     return result;
 }
 

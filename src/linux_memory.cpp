@@ -20,6 +20,7 @@ linux_deallocate_memory_block(LinuxMemoryBlock *block)
 internal PLATFORM_ALLOCATE_MEMORY(linux_allocate_memory)
 {
     // TODO(michiel): Use flags maybe? Alignment is always page aligned, and memory is always cleared to zero...
+    //s64 pageSize = sysconf(_SC_PAGESIZE);
     umm totalSize = size + sizeof(LinuxMemoryBlock);
     umm baseOffset = sizeof(LinuxMemoryBlock);
 
@@ -53,6 +54,7 @@ internal PLATFORM_REALLOCATE_MEMORY(linux_reallocate_memory)
         LinuxMemoryBlock *linuxHandle = (LinuxMemoryBlock *)block;
         umm oldSize = block->size + sizeof(LinuxMemoryBlock);
         umm totalSize = newSize + sizeof(LinuxMemoryBlock);
+        // TODO(michiel): Make a stable pointer version?
         void *newMem = mremap(linuxHandle, linuxHandle->block.size + sizeof(LinuxMemoryBlock), totalSize, MREMAP_MAYMOVE);
         i_expect(newMem && (newMem != MAP_FAILED));
 
@@ -95,8 +97,13 @@ internal PLATFORM_EXECUTABLE_MEMORY(linux_executable_memory)
 
     if (block)
     {
+        s64 pageSize = sysconf(_SC_PAGESIZE);
+
+        umm pageOffset = offset ? offset + sizeof(LinuxMemoryBlock) : 0;
+        pageOffset = align_up(pageOffset, pageSize);
         LinuxMemoryBlock *linuxHandle = (LinuxMemoryBlock *)block;
-        s32 protResult = mprotect(linuxHandle, linuxHandle->block.size + sizeof(LinuxMemoryBlock), PROT_READ|PROT_EXEC);
+        // TODO(michiel): Remove PROT_WRITE
+        s32 protResult = mprotect((u8 *)linuxHandle + pageOffset, linuxHandle->block.size + sizeof(LinuxMemoryBlock) - pageOffset, PROT_READ|PROT_EXEC);
         result = protResult == 0;
     }
 

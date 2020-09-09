@@ -488,7 +488,16 @@ expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
 internal void
 print_token(Token token)
 {
-    fprintf(stdout, "%.*s:%d:%d: '%.*s': '%.*s' (indent = %d)\n", STR_FMT(token.origin.filename),
-            token.origin.line, token.origin.column, STR_FMT(gTokenKindName[token.kind]),
-            STR_FMT(token.value), token.indent);
+    if (token.kind == Token_Newline)
+    {
+        fprintf(stdout, "%.*s:%4d:%03d: %.*s: '\\n' (indent = %d)\n", STR_FMT(token.origin.filename),
+                token.origin.line, token.origin.column, STR_FMT(gTokenKindName[token.kind]),
+                token.indent);
+    }
+    else
+    {
+        fprintf(stdout, "%.*s:%4d:%03d: %.*s: '%.*s' (indent = %d)\n", STR_FMT(token.origin.filename),
+                token.origin.line, token.origin.column, STR_FMT(gTokenKindName[token.kind]),
+                STR_FMT(token.value), token.indent);
+    }
 }
