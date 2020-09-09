@@ -98,11 +98,9 @@ internal PLATFORM_EXECUTABLE_MEMORY(linux_executable_memory)
     if (block)
     {
         s64 pageSize = sysconf(_SC_PAGESIZE);
-
         umm pageOffset = offset ? offset + sizeof(LinuxMemoryBlock) : 0;
         pageOffset = align_up(pageOffset, pageSize);
         LinuxMemoryBlock *linuxHandle = (LinuxMemoryBlock *)block;
-        // TODO(michiel): Remove PROT_WRITE
         s32 protResult = mprotect((u8 *)linuxHandle + pageOffset, linuxHandle->block.size + sizeof(LinuxMemoryBlock) - pageOffset, PROT_READ|PROT_EXEC);
         result = protResult == 0;
     }
