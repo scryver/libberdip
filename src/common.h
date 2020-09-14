@@ -214,6 +214,38 @@ reverse_bits(u32 b, u32 msb)
     return result & mask;
 }
 
+internal u16
+byteswap16(u16 be)
+{
+    u16 result = (((be & 0x00FF) << 8) |
+                  ((be & 0xFF00) >> 8));
+    return result;
+}
+
+internal u32
+byteswap32(u32 be)
+{
+    u32 result = (((be & 0x000000FF) << 24) |
+                  ((be & 0x0000FF00) <<  8) |
+                  ((be & 0x00FF0000) >>  8) |
+                  ((be & 0xFF000000) >> 24));
+    return result;
+}
+
+internal u64
+byteswap64(u64 be)
+{
+    u64 result = (((be & 0x00000000000000FF) << 56) |
+                  ((be & 0x000000000000FF00) << 40) |
+                  ((be & 0x0000000000FF0000) << 24) |
+                  ((be & 0x00000000FF000000) <<  8) |
+                  ((be & 0x000000FF00000000) >>  8) |
+                  ((be & 0x0000FF0000000000) >> 24) |
+                  ((be & 0x00FF000000000000) >> 40) |
+                  ((be & 0xFF00000000000000) >> 56));
+    return result;
+}
+
 typedef struct BitScanResult
 {
     b32 found;

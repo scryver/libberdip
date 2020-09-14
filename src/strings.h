@@ -281,7 +281,8 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 }
 
 // NOTE(michiel): Use this to clean up string formatting arguments (for usage with "%.*s")
-// TODO(michiel): Have our own printf with %S to support strings
+// TODO(michiel): Have our own printf with %S to support strings,
+// also support extras for upper/lower/snake/camel/capitalize/titleize etc
 #define STR_FMT(s)  safe_truncate_to_u32((s).size), (s).data
 
 #define static_string(c) (String){sizeof(c) - 1, (u8 *)c}
@@ -596,6 +597,7 @@ append_string(String base, String suffix, u32 maxCount)
 internal String
 append_string_fmt(String base, u32 maxCount, const char *fmt, ...)
 {
+    i_expect(base.size < maxCount);
     va_list args;
     va_start(args, fmt);
 
