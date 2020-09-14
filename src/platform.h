@@ -7,22 +7,7 @@
 #include "./keys.h"
 #include "./fonts.h"
 #include "./files.h"
-
-//
-// NOTE(michiel): Threading
-//
-
-struct WorkQueue;
-#define WORK_QUEUE_CALLBACK(name)      void name(WorkQueue *queue, void *data)
-typedef WORK_QUEUE_CALLBACK(WorkQueueCallback);
-
-#define ADD_WORK_ENTRY(name)           void name(WorkQueue *queue, \
-WorkQueueCallback *callback, \
-void *data)
-typedef ADD_WORK_ENTRY(AddWorkEntry);
-
-#define COMPLETE_ALL_WORK(name)        void name(WorkQueue *queue)
-typedef COMPLETE_ALL_WORK(CompleteAllWork);
+#include "./threading.h"
 
 typedef enum MouseButtons
 {
@@ -102,8 +87,9 @@ is_modified(Keyboard *keyboard, KeyModifiers mod)
 
 struct API
 {
-    MemoryAPI memory;
-    FileAPI file;
+    MemoryAPI    memory;
+    FileAPI      file;
+    ThreadingAPI threading;
 
     b32 closeProgram;
 
