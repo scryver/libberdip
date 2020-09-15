@@ -213,6 +213,11 @@ struct TempArenaMemory
     umm used;
 };
 
+#define arena_allocate_struct(a, t, i)            (t *)arena_allocate_size((a), sizeof(t), i)
+#define arena_allocate_array(a, t, c, i)          (t *)arena_allocate_size((a), sizeof(t)*c, i)
+#define arena_allocate_copy_struct(a, t, s, i)    (t *)arena_allocate_copy((a), s, sizeof(t), i)
+#define arena_allocate_copy_array(a, t, c, s, i)  (t *)arena_allocate_copy((a), s, sizeof(t)*c, i)
+
 //
 // NOTE(michiel): Stretchy buf, supported by a platform allocator (so a minimum of MEMORY_MINIMUM_PLATFORM_BLOCK_SIZE)
 //
