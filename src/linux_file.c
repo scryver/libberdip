@@ -184,6 +184,7 @@ GET_ALL_FILE_OF_TYPE_BEGIN(linux_get_all_files_of_type_begin)
 
     void *allocated = allocate_size(allocator, sizeof(LinuxFileGroup), 0);
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)allocated;
+    result.allocator = allocator;
     result.platform = linuxFileGroup;
     result.fileCount = 0;
     linuxFileGroup->wildcard = matchPattern;
