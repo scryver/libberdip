@@ -2,6 +2,10 @@
 // NOTE(michiel): Platform builtin allocator (use for easy platform allocations, used with big data sizes)
 //
 
+#ifndef MEMORY_PLATFORM_REAL_SIZE
+#error MEMORY_PLATFORM_REAL_SIZE not defined, make sure to include a platform allocator
+#endif
+
 internal ALLOCATE_MEMORY_SIZE(platform_allocate_size)
 {
     if (!(flags & Memory_AlignMask))
@@ -16,8 +20,7 @@ internal ALLOCATE_MEMORY_SIZE(platform_allocate_size)
 
     PlatformMemoryBlock *block = gMemoryApi->allocate_memory(size, flags);
     i_expect(block);
-    //i_expect(((umm)block->base - (umm)block) == sizeof(StdMemoryBlock));
-    //i_expect(((umm)block->base - (umm)block) == sizeof(LinuxMemoryBlock));
+    i_expect(((umm)block->base - (umm)block) == MEMORY_PLATFORM_REAL_SIZE);
     result = (void *)block->base;
 
     i_expect(((umm)result & (alignment - 1)) == 0);
@@ -52,7 +55,7 @@ internal REALLOCATE_MEMORY_SIZE(platform_reallocate_size)
     PlatformMemoryBlock *oldBlock = 0;
     if (memory)
     {
-        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
+        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - MEMORY_PLATFORM_REAL_SIZE);
     }
     PlatformMemoryBlock *newBlock = gMemoryApi->reallocate_memory(oldBlock, size, flags);
     i_expect(newBlock);
@@ -65,7 +68,7 @@ internal DEALLOCATE_MEMORY(platform_deallocate)
     PlatformMemoryBlock *oldBlock = 0;
     if (memory)
     {
-        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - sizeof(PlatformMemoryBlock));
+        oldBlock = (PlatformMemoryBlock *)((u8 *)memory - MEMORY_PLATFORM_REAL_SIZE);
         oldBlock = gMemoryApi->deallocate_memory(oldBlock);
         memory = oldBlock ? oldBlock->base : 0;
     }

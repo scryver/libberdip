@@ -433,6 +433,17 @@ match_token(Tokenizer *tokenizer, TokenKind tokenKind)
     return result;
 }
 
+internal b32
+match_token_name(Tokenizer *tokenizer, String name)
+{
+    Token match = peek_token(tokenizer);
+    b32 result = is_token_kind(match, Token_Name) && (match.value == name);
+    if (result) {
+        get_token(tokenizer);
+    }
+    return result;
+}
+
 internal Token
 expect_token(Tokenizer *tokenizer, TokenKind tokenKind)
 {

@@ -226,7 +226,7 @@ struct TempArenaMemory
 //
 //
 
-#define MBUF(t, n)   ((t) *(n))
+#define MBUF(t, n)   t *n
 
 #define MEMORY_BUF_MAGIC 0xB0FFE20123456789
 struct MemoryBuffer

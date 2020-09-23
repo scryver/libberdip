@@ -14,6 +14,8 @@ struct StdMemoryBlock
 };
 compile_expect(sizeof(StdMemoryBlock) == 64);
 
+#define MEMORY_PLATFORM_REAL_SIZE sizeof(StdMemoryBlock)
+
 struct StdGlobalMemory
 {
     TicketMutex mutex;

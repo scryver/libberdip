@@ -117,4 +117,3 @@ internal INIT_MEMORY_API(linux_memory_api)
     memoryApi->deallocate_all    = linux_deallocate_all_memory;
     memoryApi->executable_memory = linux_executable_memory;
 }
-

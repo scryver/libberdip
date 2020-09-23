@@ -15,6 +15,8 @@ struct LinuxMemoryBlock
 };
 compile_expect(sizeof(LinuxMemoryBlock) == 64);
 
+#define MEMORY_PLATFORM_REAL_SIZE sizeof(LinuxMemoryBlock)
+
 struct LinuxGlobalMemory
 {
     TicketMutex mutex;

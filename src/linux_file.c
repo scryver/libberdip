@@ -20,6 +20,12 @@ typedef struct LinuxFileGroup
     s32 lastFileHandle;
 } LinuxFileGroup;
 
+typedef struct LinuxFileDirGroup
+{
+    DIR *dir;
+    struct dirent *dirData;
+} LinuxFileDirGroup;
+
 internal s32
 get_linux_handle(ApiFile *apiFile)
 {
@@ -37,7 +43,9 @@ linux_find_file_in_folder(String wildcard, LinuxFindFile *finder)
         struct dirent *fileData = readdir(finder->dir);
         while (fileData)
         {
-            if (match_pattern(wildcard, string(fileData->d_name)))
+            // NOTE(michiel): Only match files
+            // TODO(michiel): Support symlinks
+            if ((fileData->d_type == DT_REG) && match_pattern(wildcard, string(fileData->d_name)))
             {
                 result = true;
                 finder->fileData = fileData;
@@ -80,6 +88,7 @@ linux_file_size(s32 fileHandle)
 internal
 GET_FILE_SIZE(linux_get_file_size)
 {
+    // TODO(michiel): Maybe use stat here?
     s32 linuxHandle = get_linux_handle(apiFile);
     umm result = 0;
     if ((linuxHandle >= 0))
@@ -184,6 +193,7 @@ GET_ALL_FILE_OF_TYPE_BEGIN(linux_get_all_files_of_type_begin)
 
     void *allocated = allocate_size(allocator, sizeof(LinuxFileGroup), 0);
     LinuxFileGroup *linuxFileGroup = (LinuxFileGroup *)allocated;
+    result.allocator = allocator;
     result.platform = linuxFileGroup;
     result.fileCount = 0;
     linuxFileGroup->wildcard = matchPattern;
@@ -259,6 +269,131 @@ OPEN_NEXT_FILE(linux_open_next_file)
             {
                 linuxFileGroup->fileAvailable = false;
             }
+        }
+        chdir(currentPath);
+    }
+
+    return result;
+}
+
+internal void
+linux_get_next_file_dir(LinuxFileDirGroup *group)
+{
+    // TODO(michiel): Symbolic links
+    if (group->dir)
+    {
+        group->dirData = readdir(group->dir);
+        while (group->dirData &&
+               (group->dirData->d_type != DT_REG))
+        {
+            if (group->dirData->d_type == DT_DIR)
+            {
+                if (group->dirData->d_name[0] != '.')
+                {
+                    break;
+                }
+                else if ((group->dirData->d_name[1] != '\0') &&
+                         (group->dirData->d_name[1] != '.'))
+                {
+                    break;
+                }
+            }
+            group->dirData = readdir(group->dir);
+        }
+    }
+    else
+    {
+        group->dirData = 0;
+    }
+}
+
+internal
+GET_ALL_IN_DIR_BEGIN(linux_get_all_in_dir_begin)
+{
+    ApiFileDirGroup result = {};
+
+    void *allocated = allocate_size(allocator, sizeof(LinuxFileDirGroup) + 1024, 0);
+    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)allocated;
+    result.allocator = allocator;
+    result.platform = allocated;
+    result.basePath = {0, (u8 *)(linuxFileDirGroup + 1)};
+    result.fileDirCount = 0;
+
+    i_expect(directory.data[directory.size] == 0);
+    linuxFileDirGroup->dir = opendir(to_cstring(directory));
+
+    if (linuxFileDirGroup->dir)
+    {
+        char pathBuffer[1024];
+        char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
+
+        s32 dirFd = dirfd(linuxFileDirGroup->dir);
+        fchdir(dirFd);
+        char *path = getcwd((char *)result.basePath.data, 1024);
+        result.basePath = string(path);
+        chdir(currentPath);
+
+        linux_get_next_file_dir(linuxFileDirGroup);
+        while (linuxFileDirGroup->dirData)
+        {
+            ++result.fileDirCount;
+            linux_get_next_file_dir(linuxFileDirGroup);
+        }
+    }
+    closedir(linuxFileDirGroup->dir);
+
+    linuxFileDirGroup->dir = opendir(to_cstring(directory));
+    linux_get_next_file_dir(linuxFileDirGroup);
+
+    return result;
+}
+
+internal
+GET_ALL_IN_DIR_END(linux_get_all_in_dir_end)
+{
+    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)fileDirGroup->platform;
+    if (linuxFileDirGroup)
+    {
+        if (linuxFileDirGroup->dir)
+        {
+            closedir(linuxFileDirGroup->dir);
+            linuxFileDirGroup->dir = 0;
+        }
+
+        linuxFileDirGroup = (LinuxFileDirGroup *)deallocate(fileDirGroup->allocator, linuxFileDirGroup);
+    }
+}
+
+internal
+GET_NEXT_IN_DIR(linux_get_next_in_dir)
+{
+    ApiFileDir result = {};
+
+    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)fileDirGroup->platform;
+
+    if (linuxFileDirGroup->dir)
+    {
+        s32 dirFd = dirfd(linuxFileDirGroup->dir);
+
+        char pathBuffer[1024];
+        char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
+
+        fchdir(dirFd);
+        if (linuxFileDirGroup->dirData)
+        {
+            result.platform = linuxFileDirGroup->dirData; // TODO(michiel): Maybe handy?
+            result.name = string(linuxFileDirGroup->dirData->d_name);
+            if (linuxFileDirGroup->dirData->d_type == DT_REG) {
+                result.kind = FileDir_File;
+                //result.fileSize = linux_file_size(linuxHandle);
+                result.fileSize = 0;
+            } else {
+                i_expect(linuxFileDirGroup->dirData->d_type == DT_DIR);
+                result.kind = FileDir_Directory;
+                result.fileCount = 0;
+            }
+
+            linux_get_next_file_dir(linuxFileDirGroup);
         }
         chdir(currentPath);
     }
@@ -437,12 +572,16 @@ WRITE_FMT_TO_FILE(linux_write_fmt_to_file)
 
 internal INIT_FILE_API(linux_file_api)
 {
+    fileApi->pathSep = "/";
     fileApi->file_error = linux_file_error;
     fileApi->read_entire_file = linux_read_entire_file;
     fileApi->write_entire_file = linux_write_entire_file;
     fileApi->get_all_files_of_type_begin = linux_get_all_files_of_type_begin;
     fileApi->get_all_files_of_type_end = linux_get_all_files_of_type_end;
     fileApi->open_next_file = linux_open_next_file;
+    fileApi->get_all_in_dir_begin = linux_get_all_in_dir_begin;
+    fileApi->get_all_in_dir_end = linux_get_all_in_dir_end;
+    fileApi->get_next_in_dir = linux_get_next_in_dir;
     fileApi->open_file = linux_open_file;
     fileApi->close_file = linux_close_file;
     fileApi->get_file_size = linux_get_file_size;

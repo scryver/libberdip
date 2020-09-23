@@ -25,6 +25,31 @@ typedef struct ApiFileGroup
     void *platform;
 } ApiFileGroup;
 
+typedef enum FileDirKind
+{
+    FileDir_None,
+    FileDir_File,
+    FileDir_Directory,
+} FileDirKind;
+typedef struct ApiFileDir
+{
+    FileDirKind kind;
+    String name;
+    union {
+        u64 fileSize;  // NOTE(michiel): Valid for files
+        u64 fileCount; // NOTE(michiel): Valid for directories
+    };
+    void *platform;
+} ApiFileDir;
+
+typedef struct ApiFileDirGroup
+{
+    MemoryAllocator *allocator;
+    String basePath;
+    u32 fileDirCount;
+    void *platform;
+} ApiFileDirGroup;
+
 typedef enum FileCursorReference
 {
     FileCursor_StartOfFile,
@@ -73,6 +98,16 @@ typedef GET_ALL_FILE_OF_TYPE_END(GetAllFileOfTypeEnd);
 #define OPEN_NEXT_FILE(name) ApiFile name(ApiFileGroup *fileGroup)
 typedef OPEN_NEXT_FILE(OpenNextFile);
 
+// NOTE(michiel): Directory listing
+#define GET_ALL_IN_DIR_BEGIN(name) ApiFileDirGroup name(MemoryAllocator *allocator, String directory)
+typedef GET_ALL_IN_DIR_BEGIN(GetAllInDirBegin);
+
+#define GET_ALL_IN_DIR_END(name) void name(ApiFileDirGroup *fileDirGroup)
+typedef GET_ALL_IN_DIR_END(GetAllInDirEnd);
+
+#define GET_NEXT_IN_DIR(name) ApiFileDir name(ApiFileDirGroup *fileDirGroup)
+typedef GET_NEXT_IN_DIR(GetNextInDir);
+
 // NOTE(michiel): Open single file
 #define OPEN_FILE(name) ApiFile name(String filename, u32 flags)
 typedef OPEN_FILE(OpenFile);
@@ -101,6 +136,8 @@ typedef CLOSE_FILE(CloseFile);
 
 typedef struct FileAPI
 {
+    char *pathSep;
+
     FileError *file_error;
 
     ReadEntireFile *read_entire_file;
@@ -109,6 +146,10 @@ typedef struct FileAPI
     GetAllFileOfTypeBegin *get_all_files_of_type_begin;
     GetAllFileOfTypeEnd *get_all_files_of_type_end;
     OpenNextFile *open_next_file;
+
+    GetAllInDirBegin *get_all_in_dir_begin;
+    GetAllInDirEnd *get_all_in_dir_end;
+    GetNextInDir *get_next_in_dir;
 
     OpenFile *open_file;
     CloseFile *close_file;
