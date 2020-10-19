@@ -1732,6 +1732,19 @@ normalize(v4 a)
 }
 
 internal v4
+normalize_or_zero(v4 a)
+{
+    v4 result = {};
+
+    f32 lengthSqr = length_squared(a);
+    if (lengthSqr > square(0.0001f))
+    {
+        result = a * (1.0f / square_root(lengthSqr));
+    }
+    return result;
+}
+
+internal v4
 absolute(v4 a)
 {
     v4 result;
@@ -2153,6 +2166,13 @@ inline v2
 get_dim(Rectangle2 a)
 {
     v2 result = a.max - a.min;
+    return result;
+}
+
+inline v2
+get_center(Rectangle2 a)
+{
+    v2 result = 0.5f * (a.min + a.max);
     return result;
 }
 

@@ -7,6 +7,8 @@
 #endif
 compile_expect(MEMORY_MINIMUM_PLATFORM_BLOCK_SIZE <= gigabytes(2));
 
+#define MEMORY_PLATFORM_REAL_SIZE  64
+
 enum MemoryAllocFlags
 {
     Memory_AlignMask   = 0x0000FFFF,

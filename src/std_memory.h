@@ -12,7 +12,7 @@ struct StdMemoryBlock
     StdMemoryBlock *next;
     u64 padding[2];
 };
-compile_expect(sizeof(StdMemoryBlock) == 64);
+compile_expect(sizeof(StdMemoryBlock) == MEMORY_PLATFORM_REAL_SIZE);
 
 #define MEMORY_PLATFORM_REAL_SIZE sizeof(StdMemoryBlock)
 

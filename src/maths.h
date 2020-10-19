@@ -724,3 +724,26 @@ u64_from_f64_truncate(f64 number)
 {
     return (u64)number;
 }
+
+internal f32
+safe_ratio_n(f32 num, f32 den, f32 N)
+{
+    f32 result = N;
+    if (den != 0.0f)
+    {
+        result = num / den;
+    }
+    return result;
+}
+
+internal f32
+safe_ratio0(f32 num, f32 den)
+{
+    return safe_ratio_n(num, den, 0.0f);
+}
+
+internal f32
+safe_ratio1(f32 num, f32 den)
+{
+    return safe_ratio_n(num, den, 1.0f);
+}

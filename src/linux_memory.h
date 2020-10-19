@@ -13,9 +13,7 @@ struct LinuxMemoryBlock
     LinuxMemoryBlock *next;
     u64 padding[2];
 };
-compile_expect(sizeof(LinuxMemoryBlock) == 64);
-
-#define MEMORY_PLATFORM_REAL_SIZE sizeof(LinuxMemoryBlock)
+compile_expect(sizeof(LinuxMemoryBlock) == MEMORY_PLATFORM_REAL_SIZE);
 
 struct LinuxGlobalMemory
 {
