@@ -2,6 +2,8 @@
 // NOTE(michiel): Files
 //
 
+// TODO(michiel): Add an atomic replace file function (write to temp and then a rename)
+
 #define MAKE_MAGIC(a, b, c, d)    ((d << 24) | (c << 16) | (b << 8) | a)
 
 typedef enum FileOpenType

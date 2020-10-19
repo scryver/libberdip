@@ -9,22 +9,6 @@
 #include "./files.h"
 #include "./threading.h"
 
-typedef enum MouseButtons
-{
-    Mouse_Left      = 0x01,
-    Mouse_Middle    = 0x02,
-    Mouse_Right     = 0x04,
-    Mouse_Extended1 = 0x08,
-    Mouse_Extended2 = 0x10,
-} MouseButtons;
-typedef struct Mouse
-{
-    v2  pixelPosition;
-    v2  relativePosition; // NOTE(michiel): 0, 0 is is topleft (or should it be 0, 1)
-    s32 scroll; // NOTE(michiel): + for scroll up, - for down
-    u32 mouseDowns;
-} Mouse;
-
 typedef struct Key
 {
     b8 isDown;
@@ -32,6 +16,25 @@ typedef struct Key
     b8 isReleased;
     u8 edgeCount;
 } Key;
+
+typedef enum MouseButtons
+{
+    Mouse_None,
+    Mouse_Left,
+    Mouse_Middle,
+    Mouse_Right,
+    Mouse_Extended1,
+    Mouse_Extended2,
+    MouseButtonCount
+} MouseButtons;
+typedef struct Mouse
+{
+    v2  pixelPosition;
+    v2  relativePosition; // NOTE(michiel): (0, 0) is the center, (-1, -1) is top left, (1, 1) bottom right
+    s32 scroll;           // NOTE(michiel): + for scroll up, - for down
+    Key buttons[MouseButtonCount];
+} Mouse;
+
 typedef enum KeyModifiers
 {
     KeyMod_None = 0x00,

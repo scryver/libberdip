@@ -96,6 +96,11 @@ internal PLATFORM_CREATE_WORK_QUEUE(linux_create_work_queue)
         pthread_t tid;
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (pthread_attr_setstacksize(&attr, 0x100000))
+        {
+            // TODO(michiel): Error handling!!
+            fprintf(stderr, "Failed to set the thread stack size to 1MB\n");
+        }
         int result = pthread_create(&tid, &attr, linux_thread_proc, queue);
         unused(result); // TODO(michiel): Check for errors
         pthread_attr_destroy(&attr);
