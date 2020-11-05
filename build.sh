@@ -8,7 +8,7 @@ buildDir="$curDir/gebouw"
 
 flags="-O0 -g -ggdb -Wall -Werror -pedantic -std=c++11"
 
-exceptions="-Wno-unused-function -Wno-writable-strings -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-nested-anon-types"
+exceptions="-Wno-unused-function -Wno-writable-strings -Wno-gnu-zero-variadic-macro-arguments -Wno-gnu-anonymous-struct -Wno-missing-braces -Wno-nested-anon-types -Wno-c99-extensions"
 
 echo "Building LIBBERDIP"
 

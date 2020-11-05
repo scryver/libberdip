@@ -4,7 +4,7 @@
 #include "platform.h"
 #include "std_memory.h"
 
-global MemoryAPI gMemoryApi;
+global MemoryAPI *gMemoryApi;
 //#include "base.h"
 
 #define STBTT_ifloor(x)  ((int)__builtin_floor(x))
@@ -141,6 +141,8 @@ add_character(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoader *
 
 int main(int argc, char **argv)
 {
+    MemoryAPI memApi = {};
+    gMemoryApi = &memApi;
     if (argc >= 3)
     {
         char *inputFilename = argv[1];
@@ -153,7 +155,7 @@ int main(int argc, char **argv)
 
         MemoryAllocator arenaAllocator = {};
         MemoryArena arena = {};
-        std_memory_api(&gMemoryApi);
+        std_memory_api(gMemoryApi);
         initialize_arena_allocator(&arena, &arenaAllocator);
 
         Buffer inFile = read_entire_file(&arenaAllocator, string(inputFilename));
