@@ -60,23 +60,21 @@ load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoad
     u8 *monoBitmap = stbtt_GetCodepointBitmap(fontInfo, scale, scale, (s32)codePoint,
                                               &width, &height, xOffset, yOffset);
 
-    result.width = width;
-    result.height = height;
-    result.rowStride = width;
-
-    s32 pitch = sizeof(u32) * width;
+    result.width = width + 2;
+    result.height = height + 2;
+    result.rowStride = width + 2;
 
     result.pixels = allocate_array(allocator, u32, result.height * result.width, Memory_NoClear);
 
     fprintf(stderr, "Bitmap '%c' size: %d x %d\n", codePoint, result.width, result.height);
 
     u8 *source = monoBitmap;
-    u8 *destRow = (u8 *)result.pixels; // + (result.height - 1) * pitch;
+    u32 *destRow = result.pixels + result.rowStride; // + (result.height - 1) * pitch;
 
-    for (s32 y = 0; y < height; ++y)
+    for (s32 y = 1; y < (result.height - 1); ++y)
     {
-        u32 *dest = (u32 *)destRow;
-        for (s32 x = 0; x < width; ++x)
+        u32 *dest = destRow;
+        for (s32 x = 1; x < (result.width - 1); ++x)
         {
             f32 gray = (f32)(*source++ & 0xFF);
             v4 texel = {255.0f, 255.0f, 255.0f, gray};
@@ -91,7 +89,7 @@ load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoad
         }
 
         //destRow -= pitch;
-        destRow += pitch;
+        destRow += result.rowStride;
     }
 
 
