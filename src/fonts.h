@@ -20,6 +20,7 @@ struct FontInfo
 struct BitmapFont
 {
     FontInfo info;
+    u32 renderTexIndexOffset;
 
     FontGlyph *glyphs; // [glyphCount]
     u16 *unicodeMap; // [onePastHighestCodePoint]
@@ -62,6 +63,8 @@ unpack_font(MemoryAllocator *allocator, u8 *fontData, BitmapFont *result)
 internal u32
 get_code_point_from_utf8(u8 *startOfUtf8, u32 *codePoint)
 {
+    // TODO(michiel): Not safe on misformed UTF-8!!!!!
+
     // NOTE(michiel): Returns amounts of bytes to skip, 0 on malformed encoding.
     u8 *source = startOfUtf8;
     u32 bytes = 0;
