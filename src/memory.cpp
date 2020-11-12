@@ -2,6 +2,8 @@
 // NOTE(michiel): Platform builtin allocator (use for easy platform allocations, used with big data sizes)
 //
 
+// TODO(michiel): Change all pointer use of gMemoryApi to direct usage
+
 #ifndef MEMORY_PLATFORM_REAL_SIZE
 #error MEMORY_PLATFORM_REAL_SIZE not defined, make sure to include a platform allocator
 #endif
@@ -381,6 +383,11 @@ internal void
 mmap_deallocate(MemoryMap *map)
 {
     gMemoryApi->deallocate_memory(map->block);
+    map->block = 0;
+    map->keys = 0;
+    map->values = 0;
+    map->count = 0;
+    map->maxCount = 0;
 }
 
 internal void

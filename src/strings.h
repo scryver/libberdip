@@ -300,6 +300,13 @@ string(umm size, const void *data)
 #ifdef __cplusplus
 
 internal String
+string(u8 *cString)
+{
+    // NOTE(michiel): Grumble...
+    return string(string_length((char *)cString), cString);
+}
+
+internal String
 string(umm size, const char *data)
 {
     // NOTE(michiel): F*ck const ;-)

@@ -25,6 +25,7 @@ compile_expect(sizeof(umm) == sizeof(size_t));
 #define enum8(name)             u8
 #define enum16(name)            u16
 #define enum32(name)            u32
+#define enum64(name)            u64
 
 typedef struct DivModU32
 {
