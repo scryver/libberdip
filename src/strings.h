@@ -702,6 +702,10 @@ parse_half_hex_byte(char c)
 internal s64
 number_from_string(String s)
 {
+    b32 negative = s.size && (s.data[0] == '-');
+    if (negative) {
+        advance(&s);
+    }
     s64 result = 0;
     s64 base = 10;
     if ((s.size > 2) &&
@@ -711,22 +715,19 @@ number_from_string(String s)
             (s.data[1] == 'B'))
         {
             base = 2;
-            --s.size;
-            ++s.data;
+            advance(&s);
         }
         else if ((s.data[1] == 'x') ||
                  (s.data[1] == 'X'))
         {
             base = 16;
-            --s.size;
-            ++s.data;
+            advance(&s);
         }
         else
         {
             base = 8;
         }
-        --s.size;
-        ++s.data;
+        advance(&s);
     }
 
     for (u32 sIdx = 0; sIdx < s.size; ++sIdx)
@@ -737,7 +738,7 @@ number_from_string(String s)
         i_expect(adding < base);
         result += adding;
     }
-    return result;
+    return negative ? -result : result;
 }
 
 internal u64
