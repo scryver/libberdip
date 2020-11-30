@@ -1,5 +1,11 @@
 // TODO(michiel): @Remove <stdio> printf and FILE *
+#ifndef LIBBERDIP_NO_STDIO
+#define LIBBERDIP_NO_STDIO 0
+#endif
+
+#if !LIBBERDIP_NO_STDIO
 #include <stdio.h>
+#endif
 
 #include <stdarg.h>    // va_start, va_end
 #include <stddef.h>    // size_t, ssize_t
@@ -34,6 +40,7 @@
 #if _MSC_VER
 #undef  COMPILER_MSVC
 #define COMPILER_MSVC 1
+#include <intrin.h>
 #elif __clang__
 #undef  COMPILER_LLVM
 #define COMPILER_LLVM 1
@@ -69,10 +76,22 @@
 #if LIBBERDIP_EXPECT
 #if __has_builtin(__builtin_trap)
 #define i_expect_simple(expr)   ((expr) ? (void)0 : __builtin_trap())
+
+#if LIBBERDIP_NO_STDIO
+#define i_expect                i_expect_simple
+#else
 #define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); __builtin_trap(); }
+#endif
+
 #else
 #define i_expect_simple(expr)   ((expr) ? (void)0 : (*(volatile int *)0 = 0))
+
+#if LIBBERDIP_NO_STDIO
+#define i_expect                i_expect_simple
+#else
 #define i_expect(expr)          if (!(expr)) { fprintf(stderr, "%s:%d:Expectation failed: '%s'\n", __FILE__, __LINE__, #expr); *(volatile int *)0 = 0; }
+#endif
+
 #endif
 #else  // LIBBERDIP_EXPECT
 #define i_expect_simple(expr)
@@ -195,8 +214,13 @@ internal u32 safe_truncate_to_u32(u64 value) { i_expect(value <= U32_MAX); retur
 internal u16 safe_truncate_to_u16(u64 value) { i_expect(value <= U16_MAX); return (u16)(value & U16_MAX); }
 internal u8  safe_truncate_to_u8(u64 value)  { i_expect(value <= U8_MAX);  return (u8)(value & U8_MAX); }
 internal s32 safe_truncate_to_s32(s64 value) { i_expect(value <= (s64)S32_MAX); i_expect(value >= (s64)S32_MIN); return (s32)value; }
-internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)(s32)S16_MAX); i_expect(value >= (s64)(s32)S16_MIN); return (s16)value; }
-internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)(s32)(s16)S8_MAX); i_expect(value >= (s64)(s32)(s16)S8_MIN); return (s8)value; }
+#if COMPILER_MSVC
+internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= 0x7FFFLL); i_expect(value >= 0xFFFFFFFFFFFF8000LL); return (s16)value; }
+internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= 0x7FLL); i_expect(value >= 0xFFFFFFFFFFFFFF80LL); return (s8)value; }
+#else
+internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)S16_MAX); i_expect(value >= (s64)S16_MIN); return (s16)value; }
+internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)S8_MAX); i_expect(value >= (s64)S8_MIN); return (s8)value; }
+#endif
 
 internal u32
 reverse_bits(u32 b, u32 msb)
@@ -483,7 +507,7 @@ internal Buffer
 save_advance(Buffer b, u32 amount)
 {
     if (amount > b.size) {
-        amount = b.size;
+        amount = safe_truncate_to_u32(b.size);
     }
     return advance(b, amount);
 }

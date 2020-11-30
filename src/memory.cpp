@@ -348,6 +348,7 @@ mbuf_grow_(void **bufferAddress, umm newCount, umm elemSize)
     *bufferAddress = memBuf->data;
 }
 
+#if !LIBBERDIP_NO_STDIO
 internal void
 mbuf_printf_(void **bufferAddress, char *fmt, ...)
 {
@@ -374,6 +375,7 @@ mbuf_printf_(void **bufferAddress, char *fmt, ...)
 
     *bufferAddress = buf;
 }
+#endif
 
 //
 // NOTE(michiel): Map, supported by a platform allocator (so a minimum of MEMORY_MINIMUM_PLATFORM_BLOCK_SIZE)
@@ -584,7 +586,7 @@ minterned_string(MemoryInterns *interns, String str)
             umm newSize = offset_of(InternedString, data) + str.size + 1;
             InternedString *newIntern = (InternedString *)arena_allocate_size(&interns->arena, newSize, align_memory_alloc(1, false));
             newIntern->next = intern;
-            newIntern->size = str.size;
+            newIntern->size = safe_truncate_to_u32(str.size);
             copy(str.size, str.data, newIntern->data);
             newIntern->data[str.size] = 0;
             mmap_u64_put(&interns->hashMap, key, newIntern);
@@ -601,6 +603,7 @@ minterned_string(MemoryInterns *interns, char *str)
     return minterned_string(interns, string(str));
 }
 
+#if !LIBBERDIP_NO_STDIO
 internal String
 minterned_string_fmt(MemoryInterns *interns, umm maxTempData, char *tempData, char *fmt, ...)
 {
@@ -617,3 +620,4 @@ minterned_string_fmt(MemoryInterns *interns, umm maxTempData, char *tempData, ch
     tempData[total] = 0;
     return minterned_string(interns, string(total, tempData));
 }
+#endif

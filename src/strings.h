@@ -5,6 +5,17 @@
 global const char gDecimalChars[]  = "0123456789";
 global const char gLowerHexChars[] = "0123456789abcdef";
 global const char gUpperHexChars[] = "0123456789ABCDEF";
+#if COMPILER_MSVC
+global const u32 gNumFromHex[256] = {
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
+    0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 10, 11, 12, 13, 14, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+#else
 global const u32 gNumFromHex[256] = {
     ['0'] = 0,
     ['1'] = 1,
@@ -23,6 +34,7 @@ global const u32 gNumFromHex[256] = {
     ['e'] = 14, ['E'] = 14,
     ['f'] = 15, ['F'] = 15,
 };
+#endif
 
 internal inline u32
 string_length(const char *cString)
@@ -164,7 +176,7 @@ normalize(String str, u32 maxDestSize, u8 *dest)
             result.data[result.size++] = ' ';
             space = false;
         }
-        result.data[result.size++] = to_lower_case(str.data[i]);
+        result.data[result.size++] = (u8)to_lower_case(str.data[i]);
         first = false;
     }
 
@@ -180,7 +192,7 @@ to_lower(String str, u32 maxDestSize, u8 *dest)
     String result = {str.size, dest};
 
     for (u32 i = 0; i < str.size; ++i) {
-        result.data[i] = to_lower_case(str.data[i]);
+        result.data[i] = (u8)to_lower_case(str.data[i]);
     }
 
     result.data[result.size] = 0;
@@ -195,7 +207,7 @@ to_upper(String str, u32 maxDestSize, u8 *dest)
     String result = {str.size, dest};
 
     for (u32 i = 0; i < str.size; ++i) {
-        result.data[i] = to_upper_case(str.data[i]);
+        result.data[i] = (u8)to_upper_case(str.data[i]);
     }
 
     result.data[result.size] = 0;
@@ -216,7 +228,7 @@ to_camel(String str, u32 maxDestSize, u8 *dest)
             continue;
         }
 
-        result.data[index++] = toUpper ? to_upper_case(result.data[i]) : result.data[i];
+        result.data[index++] = toUpper ? (u8)to_upper_case(result.data[i]) : result.data[i];
         toUpper = !is_alpha(result.data[i]);
     }
 
@@ -248,7 +260,7 @@ titleize(String str, u32 maxDestSize, u8 *dest)
     if (str.size) {
         copy(str.size, str.data, result.data);
         result.size = str.size;
-        result.data[0] = to_upper_case(result.data[0]);
+        result.data[0] = (u8)to_upper_case(result.data[0]);
         result.data[result.size] = 0;
     }
 
@@ -272,7 +284,7 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
             continue;
         }
 
-        result.data[result.size++] = (space || first) ? to_upper_case(str.data[i]) : str.data[i];
+        result.data[result.size++] = (space || first) ? (u8)to_upper_case(str.data[i]) : str.data[i];
         first = false;
         space = !is_alpha(result.data[i]);
     }
@@ -285,7 +297,12 @@ capitalize(String str, u32 maxDestSize, u8 *dest)
 // also support extras for upper/lower/snake/camel/capitalize/titleize etc
 #define STR_FMT(s)  safe_truncate_to_u32((s).size), (s).data
 
+#if COMPILER_MSVC
+#define static_string(c) String{sizeof(c) - 1, (u8 *)c}
+#else
 #define static_string(c) (String){sizeof(c) - 1, (u8 *)c}
+#endif
+
 #define to_cstring(s)    ((char *)s.data)
 
 internal String
@@ -516,7 +533,7 @@ ends_with(String baseString, String expectedSuffix)
 internal String
 get_extension(String name)
 {
-    s32 dotPos = name.size - 1;
+    s32 dotPos = (s32)safe_truncate_to_u32(name.size) - 1;
     while (dotPos >= 0) {
         if (name.data[dotPos] == '.') {
             break;
@@ -534,7 +551,7 @@ get_extension(String name)
 internal String
 remove_extension(String name)
 {
-    s32 dotPos = name.size - 1;
+    s32 dotPos = (s32)safe_truncate_to_u32(name.size) - 1;
     while (dotPos >= 0) {
         if (name.data[dotPos] == '.') {
             break;
@@ -570,6 +587,7 @@ string_concat(String a, String b, umm destSize, char *dest)
     return result;
 }
 
+#if !LIBBERDIP_NO_STDIO
 internal String
 vstring_fmt(u32 maxDestCount, u8 *dest, const char *fmt, va_list args)
 {
@@ -589,6 +607,7 @@ string_fmt(u32 maxDestCount, u8 *dest, const char *fmt, ...)
     va_end(args);
     return result;
 }
+#endif
 
 internal String
 append_string(String base, String suffix, u32 maxCount)
@@ -601,6 +620,7 @@ append_string(String base, String suffix, u32 maxCount)
     return base;
 }
 
+#if !LIBBERDIP_NO_STDIO
 internal String
 append_string_fmt(String base, u32 maxCount, const char *fmt, ...)
 {
@@ -609,11 +629,12 @@ append_string_fmt(String base, u32 maxCount, const char *fmt, ...)
     va_start(args, fmt);
 
     String result = base;
-    String appended = vstring_fmt(maxCount - base.size, base.data + base.size, fmt, args);
+    String appended = vstring_fmt(maxCount - safe_truncate_to_u32(base.size), base.data + base.size, fmt, args);
     result.size += appended.size;
 
     return result;
 }
+#endif
 
 internal f64
 float_from_string(String s)
@@ -771,7 +792,7 @@ u8_from_hex(char *hex)
     result = parse_half_hex_byte(*hex++) << 4;
     result |= parse_half_hex_byte(*hex);
 
-    return result;
+    return safe_truncate_to_u8(result);
 }
 
 internal u16
@@ -905,6 +926,7 @@ match_pattern_c(char *pattern, char *str)
     return result;
 }
 
+#if !LIBBERDIP_NO_STDIO
 internal String
 string_from_ip4(u32 ip4addr, u32 maxDataCount, u8 *data)
 {
@@ -1032,6 +1054,7 @@ string_from_ip6(void *ip6src, u32 maxDataCount, u8 *data)
 
     return result;
 }
+#endif
 
 internal u32
 utf8_codepoint_size(String str)

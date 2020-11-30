@@ -18,8 +18,13 @@ typedef float    f32;
 typedef double   f64;
 typedef long double f80;
 
+#if COMPILER_MSVC
+typedef unsigned long long umm;
+typedef signed long long   smm;
+#else
 typedef unsigned long int umm;
 typedef signed long int   smm;
+#endif
 compile_expect(sizeof(umm) == sizeof(size_t));
 
 #define enum8(name)             u8

@@ -196,7 +196,7 @@ sign_of(f64 value)
 }
 
 internal f32
-truncate(f32 value)
+truncate32(f32 value)
 {
     f32 result;
     result = (f32)(s32)value;
@@ -204,7 +204,7 @@ truncate(f32 value)
 }
 
 internal f64
-truncate(f64 value)
+truncate64(f64 value)
 {
     f64 result;
     result = (f64)(s64)value;
@@ -225,7 +225,7 @@ union FloatMathVec
 #endif
 
 internal f32
-floor(f32 value)
+floor32(f32 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -241,7 +241,7 @@ floor(f32 value)
 }
 
 internal f64
-floor(f64 value)
+floor64(f64 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -256,7 +256,7 @@ floor(f64 value)
 }
 
 internal f32
-ceil(f32 value)
+ceil32(f32 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -271,7 +271,7 @@ ceil(f32 value)
 }
 
 internal f64
-ceil(f64 value)
+ceil64(f64 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -286,7 +286,7 @@ ceil(f64 value)
 }
 
 internal f32
-round(f32 value)
+round32(f32 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -301,7 +301,7 @@ round(f32 value)
 }
 
 internal f64
-round(f64 value)
+round64(f64 value)
 {
 #if MATH_USE_SSE4_FUNC
     FloatMathVec result;
@@ -316,18 +316,18 @@ round(f64 value)
 }
 
 internal f32
-fraction(f32 value)
+fraction32(f32 value)
 {
     f32 result;
-    result = value - floor(value);
+    result = value - floor32(value);
     return result;
 }
 
 internal f64
-fraction(f64 value)
+fraction64(f64 value)
 {
     f64 result;
-    result = value - floor(value);
+    result = value - floor64(value);
     return result;
 }
 
@@ -383,7 +383,7 @@ internal f32
 modulus01(f32 f)
 {
     f32 result;
-    result = f - floor(f);
+    result = f - floor32(f);
     return result;
 }
 
@@ -400,7 +400,7 @@ modulus(f32 x, f32 y)
 {
     i_expect(y != 0.0f);
     f32 result;
-    result = x - floor(x / y) * y;
+    result = x - floor32(x / y) * y;
     return result;
 }
 
@@ -549,6 +549,18 @@ rotate_left(u32 value, s32 amount)
     return result;
 }
 
+internal u64
+rotate_left(u64 value, s32 amount)
+{
+#if COMPILER_MSVC
+    u64 result = _rotl64(value, amount);
+#else
+    amount &= 63;
+    u64 result = (value << amount) | (value >> (64 - amount));
+#endif
+    return result;
+}
+
 internal u32
 rotate_right(u32 value, s32 amount)
 {
@@ -566,42 +578,42 @@ rotate_right(u32 value, s32 amount)
 internal s16
 s16_from_f32_round(f32 number)
 {
-    s16 result = (s16)round(number);
+    s16 result = (s16)round32(number);
     return result;
 }
 
 internal u16
 u16_from_f32_round(f32 number)
 {
-    u16 result = (u16)round(number);
+    u16 result = (u16)round32(number);
     return result;
 }
 
 internal s16
 s16_from_f32_floor(f32 number)
 {
-    s16 result = (s16)floor(number);
+    s16 result = (s16)floor32(number);
     return result;
 }
 
 internal u16
 u16_from_f32_floor(f32 number)
 {
-    u16 result = (u16)floor(number);
+    u16 result = (u16)floor32(number);
     return result;
 }
 
 internal s16
 s16_from_f32_ceil(f32 number)
 {
-    s16 result = (s16)ceil(number);
+    s16 result = (s16)ceil32(number);
     return result;
 }
 
 internal u16
 u16_from_f32_ceil(f32 number)
 {
-    u16 result = (u16)ceil(number);
+    u16 result = (u16)ceil32(number);
     return result;
 }
 
@@ -620,42 +632,42 @@ u16_from_f32_truncate(f32 number)
 internal s32
 s32_from_f32_round(f32 number)
 {
-    s32 result = (s32)round(number);
+    s32 result = (s32)round32(number);
     return result;
 }
 
 internal u32
 u32_from_f32_round(f32 number)
 {
-    u32 result = (u32)round(number);
+    u32 result = (u32)round32(number);
     return result;
 }
 
 internal s32
 s32_from_f32_floor(f32 number)
 {
-    s32 result = (s32)floor(number);
+    s32 result = (s32)floor32(number);
     return result;
 }
 
 internal u32
 u32_from_f32_floor(f32 number)
 {
-    u32 result = (u32)floor(number);
+    u32 result = (u32)floor32(number);
     return result;
 }
 
 internal s32
 s32_from_f32_ceil(f32 number)
 {
-    s32 result = (s32)ceil(number);
+    s32 result = (s32)ceil32(number);
     return result;
 }
 
 internal u32
 u32_from_f32_ceil(f32 number)
 {
-    u32 result = (u32)ceil(number);
+    u32 result = (u32)ceil32(number);
     return result;
 }
 
@@ -674,42 +686,42 @@ u32_from_f32_truncate(f32 number)
 internal s64
 s64_from_f64_round(f64 number)
 {
-    s64 result = (s64)round(number);
+    s64 result = (s64)round64(number);
     return result;
 }
 
 internal u64
 u64_from_f64_round(f64 number)
 {
-    u64 result = (u64)round(number);
+    u64 result = (u64)round64(number);
     return result;
 }
 
 internal s64
 s64_from_f64_floor(f64 number)
 {
-    s64 result = (s64)floor(number);
+    s64 result = (s64)floor64(number);
     return result;
 }
 
 internal u64
 u64_from_f64_floor(f64 number)
 {
-    u64 result = (u64)floor(number);
+    u64 result = (u64)floor64(number);
     return result;
 }
 
 internal s64
 s64_from_f64_ceil(f64 number)
 {
-    s64 result = (s64)ceil(number);
+    s64 result = (s64)ceil64(number);
     return result;
 }
 
 internal u64
 u64_from_f64_ceil(f64 number)
 {
-    u64 result = (u64)ceil(number);
+    u64 result = (u64)ceil64(number);
     return result;
 }
 

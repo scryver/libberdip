@@ -32,7 +32,7 @@ linux_do_next_work_queue_entry(PlatformWorkQueue *queue)
     b32 weShouldSleep = false;
 
     u32 originalNextEntryToRead = queue->nextEntryToRead;
-    u32 newNextEntryToRead = (queue->nextEntryToRead + 1) % array_count(queue->entries);
+    u32 newNextEntryToRead = (originalNextEntryToRead + 1) % array_count(queue->entries);
     if (originalNextEntryToRead != queue->nextEntryToWrite)
     {
         u32 index = __sync_val_compare_and_swap(&queue->nextEntryToRead,

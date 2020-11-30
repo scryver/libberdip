@@ -88,7 +88,7 @@ slow_gaussian_choice(RandomSeriesPCG *series, u32 choiceCount, u32 gaussionCount
         sum += (random_next_u32(series) % choiceCount);
     }
     sum /= gaussionCount;
-    return sum;
+    return safe_truncate_to_u32(sum);
 }
 #else
 internal u32

@@ -67,7 +67,7 @@ typedef struct FileStream
 typedef FILE_ERROR(FileError);
 
 #define GET_FILE_SIZE(name) umm name(ApiFile *apiFile)
-typedef GET_FILE_SIZE(GetFileSize);
+typedef GET_FILE_SIZE(GetFileSize_); // NOTE(michiel): MSVC conflict
 
 #define GET_FILE_POSITION(name) u64 name(ApiFile *apiFile)
 typedef GET_FILE_POSITION(GetFilePosition);
@@ -100,7 +100,7 @@ typedef GET_ALL_IN_DIR(GetAllInDir);
 
 // NOTE(michiel): Open single file
 #define OPEN_FILE(name) ApiFile name(String filename, u32 flags)
-typedef OPEN_FILE(OpenFile);
+typedef OPEN_FILE(OpenFile_); // NOTE(NAME): MSVC conflict
 
 #define READ_FROM_FILE(name) umm name(ApiFile *apiFile, umm size, void *buffer)
 typedef READ_FROM_FILE(ReadFromFile);
@@ -139,10 +139,10 @@ typedef struct FileAPI
 
     GetAllInDir *get_all_in_dir;
 
-    OpenFile *open_file;
+    OpenFile_ *open_file;
     CloseFile *close_file;
 
-    GetFileSize *get_file_size;
+    GetFileSize_ *get_file_size;
     GetFilePosition *get_file_position;
     SetFilePosition *set_file_position;
 

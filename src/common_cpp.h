@@ -1,9 +1,15 @@
 internal u16 safe_truncate_to_u16(u32 value) { i_expect(value <= U16_MAX); return (u16)(value & U16_MAX); }
 internal u8  safe_truncate_to_u8(u32 value)  { i_expect(value <= U8_MAX);  return (u8)(value & U8_MAX); }
 internal u8  safe_truncate_to_u8(u16 value)  { i_expect(value <= U8_MAX);  return (u8)(value & U8_MAX); }
+#if COMPILER_MSVC
+internal s16 safe_truncate_to_s16(s32 value) { i_expect(value <= (s32)S16_MAX); i_expect(value >= 0xFFFF8000); return (s16)value; }
+internal s8  safe_truncate_to_s8(s32 value)  { i_expect(value <= (s32)S8_MAX); i_expect(value >= 0xFFFFFF80); return (s8)value; }
+internal s8  safe_truncate_to_s8(s16 value)  { i_expect(value <= (s16)S8_MAX); i_expect(value >= 0xFF80); return (s8)value; }
+#else
 internal s16 safe_truncate_to_s16(s32 value) { i_expect(value <= (s32)S16_MAX); i_expect(value >= (s32)S16_MIN); return (s16)value; }
-internal s8  safe_truncate_to_s8(s32 value)  { i_expect(value <= (s32)(s16)S8_MAX); i_expect(value >= (s32)(s16)S8_MIN); return (s8)value; }
+internal s8  safe_truncate_to_s8(s32 value)  { i_expect(value <= (s32)S8_MAX); i_expect(value >= (s32)S8_MIN); return (s8)value; }
 internal s8  safe_truncate_to_s8(s16 value)  { i_expect(value <= (s16)S8_MAX); i_expect(value >= (s16)S8_MIN); return (s8)value; }
+#endif
 
 internal b32 is_infinite(f32 f)
 {

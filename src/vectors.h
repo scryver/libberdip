@@ -32,8 +32,8 @@ internal v2u
 operator -(v2u a)
 {
     v2u result;
-    result.x = -a.x;
-    result.y = -a.y;
+    result.x = (u32)-(s32)a.x;
+    result.y = (u32)-(s32)a.y;
     return result;
 }
 
@@ -713,8 +713,8 @@ internal v2
 round(v2 a)
 {
     v2 result;
-    result.x = round(a.x);
-    result.y = round(a.y);
+    result.x = round32(a.x);
+    result.y = round32(a.y);
     return result;
 }
 
@@ -722,8 +722,8 @@ internal v2
 floor(v2 a)
 {
     v2 result;
-    result.x = floor(a.x);
-    result.y = floor(a.y);
+    result.x = floor32(a.x);
+    result.y = floor32(a.y);
     return result;
 }
 
@@ -731,8 +731,8 @@ internal v2
 ceil(v2 a)
 {
     v2 result;
-    result.x = ceil(a.x);
-    result.y = ceil(a.y);
+    result.x = ceil32(a.x);
+    result.y = ceil32(a.y);
     return result;
 }
 
@@ -811,9 +811,9 @@ internal v3u
 operator -(v3u a)
 {
     v3u result;
-    result.x = -a.x;
-    result.y = -a.y;
-    result.z = -a.z;
+    result.x = (u32)-(s32)a.x;
+    result.y = (u32)-(s32)a.y;
+    result.z = (u32)-(s32)a.z;
     return result;
 }
 
