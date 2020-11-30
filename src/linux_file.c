@@ -276,130 +276,100 @@ OPEN_NEXT_FILE(linux_open_next_file)
     return result;
 }
 
-internal void
-linux_get_next_file_dir(LinuxFileDirGroup *group)
+//////////////////////////////////////////////////////////////////////////////
+
+internal struct dirent *
+linux_get_next_file_dir(DIR *dir)
 {
     // TODO(michiel): Symbolic links
-    if (group->dir)
+    struct dirent *result = 0;
+    if (dir)
     {
-        group->dirData = readdir(group->dir);
-        while (group->dirData &&
-               (group->dirData->d_type != DT_REG))
+        result = readdir(dir);
+        while (result &&
+               (result->d_type != DT_REG))
         {
-            if (group->dirData->d_type == DT_DIR)
+            if (result->d_type == DT_DIR)
             {
-                if (group->dirData->d_name[0] != '.')
+                if (result->d_name[0] != '.')
                 {
                     break;
                 }
-                else if ((group->dirData->d_name[1] != '\0') &&
-                         (group->dirData->d_name[1] != '.'))
+                else if ((result->d_name[1] != '\0') &&
+                         (result->d_name[1] != '.'))
                 {
                     break;
                 }
             }
-            group->dirData = readdir(group->dir);
+            result = readdir(dir);
         }
     }
-    else
-    {
-        group->dirData = 0;
-    }
+    return result;
 }
 
 internal
-GET_ALL_IN_DIR_BEGIN(linux_get_all_in_dir_begin)
+GET_ALL_IN_DIR(linux_get_all_in_dir)
 {
-    ApiFileDirGroup result = {};
+    void *allocated = allocate_size(allocator, sizeof(ApiFileDirGroup) + 1024, 0);
+    ApiFileDirGroup *result = (ApiFileDirGroup *)allocated;
+    result->basePath = {0, (u8 *)(result + 1)};
+    result->fileDirCount = 0;
 
-    void *allocated = allocate_size(allocator, sizeof(LinuxFileDirGroup) + 1024, 0);
-    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)allocated;
-    result.allocator = allocator;
-    result.platform = allocated;
-    result.basePath = {0, (u8 *)(linuxFileDirGroup + 1)};
-    result.fileDirCount = 0;
-
+    // TODO(michiel): Check this and copy to zero terminated string if needed
     i_expect(directory.data[directory.size] == 0);
-    linuxFileDirGroup->dir = opendir(to_cstring(directory));
+    DIR *dir = opendir(to_cstring(directory));
 
-    if (linuxFileDirGroup->dir)
+    if (dir)
     {
         char pathBuffer[1024];
         char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
 
-        s32 dirFd = dirfd(linuxFileDirGroup->dir);
+        s32 dirFd = dirfd(dir);
         fchdir(dirFd);
-        char *path = getcwd((char *)result.basePath.data, 1024);
-        result.basePath = string(path);
+        char *path = getcwd((char *)result->basePath.data, 1024);
+        result->basePath = string(path);
         chdir(currentPath);
 
-        linux_get_next_file_dir(linuxFileDirGroup);
-        while (linuxFileDirGroup->dirData)
+        struct dirent *entry = linux_get_next_file_dir(dir);
+        while (entry)
         {
-            ++result.fileDirCount;
-            linux_get_next_file_dir(linuxFileDirGroup);
-        }
-    }
-    closedir(linuxFileDirGroup->dir);
-
-    linuxFileDirGroup->dir = opendir(to_cstring(directory));
-    linux_get_next_file_dir(linuxFileDirGroup);
-
-    return result;
-}
-
-internal
-GET_ALL_IN_DIR_END(linux_get_all_in_dir_end)
-{
-    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)fileDirGroup->platform;
-    if (linuxFileDirGroup)
-    {
-        if (linuxFileDirGroup->dir)
-        {
-            closedir(linuxFileDirGroup->dir);
-            linuxFileDirGroup->dir = 0;
+            ++result->fileDirCount;
+            entry = linux_get_next_file_dir(dir);
         }
 
-        linuxFileDirGroup = (LinuxFileDirGroup *)deallocate(fileDirGroup->allocator, linuxFileDirGroup);
-    }
-}
+        closedir(dir);
 
-internal
-GET_NEXT_IN_DIR(linux_get_next_in_dir)
-{
-    ApiFileDir result = {};
+        result->fileDirs = allocate_array(allocator, ApiFileDir, result->fileDirCount, default_memory_alloc());
 
-    LinuxFileDirGroup *linuxFileDirGroup = (LinuxFileDirGroup *)fileDirGroup->platform;
+        // NOTE(michiel): Reset search
+        dir = opendir(to_cstring(directory));
+        entry = linux_get_next_file_dir(dir);
 
-    if (linuxFileDirGroup->dir)
-    {
-        s32 dirFd = dirfd(linuxFileDirGroup->dir);
-
-        char pathBuffer[1024];
-        char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
-
+        u32 missingCount = 0;
         fchdir(dirFd);
-        if (linuxFileDirGroup->dirData)
+        for (u32 index = 0; (index + missingCount) < result->fileDirCount;)
         {
-            result.platform = linuxFileDirGroup->dirData; // TODO(michiel): Maybe handy?
-            result.name = string(linuxFileDirGroup->dirData->d_name);
-            if (linuxFileDirGroup->dirData->d_type == DT_REG) {
-                result.kind = FileDir_File;
-                //result.fileSize = linux_file_size(linuxHandle);
-                result.fileSize = 0;
+            if (entry) {
+                ApiFileDir *fileDir = result->fileDirs + index;
+                fileDir->kind = entry->d_type == DT_REG ? FileDir_File : FileDir_Directory;
+                fileDir->name = allocate_stringz(allocator, string(entry->d_name));
+                ++index;
             } else {
-                i_expect(linuxFileDirGroup->dirData->d_type == DT_DIR);
-                result.kind = FileDir_Directory;
-                result.fileCount = 0;
+                // NOTE(michiel): File could be deleted in the mean time, so just check again
+                ++missingCount;
             }
-
-            linux_get_next_file_dir(linuxFileDirGroup);
+            entry = linux_get_next_file_dir(dir);
         }
+        // TODO(michiel): Reallocate to exclude missing?? If we do alloc/dealloc pure on size, this will leak memory. On an arena we are fine.
+        result->fileDirCount -= missingCount;
         chdir(currentPath);
     }
+    closedir(dir);
 
     return result;
 }
+
+//////////////////////////////////////////////////////////////////////////////
 
 internal
 OPEN_FILE(linux_open_file)
@@ -579,9 +549,7 @@ internal INIT_FILE_API(linux_file_api)
     fileApi->get_all_files_of_type_begin = linux_get_all_files_of_type_begin;
     fileApi->get_all_files_of_type_end = linux_get_all_files_of_type_end;
     fileApi->open_next_file = linux_open_next_file;
-    fileApi->get_all_in_dir_begin = linux_get_all_in_dir_begin;
-    fileApi->get_all_in_dir_end = linux_get_all_in_dir_end;
-    fileApi->get_next_in_dir = linux_get_next_in_dir;
+    fileApi->get_all_in_dir = linux_get_all_in_dir;
     fileApi->open_file = linux_open_file;
     fileApi->close_file = linux_close_file;
     fileApi->get_file_size = linux_get_file_size;
