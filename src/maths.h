@@ -391,7 +391,7 @@ internal f64
 modulus01(f64 f)
 {
     f64 result;
-    result = f - floor(f);
+    result = f - floor64(f);
     return result;
 }
 
@@ -409,7 +409,7 @@ modulus(f64 x, f64 y)
 {
     i_expect(y != 0.0);
     f64 result;
-    result = x - floor(x / y) * y;
+    result = x - floor64(x / y) * y;
     return result;
 }
 
