@@ -209,6 +209,11 @@ free_last_block(MemoryArena *arena)
     gMemoryApi->deallocate_memory(free);
 }
 
+internal DEALLOCATE_MEMORY(arena_deallocate)
+{
+    return 0;
+}
+
 internal DEALLOCATE_ALL(arena_deallocate_all)
 {
     MemoryArena *arena = (MemoryArena *)allocator;
@@ -293,7 +298,7 @@ internal INIT_ALLOCATOR(initialize_arena_allocator)
     dest->allocate_copy    = arena_allocate_copy;
     dest->allocate_stringz = arena_allocate_stringz;
     dest->reallocate_size  = 0;
-    dest->deallocate       = 0;
+    dest->deallocate       = arena_deallocate;
     dest->deallocate_all   = arena_deallocate_all;
 }
 

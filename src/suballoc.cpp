@@ -407,12 +407,12 @@ sub_alloc_string_fmt(SubAllocator *subAllocator, char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    String sizeStr = vstring_fmt(0, 0, fmt, args);
+    String sizeStr = string_vformatter(0, 0, fmt, args);
     va_end(args);
 
     String allocStr = sub_alloc_string(subAllocator, sizeStr.size, no_clear_memory_alloc());
     va_start(args, fmt);
-    String result = string_fmt(allocStr.size + 1, allocStr.data, fmt, args);
+    String result = string_vformatter(allocStr.size + 1, (char *)allocStr.data, fmt, args);
     va_end(args);
     i_expect(result.size == sizeStr.size);
     result.data[result.size] = 0;
