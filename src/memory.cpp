@@ -109,7 +109,7 @@ get_alignment_offset(MemoryArena *arena, umm alignment)
     umm alignmentMask = alignment - 1;
     if (resultPtr & alignmentMask)
     {
-        result = alignment - (result & alignmentMask);
+        result = alignment - (resultPtr & alignmentMask);
     }
 
     return result;
