@@ -57,6 +57,30 @@ typedef struct Keyboard
 } Keyboard;
 
 internal b32
+is_down(Mouse *mouse, MouseButtons button)
+{
+    i_expect(mouse);
+    b32 result = mouse->buttons[button].isDown;
+    return result;
+}
+
+internal b32
+is_pressed(Mouse *mouse, MouseButtons button)
+{
+    i_expect(mouse);
+    b32 result = mouse->buttons[button].isPressed;
+    return result;
+}
+
+internal b32
+is_released(Mouse *mouse, MouseButtons button)
+{
+    i_expect(mouse);
+    b32 result = mouse->buttons[button].isReleased;
+    return result;
+}
+
+internal b32
 is_down(Keyboard *keyboard, Keys key)
 {
     i_expect(keyboard);
