@@ -374,15 +374,15 @@ GET_ALL_IN_DIR(linux_get_all_in_dir)
 internal
 OPEN_FILE(linux_open_file)
 {
+    ApiFile result = {};
+    result.filename = filename;
+
     // NOTE(michiel): Make it save to call to_cstring()
     i_expect(filename.size < 1024);
     u8 filenameBuf[1024];
     copy(filename.size, filename.data, filenameBuf);
     filenameBuf[filename.size] = 0;
     filename.data = filenameBuf;
-
-    ApiFile result = {};
-    result.filename = filename;
 
     if (filename == string("stdin"))
     {
