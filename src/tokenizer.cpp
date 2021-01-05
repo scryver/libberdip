@@ -1,73 +1,81 @@
-global String gTokenKindName[TokenCount] =
+internal String
+get_token_kind_name(TokenKind token)
 {
-    [Token_None]         = static_string("NONE"),
-    [Token_Name]         = static_string("name"),
-    [Token_Integer]      = static_string("integer"),
-    [Token_Float]        = static_string("float"),
-    [Token_String]       = static_string("string"),
-    [Token_Dot]          = static_string("dot"),
-    [Token_Comma]        = static_string("comma"),
-    [Token_Colon]        = static_string("colon"),
-    [Token_SemiColon]    = static_string("semicolon"),
-    [Token_Newline]      = static_string("new line"),
-    [Token_ParenOpen]    = static_string("opening parenthesis"),
-    [Token_ParenClose]   = static_string("closing parenthesis"),
-    [Token_BraceOpen]    = static_string("opening brace"),
-    [Token_BraceClose]   = static_string("closing brace"),
-    [Token_BracketOpen]  = static_string("opening bracket"),
-    [Token_BracketClose] = static_string("closing bracket"),
-    [Token_LogicalOr]    = static_string("logical or"),
-    [Token_LogicalAnd]   = static_string("logical and"),
-    [Token_Eq]           = static_string("equal"),
-    [Token_Neq]          = static_string("not equal"),
-    [Token_Lt]           = static_string("less than"),
-    [Token_Gt]           = static_string("greater than"),
-    [Token_LtEq]         = static_string("equal or less than"),
-    [Token_GtEq]         = static_string("equal or greater than"),
-    [Token_Or]           = static_string("or"),
-    [Token_And]          = static_string("and"),
-    [Token_Xor]          = static_string("xor"),
-    [Token_Add]          = static_string("add"),
-    [Token_Subtract]     = static_string("subtract"),
-    //[Token_Negate]       = static_string("negate"),
-    [Token_ShiftLeft]    = static_string("shift left"),
-    [Token_ShiftRight]   = static_string("shift right"),
-    [Token_Multiply]     = static_string("multiply"),
-    [Token_Divide]       = static_string("divide"),
-    [Token_Modulus]      = static_string("modulus"),
-    [Token_Not]          = static_string("not"),
-    [Token_Invert]       = static_string("invert"),
-    [Token_Increment]    = static_string("increment"),
-    [Token_Decrement]    = static_string("decrement"),
-    [Token_Assign]       = static_string("assign"),
-    [Token_OrAssign]     = static_string("or assign"),
-    [Token_AndAssign]    = static_string("and assign"),
-    [Token_XorAssign]    = static_string("xor assign"),
-    [Token_AddAssign]    = static_string("add assign"),
-    [Token_SubAssign]    = static_string("sub assign"),
-    [Token_SlAssign]     = static_string("shift left assign"),
-    [Token_SrAssign]     = static_string("shift right assign"),
-    [Token_MulAssign]    = static_string("multiply assign"),
-    [Token_DivAssign]    = static_string("divide assign"),
-    [Token_ModAssign]    = static_string("modulo assign"),
-    [Token_Quote]        = static_string("quote"),
-    [Token_Backslash]    = static_string("backslash"),
-    [Token_Number]       = static_string("number sign"),
-    [Token_Dollar]       = static_string("dollar sign"),
-    [Token_Query]        = static_string("question mark"),
-
-    [Token_EOF]          = static_string("end of file"),
-};
+    String result = static_string("unknown");
+    switch (token)
+    {
+        case Token_None          : { result = static_string("NONE"); } break;
+        case Token_Name          : { result = static_string("name"); } break;
+        case Token_Integer       : { result = static_string("integer"); } break;
+        case Token_Float         : { result = static_string("float"); } break;
+        case Token_String        : { result = static_string("string"); } break;
+        case Token_Dot           : { result = static_string("dot"); } break;
+        case Token_Comma         : { result = static_string("comma"); } break;
+        case Token_Colon         : { result = static_string("colon"); } break;
+        case Token_SemiColon     : { result = static_string("semicolon"); } break;
+        case Token_Newline       : { result = static_string("new line"); } break;
+        case Token_ParenOpen     : { result = static_string("opening parenthesis"); } break;
+        case Token_ParenClose    : { result = static_string("closing parenthesis"); } break;
+        case Token_BraceOpen     : { result = static_string("opening brace"); } break;
+        case Token_BraceClose    : { result = static_string("closing brace"); } break;
+        case Token_BracketOpen   : { result = static_string("opening bracket"); } break;
+        case Token_BracketClose  : { result = static_string("closing bracket"); } break;
+        case Token_LogicalOr     : { result = static_string("logical or"); } break;
+        case Token_LogicalAnd    : { result = static_string("logical and"); } break;
+        case Token_Eq            : { result = static_string("equal"); } break;
+        case Token_Neq           : { result = static_string("not equal"); } break;
+        case Token_Lt            : { result = static_string("less than"); } break;
+        case Token_Gt            : { result = static_string("greater than"); } break;
+        case Token_LtEq          : { result = static_string("equal or less than"); } break;
+        case Token_GtEq          : { result = static_string("equal or greater than"); } break;
+        case Token_Or            : { result = static_string("or"); } break;
+        case Token_And           : { result = static_string("and"); } break;
+        case Token_Xor           : { result = static_string("xor"); } break;
+        case Token_Add           : { result = static_string("add"); } break;
+        case Token_Subtract      : { result = static_string("subtract"); } break;
+        //case Token_Negate        : { result = static_string("negate"); } break;
+        case Token_ShiftLeft     : { result = static_string("shift left"); } break;
+        case Token_ShiftRight    : { result = static_string("shift right"); } break;
+        case Token_Multiply      : { result = static_string("multiply"); } break;
+        case Token_Divide        : { result = static_string("divide"); } break;
+        case Token_Modulus       : { result = static_string("modulus"); } break;
+        case Token_Not           : { result = static_string("not"); } break;
+        case Token_Invert        : { result = static_string("invert"); } break;
+        case Token_Increment     : { result = static_string("increment"); } break;
+        case Token_Decrement     : { result = static_string("decrement"); } break;
+        case Token_Assign        : { result = static_string("assign"); } break;
+        case Token_OrAssign      : { result = static_string("or assign"); } break;
+        case Token_AndAssign     : { result = static_string("and assign"); } break;
+        case Token_XorAssign     : { result = static_string("xor assign"); } break;
+        case Token_AddAssign     : { result = static_string("add assign"); } break;
+        case Token_SubAssign     : { result = static_string("sub assign"); } break;
+        case Token_SlAssign      : { result = static_string("shift left assign"); } break;
+        case Token_SrAssign      : { result = static_string("shift right assign"); } break;
+        case Token_MulAssign     : { result = static_string("multiply assign"); } break;
+        case Token_DivAssign     : { result = static_string("divide assign"); } break;
+        case Token_ModAssign     : { result = static_string("modulo assign"); } break;
+        case Token_Quote         : { result = static_string("quote"); } break;
+        case Token_Backslash     : { result = static_string("backslash"); } break;
+        case Token_Number        : { result = static_string("number sign"); } break;
+        case Token_Dollar        : { result = static_string("dollar sign"); } break;
+        case Token_Query         : { result = static_string("question mark"); } break;
+        case Token_EOF           : { result = static_string("end of file"); } break;
+        INVALID_DEFAULT_CASE;
+    }
+    return result;
+}
 
 // TODO(michiel): Add Token to error
 internal void
 tokenize_error(Tokenizer *tokenizer, char *fmt, va_list args)
 {
+#if !COMPILER_MSVC
     fprintf(stderr, "TOKENIZER::ERROR::%.*s:%d:%d\n\t", STR_FMT(tokenizer->origin.filename),
             tokenizer->origin.line,
             tokenizer->origin.column);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "\n");
+#endif
 
     tokenizer->error = true;
 }
@@ -171,8 +179,12 @@ get_token(Tokenizer *tokenizer)
     result.origin = tokenizer->origin;
 
     if (!tokenizer->scanner.data[0] ||
-        (tokenizer->scanner.size == 0) ||
-        ((char)tokenizer->scanner.data[0] == EOF)) {
+        (tokenizer->scanner.size == 0)
+#if !COMPILER_MSVC
+        // NOTE(michiel): Bah..., maybe just replace the EOF on the platform side
+        || ((char)tokenizer->scanner.data[0] == EOF)
+#endif
+        ) {
         result.kind = Token_EOF;
         return result;
     }
@@ -451,8 +463,8 @@ expect_token(Tokenizer *tokenizer, TokenKind tokenKind)
     if (!is_token_kind(result, tokenKind))
     {
         tokenize_error(tokenizer, "Expected '%.*s', got '%.*s'.",
-                       STR_FMT(gTokenKindName[tokenKind]),
-                       STR_FMT(gTokenKindName[result.kind]));
+                       STR_FMT(get_token_kind_name(tokenKind)),
+                       STR_FMT(get_token_kind_name(result.kind)));
     }
     return result;
 }
@@ -477,7 +489,7 @@ expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
 
     if (is_token_kind(result, Token_Integer))
     {
-        result.s32 = number_from_string(result.value);
+        result.s32 = safe_truncate_to_s32(number_from_string(result.value));
         if ((result.s32 >= minValue) &&
             (result.s32 <= maxValue))
         {
@@ -490,7 +502,7 @@ expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
     }
     else
     {
-        tokenize_error(tokenizer, "Expected integer, got '%.*s'.", STR_FMT(gTokenKindName[result.kind]));
+        tokenize_error(tokenizer, "Expected integer, got '%.*s'.", STR_FMT(get_token_kind_name(result.kind)));
     }
 
     return result;
@@ -499,16 +511,18 @@ expect_integer_range(Tokenizer *tokenizer, s32 minValue, s32 maxValue)
 internal void
 print_token(Token token)
 {
+#if !COMPILER_MSVC
     if (token.kind == Token_Newline)
     {
         fprintf(stdout, "%.*s:%4d:%03d: %.*s: '\\n' (indent = %d)\n", STR_FMT(token.origin.filename),
-                token.origin.line, token.origin.column, STR_FMT(gTokenKindName[token.kind]),
+                token.origin.line, token.origin.column, STR_FMT(get_token_kind_name(token.kind)),
                 token.indent);
     }
     else
     {
         fprintf(stdout, "%.*s:%4d:%03d: %.*s: '%.*s' (indent = %d)\n", STR_FMT(token.origin.filename),
-                token.origin.line, token.origin.column, STR_FMT(gTokenKindName[token.kind]),
+                token.origin.line, token.origin.column, STR_FMT(get_token_kind_name(token.kind)),
                 STR_FMT(token.value), token.indent);
     }
+#endif
 }

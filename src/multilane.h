@@ -137,7 +137,7 @@ internal f32_4x
 S32_4x(s32 s)
 {
     f32_4x result;
-    result.m = _mm_set1_epi32(s);
+    result.mi = _mm_set1_epi32(s);
     return result;
 }
 

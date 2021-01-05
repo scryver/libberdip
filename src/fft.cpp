@@ -4,8 +4,10 @@
 
 //#define fft_cos(x)  cos_f32(x)
 //#define fft_sin(x)  sin_f32(x)
-#define fft_cos(x)  __builtin_cosf(F32_TAU * x)
-#define fft_sin(x)  __builtin_sinf(F32_TAU * x)
+//#define fft_cos(x)  __builtin_cosf(F32_TAU * x)
+//#define fft_sin(x)  __builtin_sinf(F32_TAU * x)
+#define fft_cos(x)  cos_pi(F32_TAU * x)
+#define fft_sin(x)  sin_pi(F32_TAU * x)
 
 internal void
 fft(u32 dftCount, Complex32 *signal)
@@ -60,8 +62,8 @@ fft(u32 dftCount, Complex32 *signal)
         SinCos_4x sinCos = sincos_f32_4x(F32_4x(0.0f, -0.125f, -0.25f, -0.375f));
         f32_4x W4_reals;
         f32_4x W4_imags;
-        W4_reals.m = _mm_shuffle_epi32(sinCos.cos.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-        W4_imags.m = _mm_shuffle_epi32(sinCos.sin.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_reals.mi = _mm_shuffle_epi32(sinCos.cos.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_imags.mi = _mm_shuffle_epi32(sinCos.sin.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
 
         f32_4x W8_reals = sinCos.cos;
         f32_4x W8_imags = sinCos.sin;
@@ -94,10 +96,10 @@ fft(u32 dftCount, Complex32 *signal)
 
             f32_4x X_reals;
             X_reals.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-            X_reals.m = _mm_shuffle_epi32(X_reals.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_reals.mi = _mm_shuffle_epi32(X_reals.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             f32_4x X_imags;
             X_imags.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
-            X_imags.m = _mm_shuffle_epi32(X_imags.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_imags.mi = _mm_shuffle_epi32(X_imags.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x O4_reals = (W4_reals * X_reals) - (W4_imags * X_imags);
             f32_4x O4_imags = (W4_reals * X_imags) + (W4_imags * X_reals);
@@ -109,9 +111,9 @@ fft(u32 dftCount, Complex32 *signal)
             E4_0_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
             E4_1_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
             O4_0_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O4_0_4x.m = _mm_shuffle_epi32(O4_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_0_4x.mi = _mm_shuffle_epi32(O4_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O4_1_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O4_1_4x.m = _mm_shuffle_epi32(O4_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_1_4x.mi = _mm_shuffle_epi32(O4_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x ef_4x = E4_1_4x + O4_1_4x;
             f32_4x gh_4x = E4_1_4x - O4_1_4x;
@@ -129,9 +131,9 @@ fft(u32 dftCount, Complex32 *signal)
             f32_4x O8_0_4x;
             f32_4x O8_1_4x;
             O8_0_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O8_0_4x.m = _mm_shuffle_epi32(O8_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_0_4x.mi = _mm_shuffle_epi32(O8_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O8_1_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O8_1_4x.m = _mm_shuffle_epi32(O8_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_1_4x.mi = _mm_shuffle_epi32(O8_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             _mm_store_ps(kPut, (E8_0_4x + O8_0_4x).m);
             kPut += 4;
@@ -204,7 +206,7 @@ fft(u32 dftCount, Complex32 *signal)
             Wm7.imag = fft_sin(-oneOverM * 7.0f);
 #endif
 #else
-            SinCos_4x sinCos = sincos_f32_4x(F32_4x(-oneOverM, -oneOverM*3.0f, -oneOverM*5.0f, -oneOverM*7.0f));
+            sinCos = sincos_f32_4x(F32_4x(-oneOverM, -oneOverM*3.0f, -oneOverM*5.0f, -oneOverM*7.0f));
             Wm.real = sinCos.cos.e[0];
             Wm.imag = sinCos.sin.e[0];
             Wm3.real = sinCos.cos.e[1];
@@ -298,13 +300,13 @@ fft(u32 dftCount, Complex32 *signal)
                     f32_4x O45;
                     f32_4x O67;
                     O01.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O01.m = _mm_shuffle_epi32(O01.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O01.mi = _mm_shuffle_epi32(O01.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O23.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O23.m = _mm_shuffle_epi32(O23.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O23.mi = _mm_shuffle_epi32(O23.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O45.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O45.m = _mm_shuffle_epi32(O45.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O45.mi = _mm_shuffle_epi32(O45.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O67.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O67.m = _mm_shuffle_epi32(O67.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O67.mi = _mm_shuffle_epi32(O67.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
                     f32_4x add01 = E01 + O01;
                     f32_4x add23 = E23 + O23;
@@ -437,10 +439,10 @@ ifft(u32 dftCount, Complex32 *signal)
 
             f32_4x X_reals;
             X_reals.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-            X_reals.m = _mm_shuffle_epi32(X_reals.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_reals.mi = _mm_shuffle_epi32(X_reals.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             f32_4x X_imags;
             X_imags.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
-            X_imags.m = _mm_shuffle_epi32(X_imags.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_imags.mi = _mm_shuffle_epi32(X_imags.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x mulX0 = W4_reals * X_reals;
             f32_4x mulX1 = W4_imags * X_imags;
@@ -457,9 +459,9 @@ ifft(u32 dftCount, Complex32 *signal)
             E4_0_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
             E4_1_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
             O4_0_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O4_0_4x.m = _mm_shuffle_epi32(O4_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_0_4x.mi = _mm_shuffle_epi32(O4_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O4_1_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O4_1_4x.m = _mm_shuffle_epi32(O4_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_1_4x.mi = _mm_shuffle_epi32(O4_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x ef_4x = (E4_1_4x + O4_1_4x) * ampl4_4x;
             f32_4x gh_4x = (E4_1_4x - O4_1_4x) * ampl4_4x;
@@ -482,9 +484,9 @@ ifft(u32 dftCount, Complex32 *signal)
             f32_4x O8_0_4x;
             f32_4x O8_1_4x;
             O8_0_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O8_0_4x.m = _mm_shuffle_epi32(O8_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_0_4x.mi = _mm_shuffle_epi32(O8_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O8_1_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O8_1_4x.m = _mm_shuffle_epi32(O8_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_1_4x.mi = _mm_shuffle_epi32(O8_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             _mm_store_ps(kPut, ((E8_0_4x + O8_0_4x) * ampl8_4x).m);
             kPut += 4;
@@ -652,13 +654,13 @@ ifft(u32 dftCount, Complex32 *signal)
                     f32_4x O45;
                     f32_4x O67;
                     O01.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O01.m = _mm_shuffle_epi32(O01.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O01.mi = _mm_shuffle_epi32(O01.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O23.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O23.m = _mm_shuffle_epi32(O23.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O23.mi = _mm_shuffle_epi32(O23.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O45.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O45.m = _mm_shuffle_epi32(O45.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O45.mi = _mm_shuffle_epi32(O45.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O67.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O67.m = _mm_shuffle_epi32(O67.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O67.mi = _mm_shuffle_epi32(O67.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
                     f32_4x add01 = E01 + O01;
                     f32_4x add23 = E23 + O23;
@@ -760,8 +762,8 @@ fft_exact(u32 dftCount, Complex32 *signal)
 
         f32_4x W4_reals;
         f32_4x W4_imags;
-        W4_reals.m = _mm_shuffle_epi32(sinCos.cos.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-        W4_imags.m = _mm_shuffle_epi32(sinCos.sin.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_reals.mi = _mm_shuffle_epi32(sinCos.cos.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_imags.mi = _mm_shuffle_epi32(sinCos.sin.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
 
         f32_4x W8_reals = sinCos.cos;
         f32_4x W8_imags = sinCos.sin;
@@ -795,10 +797,10 @@ fft_exact(u32 dftCount, Complex32 *signal)
 
             f32_4x X_reals;
             X_reals.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-            X_reals.m = _mm_shuffle_epi32(X_reals.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_reals.mi = _mm_shuffle_epi32(X_reals.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             f32_4x X_imags;
             X_imags.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
-            X_imags.m = _mm_shuffle_epi32(X_imags.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_imags.mi = _mm_shuffle_epi32(X_imags.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x O4_reals = (W4_reals * X_reals) - (W4_imags * X_imags);
             f32_4x O4_imags = (W4_reals * X_imags) + (W4_imags * X_reals);
@@ -810,9 +812,9 @@ fft_exact(u32 dftCount, Complex32 *signal)
             E4_0_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
             E4_1_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
             O4_0_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O4_0_4x.m = _mm_shuffle_epi32(O4_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_0_4x.mi = _mm_shuffle_epi32(O4_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O4_1_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O4_1_4x.m = _mm_shuffle_epi32(O4_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_1_4x.mi = _mm_shuffle_epi32(O4_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x ef_4x = E4_1_4x + O4_1_4x;
             f32_4x gh_4x = E4_1_4x - O4_1_4x;
@@ -830,9 +832,9 @@ fft_exact(u32 dftCount, Complex32 *signal)
             f32_4x O8_0_4x;
             f32_4x O8_1_4x;
             O8_0_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O8_0_4x.m = _mm_shuffle_epi32(O8_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_0_4x.mi = _mm_shuffle_epi32(O8_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O8_1_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O8_1_4x.m = _mm_shuffle_epi32(O8_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_1_4x.mi = _mm_shuffle_epi32(O8_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             _mm_store_ps(kPut, (E8_0_4x + O8_0_4x).m);
             kPut += 4;
@@ -914,13 +916,13 @@ fft_exact(u32 dftCount, Complex32 *signal)
                     f32_4x O45;
                     f32_4x O67;
                     O01.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O01.m = _mm_shuffle_epi32(O01.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O01.mi = _mm_shuffle_epi32(O01.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O23.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O23.m = _mm_shuffle_epi32(O23.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O23.mi = _mm_shuffle_epi32(O23.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O45.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O45.m = _mm_shuffle_epi32(O45.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O45.mi = _mm_shuffle_epi32(O45.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O67.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O67.m = _mm_shuffle_epi32(O67.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O67.mi = _mm_shuffle_epi32(O67.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
                     f32_4x add01 = E01 + O01;
                     f32_4x add23 = E23 + O23;
@@ -1009,8 +1011,8 @@ ifft_exact(u32 dftCount, Complex32 *signal)
 
         f32_4x W4_reals;
         f32_4x W4_imags;
-        W4_reals.m = _mm_shuffle_epi32(sinCos.cos.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-        W4_imags.m = _mm_shuffle_epi32(sinCos.sin.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_reals.mi = _mm_shuffle_epi32(sinCos.cos.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
+        W4_imags.mi = _mm_shuffle_epi32(sinCos.sin.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
 
         f32_4x W8_reals = sinCos.cos;
         f32_4x W8_imags = sinCos.sin;
@@ -1048,10 +1050,10 @@ ifft_exact(u32 dftCount, Complex32 *signal)
 
             f32_4x X_reals;
             X_reals.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
-            X_reals.m = _mm_shuffle_epi32(X_reals.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_reals.mi = _mm_shuffle_epi32(X_reals.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             f32_4x X_imags;
             X_imags.m = _mm_shuffle_ps(ac_4x.m, bd_4x.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
-            X_imags.m = _mm_shuffle_epi32(X_imags.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            X_imags.mi = _mm_shuffle_epi32(X_imags.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x mulX0 = W4_reals * X_reals;
             f32_4x mulX1 = W4_imags * X_imags;
@@ -1068,9 +1070,9 @@ ifft_exact(u32 dftCount, Complex32 *signal)
             E4_0_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
             E4_1_4x.m = _mm_shuffle_ps(E4_02.m, E4_13.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
             O4_0_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O4_0_4x.m = _mm_shuffle_epi32(O4_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_0_4x.mi = _mm_shuffle_epi32(O4_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O4_1_4x.m = _mm_shuffle_ps(O4_reals.m, O4_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O4_1_4x.m = _mm_shuffle_epi32(O4_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O4_1_4x.mi = _mm_shuffle_epi32(O4_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             f32_4x ef_4x = (E4_1_4x + O4_1_4x) * ampl4_4x;
             f32_4x gh_4x = (E4_1_4x - O4_1_4x) * ampl4_4x;
@@ -1093,9 +1095,9 @@ ifft_exact(u32 dftCount, Complex32 *signal)
             f32_4x O8_0_4x;
             f32_4x O8_1_4x;
             O8_0_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-            O8_0_4x.m = _mm_shuffle_epi32(O8_0_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_0_4x.mi = _mm_shuffle_epi32(O8_0_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
             O8_1_4x.m = _mm_shuffle_ps(O8_reals.m, O8_imags.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-            O8_1_4x.m = _mm_shuffle_epi32(O8_1_4x.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+            O8_1_4x.mi = _mm_shuffle_epi32(O8_1_4x.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
             _mm_store_ps(kPut, ((E8_0_4x + O8_0_4x) * ampl8_4x).m);
             kPut += 4;
@@ -1190,13 +1192,13 @@ ifft_exact(u32 dftCount, Complex32 *signal)
                     f32_4x O45;
                     f32_4x O67;
                     O01.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O01.m = _mm_shuffle_epi32(O01.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O01.mi = _mm_shuffle_epi32(O01.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O23.m = _mm_shuffle_ps(O0_real.m, O0_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O23.m = _mm_shuffle_epi32(O23.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O23.mi = _mm_shuffle_epi32(O23.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O45.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
-                    O45.m = _mm_shuffle_epi32(O45.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O45.mi = _mm_shuffle_epi32(O45.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
                     O67.m = _mm_shuffle_ps(O1_real.m, O1_imag.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
-                    O67.m = _mm_shuffle_epi32(O67.m, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
+                    O67.mi = _mm_shuffle_epi32(O67.mi, MULTILANE_SHUFFLE_MASK(0, 2, 1, 3));
 
                     f32_4x add01 = E01 + O01;
                     f32_4x add23 = E23 + O23;

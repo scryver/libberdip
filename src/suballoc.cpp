@@ -239,7 +239,7 @@ internal ALLOCATE_MEMORY_SIZE(sub_alloc)
     // if the size is greater than or equal to the alignment. Which is _probably_ true.
 
     void *result = 0;
-    u32 totalSize = size + SUBALLOC_HEADER_OFFSET;
+    u32 totalSize = safe_truncate_to_u32(size) + SUBALLOC_HEADER_OFFSET;
     b32 clear = !(flags & Memory_NoClear);
 
     if ((size > 0) && (totalSize <= subAllocator->totalSize))
@@ -292,13 +292,13 @@ internal ALLOCATE_MEMORY_SIZE(sub_alloc)
                 }
                 suballoc_expect(get_bucket_size(subAllocator, origBucket) == (bucketSize << 1));
             }
-            u32 size = get_bucket_size(subAllocator, origBucket);
-            allocPtr->size = size;
-            suballoc_expect((((u8 *)allocPtr - subAllocator->base) & (size - 1)) == 0);
+            u32 newSize = get_bucket_size(subAllocator, origBucket);
+            allocPtr->size = newSize;
+            suballoc_expect((((u8 *)allocPtr - subAllocator->base) & (newSize - 1)) == 0);
             allocPtr->isUsed = true;
 
 #if SUB_ALLOC_DEBUG
-            update_mark(subAllocator, (u8 *)allocPtr + size);
+            update_mark(subAllocator, (u8 *)allocPtr + newSize);
 #endif
 
             result = (u8 *)allocPtr + SUBALLOC_HEADER_OFFSET;
@@ -332,7 +332,7 @@ internal DEALLOCATE_MEMORY(sub_dealloc)
         suballoc_expect(entry->size <= S32_MAX);
         suballoc_expect(is_pow2(entry->size));
 
-        u32 bucket = bucket_from_size(subAllocator, entry->size);
+        u32 bucket = bucket_from_size(subAllocator, (u32)entry->size);
         add_to_free_list(subAllocator, entry, bucket);
 
         result = 0;
@@ -396,7 +396,7 @@ sub_alloc_string(SubAllocator *subAllocator, u32 size, u32 flags)
 internal ALLOCATE_MEMORY_STRINGZ(sub_alloc_stringz)
 {
     SubAllocator *subAllocator = (SubAllocator *)allocator;
-    String result = sub_alloc_string(subAllocator, source.size, align_memory_alloc(1, false));
+    String result = sub_alloc_string(subAllocator, safe_truncate_to_u32(source.size), align_memory_alloc(1, false));
     copy(source.size, source.data, result.data);
     result.data[result.size] = 0;
     return result;
@@ -410,7 +410,7 @@ sub_alloc_string_fmt(SubAllocator *subAllocator, char *fmt, ...)
     String sizeStr = string_vformatter(0, 0, fmt, args);
     va_end(args);
 
-    String allocStr = sub_alloc_string(subAllocator, sizeStr.size, no_clear_memory_alloc());
+    String allocStr = sub_alloc_string(subAllocator, safe_truncate_to_u32(sizeStr.size), no_clear_memory_alloc());
     va_start(args, fmt);
     String result = string_vformatter(allocStr.size + 1, (char *)allocStr.data, fmt, args);
     va_end(args);

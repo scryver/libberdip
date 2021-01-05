@@ -575,167 +575,69 @@ rotate_right(u32 value, s32 amount)
 
 #include TRIGONOMETRY_FILE
 
-internal s16
-s16_from_f32_round(f32 number)
-{
-    s16 result = (s16)round32(number);
-    return result;
+#define trunc(frm, to) \
+internal to \
+to##_from_##frm##_truncate(frm number) \
+{ \
+    to result = (to)number; \
+    return result; \
 }
 
-internal u16
-u16_from_f32_round(f32 number)
-{
-    u16 result = (u16)round32(number);
-    return result;
+#define convert(frm, to, r, b) \
+internal to \
+to##_from_##frm##_##r(frm number) \
+{ \
+    to result = (to)r##b(number); \
+    return result; \
 }
 
-internal s16
-s16_from_f32_floor(f32 number)
-{
-    s16 result = (s16)floor32(number);
-    return result;
-}
+convert(f32, s16, round, 32)
+convert(f32, u16, round, 32)
+convert(f32, s16, floor, 32)
+convert(f32, u16, floor, 32)
+convert(f32, s16, ceil, 32)
+convert(f32, u16, ceil, 32)
+trunc(f32, s16)
+trunc(f32, u16)
 
-internal u16
-u16_from_f32_floor(f32 number)
-{
-    u16 result = (u16)floor32(number);
-    return result;
-}
+convert(f32, s32, round, 32)
+convert(f32, u32, round, 32)
+convert(f32, s32, floor, 32)
+convert(f32, u32, floor, 32)
+convert(f32, s32, ceil, 32)
+convert(f32, u32, ceil, 32)
+trunc(f32, s32)
+trunc(f32, u32)
 
-internal s16
-s16_from_f32_ceil(f32 number)
-{
-    s16 result = (s16)ceil32(number);
-    return result;
-}
+convert(f64, s16, round, 64)
+convert(f64, u16, round, 64)
+convert(f64, s16, floor, 64)
+convert(f64, u16, floor, 64)
+convert(f64, s16, ceil, 64)
+convert(f64, u16, ceil, 64)
+trunc(f64, s16)
+trunc(f64, u16)
 
-internal u16
-u16_from_f32_ceil(f32 number)
-{
-    u16 result = (u16)ceil32(number);
-    return result;
-}
+convert(f64, s32, round, 64)
+convert(f64, u32, round, 64)
+convert(f64, s32, floor, 64)
+convert(f64, u32, floor, 64)
+convert(f64, s32, ceil, 64)
+convert(f64, u32, ceil, 64)
+trunc(f64, s32)
+trunc(f64, u32)
 
-internal s16
-s16_from_f32_truncate(f32 number)
-{
-    return (s16)number;
-}
+convert(f64, s64, round, 64)
+convert(f64, u64, round, 64)
+convert(f64, s64, floor, 64)
+convert(f64, u64, floor, 64)
+convert(f64, s64, ceil, 64)
+convert(f64, u64, ceil, 64)
+trunc(f64, s64)
+trunc(f64, u64)
 
-internal u16
-u16_from_f32_truncate(f32 number)
-{
-    return (u16)number;
-}
-
-internal s32
-s32_from_f32_round(f32 number)
-{
-    s32 result = (s32)round32(number);
-    return result;
-}
-
-internal u32
-u32_from_f32_round(f32 number)
-{
-    u32 result = (u32)round32(number);
-    return result;
-}
-
-internal s32
-s32_from_f32_floor(f32 number)
-{
-    s32 result = (s32)floor32(number);
-    return result;
-}
-
-internal u32
-u32_from_f32_floor(f32 number)
-{
-    u32 result = (u32)floor32(number);
-    return result;
-}
-
-internal s32
-s32_from_f32_ceil(f32 number)
-{
-    s32 result = (s32)ceil32(number);
-    return result;
-}
-
-internal u32
-u32_from_f32_ceil(f32 number)
-{
-    u32 result = (u32)ceil32(number);
-    return result;
-}
-
-internal s32
-s32_from_f32_truncate(f32 number)
-{
-    return (s32)number;
-}
-
-internal u32
-u32_from_f32_truncate(f32 number)
-{
-    return (u32)number;
-}
-
-internal s64
-s64_from_f64_round(f64 number)
-{
-    s64 result = (s64)round64(number);
-    return result;
-}
-
-internal u64
-u64_from_f64_round(f64 number)
-{
-    u64 result = (u64)round64(number);
-    return result;
-}
-
-internal s64
-s64_from_f64_floor(f64 number)
-{
-    s64 result = (s64)floor64(number);
-    return result;
-}
-
-internal u64
-u64_from_f64_floor(f64 number)
-{
-    u64 result = (u64)floor64(number);
-    return result;
-}
-
-internal s64
-s64_from_f64_ceil(f64 number)
-{
-    s64 result = (s64)ceil64(number);
-    return result;
-}
-
-internal u64
-u64_from_f64_ceil(f64 number)
-{
-    u64 result = (u64)ceil64(number);
-    return result;
-}
-
-internal s64
-s64_from_f64_truncate(f64 number)
-{
-    return (s64)number;
-}
-
-internal u64
-u64_from_f64_truncate(f64 number)
-{
-    return (u64)number;
-}
+#undef convert
+#undef trunc
 
 internal f32
 safe_ratio_n(f32 num, f32 den, f32 N)
