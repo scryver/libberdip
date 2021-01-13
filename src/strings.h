@@ -36,6 +36,13 @@ global const u32 gNumFromHex[256] = {
 };
 #endif
 
+internal void
+copy(String source, String *dest)
+{
+    copy(source.size, source.data, dest->data);
+    dest->size = source.size;
+}
+
 internal inline u32
 string_length(const char *cString)
 {
@@ -712,6 +719,84 @@ float_from_string(String s)
     return result * sign;
 }
 
+internal b32
+try_float_from_string(String s, f64 *dest)
+{
+    b32 valid = false;
+    f64 result = 0.0;
+
+    String scanner = s;
+
+    f64 sign = 1.0;
+    if (scanner.size && (scanner.data[0] == '-'))
+    {
+        sign = -1.0;
+        advance(&scanner);
+    }
+    else if (scanner.size && (scanner.data[0] == '+'))
+    {
+        advance(&scanner);
+    }
+
+    while (scanner.size && is_digit(scanner.data[0]))
+    {
+        valid = true;
+        result *= 10.0;
+        result += (f64)(scanner.data[0] & 0xF);
+        advance(&scanner);
+    }
+
+    if (scanner.data[0] == '.') {
+        f64 multiplier = 0.1;
+        advance(&scanner);
+        valid = false;
+        while (scanner.size && is_digit(scanner.data[0])) {
+            valid = true;
+            f64 addend = (f64)(scanner.data[0] & 0xF);
+            addend *= multiplier;
+            result += addend;
+            multiplier *= 0.1;
+            advance(&scanner);
+        }
+    }
+
+    if(scanner.size && to_lower_case(scanner.data[0]) == 'e')
+    {
+        advance(&scanner);
+        valid = false;
+
+        f64 exponentSign = 1.0;
+
+        if(scanner.size && scanner.data[0] == '-')
+        {
+            exponentSign = -1.0;
+            advance(&scanner);
+        }
+        else if (scanner.size && scanner.data[0] == '+')
+        {
+            advance(&scanner);
+        }
+
+        f64 exponent = 0;
+        while (scanner.size && is_digit(scanner.data[0])) {
+            valid = true;
+            f64 addend = (f64)(scanner.data[0] & 0xF);
+            exponent = exponent * 10.0 + addend;
+            advance(&scanner);
+        }
+
+        result *= pow(10.0, exponentSign * exponent);
+    }
+
+    valid = valid && (scanner.size == 0);
+    if (valid)
+    {
+        *dest = sign * result;
+    }
+
+    return valid;
+}
+
 internal u32
 parse_half_hex_byte(char c)
 {
@@ -1209,4 +1294,36 @@ codepoint_from_utf8_advance(String *str)
     }
 
     return result;
+}
+
+internal String
+trim_leading_whitespace(String s)
+{
+    // NOTE(michiel): Get a substring of the original input (data of result is owned by the original string!)
+    String result = s;
+    while (result.size && is_whitespace(result.data[0]))
+    {
+        advance(&result);
+    }
+    return result;
+}
+
+internal b32
+trim_leading_whitespace(String *s)
+{
+    // NOTE(michiel): Modifies the string while keeping the data pointer the same (so moves memory if needed)
+    u32 whitespaceCount = 0;
+    while ((whitespaceCount < s->size) && is_whitespace(s->data[whitespaceCount]))
+    {
+        ++whitespaceCount;
+    }
+    if (whitespaceCount)
+    {
+        for (u32 idx = whitespaceCount; idx < s->size; ++idx)
+        {
+            s->data[idx - whitespaceCount] = s->data[idx];
+        }
+    }
+    s->size = s->size - whitespaceCount;
+    return whitespaceCount > 0;
 }
