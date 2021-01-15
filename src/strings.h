@@ -805,6 +805,16 @@ parse_half_hex_byte(char c)
     return result;
 }
 
+internal b32
+try_parse_half_hex_byte(char c, u32 *dest)
+{
+    b32 result = is_hex_digit(c);
+    if(result) {
+        *dest = gNumFromHex[(u8)c];
+    }
+    return result;
+}
+
 internal s64
 number_from_string(String s)
 {
@@ -845,6 +855,31 @@ number_from_string(String s)
         result += adding;
     }
     return negative ? -result : result;
+}
+
+internal b32
+try_decimal_from_string(String s, s64 *dest)
+{
+    b32 negative = s.size && (s.data[0] == '-');
+    if (negative) {
+        advance(&s);
+    }
+    b32 isValid = false;
+    s64 result = 0;
+
+    while (s.size && is_digit(s.data[0]))
+    {
+        isValid = true;
+        result *= 10;
+        result += s.data[0] - '0';
+        advance(&s);
+    }
+
+    if (isValid)
+    {
+        *dest = negative ? -result : result;
+    }
+    return isValid;
 }
 
 internal u64
