@@ -24,6 +24,10 @@
 #define COMPILER_MSVC 0
 #endif
 
+#if !defined(COMPILER_MSVC_X86)
+#define COMPILER_MSVC_X86 0
+#endif
+
 #if !defined(COMPILER_LLVM)
 #define COMPILER_LLVM 0
 #endif
@@ -36,11 +40,14 @@
 #define COMPILER_TCC 0
 #endif
 
-#if !COMPILER_MSVC && !COMPILER_LLVM && !COMPILER_GCC && !COMPILER_TCC
+#if !COMPILER_MSVC && !COMPILER_MSVC_X86 && !COMPILER_LLVM && !COMPILER_GCC && !COMPILER_TCC
 #if _MSC_VER
 #undef  COMPILER_MSVC
 #define COMPILER_MSVC 1
-#include <intrin.h>
+#ifndef _WIN64
+#undef COMPILER_MSVC_X86
+#define COMPILER_MSVC_X86 1
+#endif
 #elif __clang__
 #undef  COMPILER_LLVM
 #define COMPILER_LLVM 1
@@ -56,6 +63,12 @@
 #else
 #error Unknown compiler
 #endif
+#endif
+
+#if COMPILER_MSVC_X86
+// NOTE(michiel): Force definition of COMPILER_MSVC to be true
+#undef COMPILER_MSVC
+#define COMPILER_MSVC 1
 #endif
 
 #ifndef __has_builtin                   // Optional of course.

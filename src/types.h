@@ -18,12 +18,15 @@ typedef float    f32;
 typedef double   f64;
 typedef long double f80;
 
-#if COMPILER_MSVC
+#if COMPILER_MSVC_X86
+typedef unsigned long      umm;
+typedef signed long        smm;
+#elif COMPILER_MSVC
 typedef unsigned long long umm;
 typedef signed long long   smm;
 #else
-typedef unsigned long int umm;
-typedef signed long int   smm;
+typedef unsigned long int  umm;
+typedef signed long int    smm;
 #endif
 compile_expect(sizeof(umm) == sizeof(size_t));
 

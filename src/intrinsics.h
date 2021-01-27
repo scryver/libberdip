@@ -1,7 +1,12 @@
 struct TicketMutex
 {
+#if COMPILER_MSVC_X86
+    u32 volatile ticket;
+    u32 volatile serving;
+#else
     u64 volatile ticket;
     u64 volatile serving;
+#endif
 };
 
 #if COMPILER_MSVC
@@ -16,6 +21,7 @@ internal inline u32 atomic_compare_exchange_u32(u32 volatile *value, u32 new_val
     return (result);
 }
 
+#if !COMPILER_MSVC_X86
 internal inline u64 atomic_compare_exchange_u64(u64 volatile *value, u64 new_value, u64 expected)
 {
     u64 result = _InterlockedCompareExchange64((__int64  volatile *)value, new_value, expected);
@@ -34,6 +40,7 @@ internal inline u64 atomic_add_u64(u64 volatile *value, u64 addend)
     u64 result = _InterlockedExchangeAdd64((__int64 volatile *)value, addend);
     return result;
 }
+#endif
 
 internal inline u32 atomic_add_u32(u32 volatile *value, u32 addend)
 {
@@ -44,8 +51,13 @@ internal inline u32 atomic_add_u32(u32 volatile *value, u32 addend)
 
 internal inline u32 get_thread_id(void)
 {
+#if COMPILER_MSVC_X86
+    u8 *thread_local_storage = (u8 *)__readfsdword(0x18);
+    u32 thread_id = *(u32 *)(thread_local_storage + 0x24);
+#else
     u8 *thread_local_storage = (u8 *)__readgsqword(0x30);
     u32 thread_id = *(u32 *)(thread_local_storage + 0x48);
+#endif
     return thread_id;
 }
 
@@ -123,7 +135,11 @@ atomic_unlock(u32 volatile *lock)
 internal void
 begin_ticket_mutex(TicketMutex *mutex)
 {
+#if COMPILER_MSVC_X86
+    u32 ticket = atomic_add_u32(&mutex->ticket, 1);
+#else
     u64 ticket = atomic_add_u64(&mutex->ticket, 1);
+#endif
     while (ticket != mutex->serving) {
         _mm_pause();
     }
@@ -132,5 +148,9 @@ begin_ticket_mutex(TicketMutex *mutex)
 internal void
 end_ticket_mutex(TicketMutex *mutex)
 {
+#if COMPILER_MSVC_X86
+    atomic_add_u32(&mutex->serving, 1);
+#else
     atomic_add_u64(&mutex->serving, 1);
+#endif
 }

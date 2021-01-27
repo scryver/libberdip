@@ -10,7 +10,11 @@ struct StdMemoryBlock
     PlatformMemoryBlock block;
     StdMemoryBlock *prev;
     StdMemoryBlock *next;
+#if COMPILER_MSVC_X86
+    u64 padding[3];
+#else
     u64 padding[2];
+#endif
 };
 compile_expect(sizeof(StdMemoryBlock) == MEMORY_PLATFORM_REAL_SIZE);
 

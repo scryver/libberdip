@@ -1,4 +1,10 @@
+#if COMPILER_MSVC
+#undef NO_INTRINSICS
+#define NO_INTRINSICS 1
+#else
 #include <sys/mman.h>
+#endif
+
 #include <stdio.h>
 
 #include "platform.h"
@@ -7,15 +13,25 @@
 global MemoryAPI *gMemoryApi;
 //#include "base.h"
 
+#define STBTT_sqrt(x)    square_root(x)
+#define STBTT_assert(x)  i_expect_simple(x)
+#if COMPILER_MSVC
+#define STBTT_ifloor(x)  ((int)floor(x))
+#define STBTT_iceil(x)   ((int)ceil(x))
+#define STBTT_pow(x, y)  powf(x, y)
+#define STBTT_fmod(x, y) fmodf(x, y)
+#define STBTT_cos(x)     cosf(x)
+#define STBTT_acos(x)    acosf(x)
+#define STBTT_fabs(x)    fabs(x)
+#else
 #define STBTT_ifloor(x)  ((int)__builtin_floor(x))
 #define STBTT_iceil(x)   ((int)__builtin_ceil(x))
-#define STBTT_sqrt(x)    square_root(x)
 #define STBTT_pow(x, y)  __builtin_powf(x, y)
 #define STBTT_fmod(x, y) __builtin_fmodf(x, y)
 #define STBTT_cos(x)     __builtin_cosf(x)
 #define STBTT_acos(x)    __builtin_acosf(x)
 #define STBTT_fabs(x)    __builtin_fabs(x)
-#define STBTT_assert(x)  i_expect_simple(x)
+#endif
 
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
