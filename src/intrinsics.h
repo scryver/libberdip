@@ -45,7 +45,7 @@ internal inline u64 atomic_add_u64(u64 volatile *value, u64 addend)
 internal inline u32 atomic_add_u32(u32 volatile *value, u32 addend)
 {
     // NOTE(michiel): Returns the original value _prior_ to adding
-    u32 result = _InterlockedExchangeAdd((long *)value, addend);
+    u32 result = _InterlockedExchangeAdd((long volatile *)value, addend);
     return result;
 }
 

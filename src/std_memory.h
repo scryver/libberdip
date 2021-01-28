@@ -11,7 +11,7 @@ struct StdMemoryBlock
     StdMemoryBlock *prev;
     StdMemoryBlock *next;
 #if COMPILER_MSVC_X86
-    u64 padding[3];
+    u64 padding[5];
 #else
     u64 padding[2];
 #endif

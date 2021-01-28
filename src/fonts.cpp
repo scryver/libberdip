@@ -1,6 +1,7 @@
-#if COMPILER_MSVC
+#if _MSC_VER
 #undef NO_INTRINSICS
 #define NO_INTRINSICS 1
+#define _CRT_SECURE_NO_WARNINGS
 #else
 #include <sys/mman.h>
 #endif
@@ -72,7 +73,7 @@ load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoad
     Image result = {};
 
     s32 width, height;
-    f32 scale = stbtt_ScaleForPixelHeight(fontInfo, font->info.pixelHeight);
+    f32 scale = stbtt_ScaleForPixelHeight(fontInfo, (f32)font->info.pixelHeight);
     u8 *monoBitmap = stbtt_GetCodepointBitmap(fontInfo, scale, scale, (s32)codePoint,
                                               &width, &height, xOffset, yOffset);
 
@@ -87,10 +88,10 @@ load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoad
     u8 *source = monoBitmap;
     u32 *destRow = result.pixels + result.rowStride; // + (result.height - 1) * pitch;
 
-    for (s32 y = 1; y < (result.height - 1); ++y)
+    for (s32 y = 1; y < (s32)(result.height - 1); ++y)
     {
         u32 *dest = destRow;
-        for (s32 x = 1; x < (result.width - 1); ++x)
+        for (s32 x = 1; x < (s32)(result.width - 1); ++x)
         {
             f32 gray = (f32)(*source++ & 0xFF);
             v4 texel = {255.0f, 255.0f, 255.0f, gray};
@@ -140,7 +141,7 @@ add_character(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoader *
         glyph->unicodeCodePoint = codePoint;
         s32 xOffset, yOffset;
         glyph->bitmap = load_glyph_bitmap(allocator, fontInfo, font, codePoint, glyphIndex, &xOffset, &yOffset);
-        glyph->yOffset = yOffset;
+        glyph->yOffset = (f32)yOffset;
         font->unicodeMap[codePoint] = glyphIndex;
         if (font->info.onePastHighestCodePoint <= codePoint)
         {
@@ -164,7 +165,7 @@ int main(int argc, char **argv)
         s32 pixelHeight = 32;
         if (argc > 3)
         {
-            pixelHeight = number_from_string(string(argv[3]));
+            pixelHeight = safe_truncate_to_s32(number_from_string(string(argv[3])));
         }
 
         MemoryAllocator arenaAllocator = {};
@@ -193,7 +194,7 @@ int main(int argc, char **argv)
                 //  "*ascent - *descent + *lineGap"
                 stbtt_GetFontVMetrics(&fontInfo, &ascent, &descent, &lineGap);
 
-                f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, makeFont.info.pixelHeight);
+                f32 scale = stbtt_ScaleForPixelHeight(&fontInfo, (f32)makeFont.info.pixelHeight);
                 fprintf(stdout, "Scaling: %f\n", scale);
 
                 makeFont.info.ascenderHeight = (f32)ascent * scale;
