@@ -235,6 +235,16 @@ internal s16 safe_truncate_to_s16(s64 value) { i_expect(value <= (s64)S16_MAX); 
 internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)S8_MAX); i_expect(value >= (s64)S8_MIN); return (s8)value; }
 #endif
 
+#if COMPILER_MSVC
+internal u16 popcount(u16 value) { return __popcnt16(value); }
+internal u32 popcount(u32 value) { return __popcnt(value); }
+internal u64 popcount(u64 value) { return __popcnt64(value); }
+#else
+internal u16 popcount(u16 value) { return __builtin_popcount(value); }
+internal u32 popcount(u32 value) { return __builtin_popcountl(value); }
+internal u64 popcount(u64 value) { return __builtin_popcountll(value); }
+#endif
+
 internal u32
 reverse_bits(u32 b, u32 msb)
 {
