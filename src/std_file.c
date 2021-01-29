@@ -41,7 +41,7 @@ get_std_file_size(FILE *file)
         umm oldPos = ftell(file);
         fseek(file, 0, SEEK_END);
         result = ftell(file);
-        fseek(file, oldPos, SEEK_SET);
+        fseek(file, safe_truncate_to_s32(oldPos), SEEK_SET);
     }
     return result;
 }
@@ -114,7 +114,7 @@ internal READ_FROM_FILE_OFFSET(read_from_file_offset)
     FILE *inFile = (FILE *)apiFile->platform;
     if (inFile && no_file_errors(apiFile))
     {
-        fseek(inFile, offset, SEEK_SET);
+        fseek(inFile, safe_truncate_to_s32(offset), SEEK_SET);
         result = fread(buffer, 1, size, inFile);
     }
     return result;

@@ -238,7 +238,9 @@ internal s8  safe_truncate_to_s8(s64 value)  { i_expect(value <= (s64)S8_MAX); i
 #if COMPILER_MSVC
 //internal u16 popcount(u16 value) { return __popcnt16(value); }
 internal u32 popcount(u32 value) { return __popcnt(value); }
+#if !COMPILER_MSVC_X86
 internal u64 popcount(u64 value) { return __popcnt64(value); }
+#endif
 #else
 internal u16 popcount(u16 value) { return __builtin_popcount(value); }
 internal u32 popcount(u32 value) { return __builtin_popcountl(value); }
