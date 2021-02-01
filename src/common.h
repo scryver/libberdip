@@ -495,6 +495,22 @@ copy_single(umm size, u32 value, void *dst)
     }
 }
 
+internal b32
+is_equal(umm size, void *aInit, void *bInit)
+{
+    u8 *a = (u8 *)aInit;
+    u8 *b = (u8 *)bInit;
+    b32 result = true;
+    while (size--)
+    {
+        if (*a++ != *b++) {
+            result = false;
+            break;
+        }
+    }
+    return result;
+}
+
 internal f32
 clamp01(f32 value)
 {
