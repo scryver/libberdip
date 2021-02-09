@@ -86,7 +86,7 @@ load_glyph_bitmap(MemoryAllocator *allocator, stbtt_fontinfo *fontInfo, FontLoad
     fprintf(stderr, "Bitmap '%c' size: %d x %d\n", codePoint, result.width, result.height);
 
     u8 *source = monoBitmap;
-    u32 *destRow = result.pixels + result.rowStride; // + (result.height - 1) * pitch;
+    u32 *destRow = result.pixels + result.rowStride + 1; // + (result.height - 1) * pitch;
 
     for (s32 y = 1; y < (s32)(result.height - 1); ++y)
     {

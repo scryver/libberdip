@@ -815,6 +815,21 @@ try_parse_half_hex_byte(char c, u32 *dest)
     return result;
 }
 
+internal s32
+s32_from_cstring_start(char *str)
+{
+    s32 result = 0;
+
+    char *at = str;
+    while (is_digit(*at))
+    {
+        result *= 10;
+        result += (*at - '0');
+        ++at;
+    }
+    return result;
+}
+
 internal s64
 number_from_string(String s)
 {
