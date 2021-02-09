@@ -713,7 +713,7 @@ float_from_string(String s)
             --scanner.size;
         }
 
-        result *= pow(10.0, exponentSign * exponent);
+        result *= pow64(10.0, exponentSign * exponent);
     }
 
     return result * sign;
@@ -785,7 +785,7 @@ try_float_from_string(String s, f64 *dest)
             advance(&scanner);
         }
 
-        result *= pow(10.0, exponentSign * exponent);
+        result *= pow64(10.0, exponentSign * exponent);
     }
 
     valid = valid && (scanner.size == 0);
