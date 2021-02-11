@@ -2213,4 +2213,29 @@ in_rectangle(Rectangle2 rect, v2 point)
     return result;
 }
 
+internal Rectangle2
+operator *(Rectangle2 a, f32 b)
+{
+    Rectangle2 result;
+    result.min = b * a.min;
+    result.max = b * a.max;
+    return result;
+}
+
+internal Rectangle2
+operator *(f32 a, Rectangle2 b)
+{
+    return b * a;
+}
+
+// TODO(michiel): Is this the expected behaviour?
+internal Rectangle2
+operator +(Rectangle2 a, v2 b)
+{
+    Rectangle2 result = a;
+    result.min += b;
+    result.max += b;
+    return result;
+}
+
 #endif // __cplusplus
