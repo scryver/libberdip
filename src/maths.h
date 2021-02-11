@@ -414,7 +414,7 @@ modulus(f64 x, f64 y)
 }
 
 internal f32
-exp(f32 f)
+exp32(f32 f)
 {
     f32 result;
 #if NO_INTRINSICS
@@ -439,7 +439,7 @@ exp(f32 f)
 
 #if __has_builtin(__builtin_exp)
 internal f64
-exp(f64 f)
+exp64(f64 f)
 {
     f64 result;
 #if __has_builtin(__builtin_exp)
@@ -452,7 +452,7 @@ exp(f64 f)
 #endif
 
 internal f32
-pow(f32 x, f32 y)
+pow32(f32 x, f32 y)
 {
     // TODO(michiel): pow(x, y) = e^(y * ln(x))
     f32 result;
@@ -468,7 +468,7 @@ pow(f32 x, f32 y)
 
 #if !NO_INTRINSICS
 internal f64
-pow(f64 x, f64 y)
+pow64(f64 x, f64 y)
 {
     // TODO(michiel): pow(x, y) = e^(y * ln(x))
     f64 result;
@@ -510,7 +510,7 @@ square_root(f64 value)
 }
 
 internal f32
-log(f32 x)
+log32(f32 x)
 {
     f32 result;
 #if NO_INTRINSICS
@@ -525,7 +525,7 @@ log(f32 x)
 
 #if !NO_INTRINSICS
 internal f64
-log(f64 x)
+log64(f64 x)
 {
     f64 result;
 #if __has_builtin(__builtin_log)
@@ -579,16 +579,16 @@ rotate_right(u32 value, s32 amount)
 internal to \
 to##_from_##frm##_truncate(frm number) \
 { \
-    to result = (to)number; \
-    return result; \
+to result = (to)number; \
+return result; \
 }
 
 #define convert(frm, to, r, b) \
 internal to \
 to##_from_##frm##_##r(frm number) \
 { \
-    to result = (to)r##b(number); \
-    return result; \
+to result = (to)r##b(number); \
+return result; \
 }
 
 convert(f32, s16, round, 32)
