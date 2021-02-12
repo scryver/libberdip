@@ -363,7 +363,7 @@ internal Complex64
 exp(Complex64 c)
 {
     Complex64 result;
-    f64 magnitude = exp(c.real);
+    f64 magnitude = exp64(c.real);
     result.real = cos_pi(c.imag) * magnitude;
     result.imag = sin_pi(c.imag) * magnitude;
     return result;

@@ -466,20 +466,20 @@ pow32(f32 x, f32 y)
     return result;
 }
 
-#if !NO_INTRINSICS
 internal f64
 pow64(f64 x, f64 y)
 {
     // TODO(michiel): pow(x, y) = e^(y * ln(x))
     f64 result;
-#if __has_builtin(__builtin_pow)
+#if NO_INTRINSICS
+    result = pow(x, y);
+#elif __has_builtin(__builtin_pow)
     result = __builtin_pow(x, y);
 #else
 #error No pow builtin!
 #endif
     return result;
 }
-#endif
 
 internal f32
 square_root(f32 value)
