@@ -437,19 +437,20 @@ exp32(f32 f)
 #endif
 }
 
-#if __has_builtin(__builtin_exp)
+
 internal f64
 exp64(f64 f)
 {
     f64 result;
-#if __has_builtin(__builtin_exp)
+#if NO_INTRINSICS
+    result = exp(f);
+#elif __has_builtin(__builtin_exp)
     result = __builtin_exp(f);
 #else
 #error No exp builtin!
 #endif
     return result;
 }
-#endif
 
 internal f32
 pow32(f32 x, f32 y)
@@ -523,19 +524,19 @@ log32(f32 x)
     return result;
 }
 
-#if !NO_INTRINSICS
 internal f64
 log64(f64 x)
 {
     f64 result;
-#if __has_builtin(__builtin_log)
+#if NO_INTRINSICS
+    result = log(x);
+#elif __has_builtin(__builtin_log)
     result = __builtin_log(x);
 #else
 #error No log builtin!
 #endif
     return result;
 }
-#endif
 
 internal u32
 rotate_left(u32 value, s32 amount)
