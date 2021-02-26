@@ -283,7 +283,6 @@ internal ALLOCATE_MEMORY_SIZE(sub_alloc)
                     ++subAllocator->splitCount;
 #endif
                     SubAllocItem *sibling = (SubAllocItem *)((u8 *)allocPtr + bucketSize);
-                    suballoc_expect(!sibling->isUsed);
                     suballoc_expect(is_right(subAllocator, sibling, bucketSize));
                     add_to_free_list(subAllocator, sibling, bucket);
 
