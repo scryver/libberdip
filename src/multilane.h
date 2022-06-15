@@ -1,9 +1,11 @@
 #define MULTILANE_SHUFFLE_MASK(a, b, c, d) (((d) << 6) | ((c) << 4) | ((b) << 2) | (a))
+#define MULTILANE_SHUFFLE_MASK_D(a, b)     (((b) << 1) | (a))
 
 union f32_4x
 {
     __m128  m;
     __m128i mi;
+    __m128d md;
     f32     e[4];
     u32     u[4];
 };
@@ -12,6 +14,7 @@ union f64_2x
 {
     __m128  m;
     __m128i mi;
+    __m128d md;
     f64     e[2];
     u64     u[2];
 };
@@ -73,7 +76,7 @@ union v4_4x
     f32_4x e[4];
 };
 
-struct SinCos_4x
+struct SinCos32_4x
 {
     f32_4x sin;
     f32_4x cos;
@@ -130,6 +133,30 @@ F32_4x(__m128 m)
 {
     f32_4x result;
     result.m = m;
+    return result;
+}
+
+internal f32_4x
+F32_4x(f64_2x x)
+{
+    f32_4x result;
+    result.m = _mm_cvtpd_ps(x.md);
+    return result;
+}
+
+internal f32_4x
+F32_4x(f64_2x x, f64_2x y)
+{
+    f32_4x result;
+    result.m = _mm_shuffle_ps(_mm_cvtpd_ps(x.md), _mm_cvtpd_ps(y.md), MULTILANE_SHUFFLE_MASK(0, 1, 0, 1));
+    return result;
+}
+
+internal f32_4x
+zero_s32_4x(void)
+{
+    f32_4x result;
+    result.mi = _mm_setzero_si128();
     return result;
 }
 
@@ -458,6 +485,23 @@ s32_4x_or(f32_4x a, f32_4x b)
 }
 
 internal f32_4x
+s32_4x_xor(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+    result.mi = _mm_xor_si128(a.mi, b.mi);
+    return result;
+}
+
+internal f32_4x
+s32_4x_and_not(f32_4x a, f32_4x b)
+{
+    // NOTE(michiel): Returns a & ~b
+    f32_4x result;
+    result.mi = _mm_andnot_si128(b.mi, a.mi);
+    return result;
+}
+
+internal f32_4x
 s32_4x_add(f32_4x a, f32_4x b)
 {
     f32_4x result;
@@ -474,26 +518,29 @@ s32_4x_sub(f32_4x a, f32_4x b)
 }
 
 internal f32_4x
-s32_4x_sll(f32_4x a, f32_4x b)
+s32_4x_sll(f32_4x a, s32 count)
 {
+    // NOTE(michiel): Shifts all lanes by count
     f32_4x result;
-    result.mi = _mm_sll_epi32(a.mi, b.mi);
+    result.mi = _mm_sll_epi32(a.mi, S32_4x(count, 0, 0, 0).mi);
     return result;
 }
 
 internal f32_4x
-s32_4x_srl(f32_4x a, f32_4x b)
+s32_4x_srl(f32_4x a, s32 count)
 {
+    // NOTE(michiel): Shifts all lanes by count
     f32_4x result;
-    result.mi = _mm_srl_epi32(a.mi, b.mi);
+    result.mi = _mm_srl_epi32(a.mi, S32_4x(count, 0, 0, 0).mi);
     return result;
 }
 
 internal f32_4x
-s32_4x_sra(f32_4x a, f32_4x b)
+s32_4x_sra(f32_4x a, s32 count)
 {
+    // NOTE(michiel): Shifts all lanes by count
     f32_4x result;
-    result.mi = _mm_sra_epi32(a.mi, b.mi);
+    result.mi = _mm_sra_epi32(a.mi, S32_4x(count, 0, 0, 0).mi);
     return result;
 }
 
@@ -510,6 +557,14 @@ s32_4x_greater(f32_4x a, f32_4x b)
 {
     f32_4x result;
     result.mi = _mm_cmpgt_epi32(a.mi, b.mi);
+    return result;
+}
+
+internal f32_4x
+s32_4x_less(f32_4x a, f32_4x b)
+{
+    f32_4x result;
+    result.mi = _mm_cmplt_epi32(a.mi, b.mi);
     return result;
 }
 
@@ -536,6 +591,171 @@ mul_s64_2x(f32_4x a, f32_4x b)
     result.mi = _mm_slli_epi64(result.mi, 32);
     result.mi = _mm_add_epi64(result.mi, x0.mi);
 
+    return result;
+}
+
+//
+// NOTE(michiel): f64_2x
+//
+
+internal f64_2x
+F64_2x(f64 a)
+{
+    f64_2x result;
+    result.md = _mm_set1_pd(a);
+    return result;
+}
+
+internal f64_2x
+F64_2x(f64 a, f64 b)
+{
+    f64_2x result;
+    result.md = _mm_setr_pd(a, b);
+    return result;
+}
+
+internal f64_2x
+F64_2x(f32_4x a, b32 doHigh = false)
+{
+    f64_2x result;
+    if (doHigh) {
+        a.m = _mm_shuffle_ps(a.m, a.m, MULTILANE_SHUFFLE_MASK(2, 3, 2, 3));
+    }
+    result.md = _mm_cvtps_pd(a.m);
+    return result;
+}
+
+internal f64_2x
+S64_2x(s64 a)
+{
+    f64_2x result;
+    result.mi = _mm_set1_epi64x(a);
+    return result;
+}
+
+internal f64_2x
+S64_2x(s64 a, s64 b)
+{
+    f64_2x result;
+    result.mi = _mm_set_epi64x(b, a); // NOTE(michiel): Looks backwards but that's why we normally prefer the 'setr' version
+    return result;
+}
+
+internal s64
+s64_from_f64_2x(f64_2x a, b32 doHigh = false)
+{
+    if (doHigh) {
+        a.md = _mm_shuffle_pd(a.md, a.md, MULTILANE_SHUFFLE_MASK_D(1, 1));
+    }
+    s64 result = _mm_cvtsd_si64(a.md);
+    return result;
+}
+
+internal f64_2x &
+operator +=(f64_2x &a, f64_2x b)
+{
+    a.md = _mm_add_pd(a.md, b.md);
+    return a;
+}
+
+internal f64_2x
+operator +(f64_2x a, f64_2x b)
+{
+    f64_2x result = a;
+    result += b;
+    return result;
+}
+
+internal f64_2x &
+operator -=(f64_2x &a, f64_2x b)
+{
+    a.md = _mm_sub_pd(a.md, b.md);
+    return a;
+}
+
+internal f64_2x
+operator -(f64_2x a, f64_2x b)
+{
+    f64_2x result = a;
+    result -= b;
+    return result;
+}
+
+internal f64_2x &
+operator *=(f64_2x &a, f64_2x b)
+{
+    a.md = _mm_mul_pd(a.md, b.md);
+    return a;
+}
+
+internal f64_2x
+operator *(f64_2x a, f64_2x b)
+{
+    f64_2x result = a;
+    result *= b;
+    return result;
+}
+
+internal f64_2x
+square(f64_2x a)
+{
+    return a * a;
+}
+
+internal f64_2x
+round(f64_2x a)
+{
+    f64_2x result;
+    result.md = _mm_round_pd(a.md, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC);
+    return result;
+}
+
+internal f64_2x
+select(f64_2x op0, f64_2x mask, f64_2x op1)
+{
+    f64_2x result;
+    result.md = _mm_or_pd(_mm_andnot_pd(mask.md, op0.md),
+                          _mm_and_pd(mask.md, op1.md));
+    return result;
+}
+
+internal f64_2x
+s64_2x_add(f64_2x a, f64_2x b)
+{
+    f64_2x result;
+    result.mi = _mm_add_epi64(a.mi, b.mi);
+    return result;
+}
+
+internal f64_2x
+s64_2x_sub(f64_2x a, f64_2x b)
+{
+    f64_2x result;
+    result.mi = _mm_sub_epi64(a.mi, b.mi);
+    return result;
+}
+
+internal f64_2x
+s64_2x_sll(f64_2x a, s32 count)
+{
+    f64_2x result;
+    result.mi = _mm_sll_epi64(a.mi, S64_2x(count, 0).mi);
+    return result;
+}
+
+internal f64_2x
+s64_2x_srl(f64_2x a, s32 count)
+{
+    f64_2x result;
+    result.mi = _mm_srl_epi64(a.mi, S64_2x(count, 0).mi);
+    return result;
+}
+
+internal f64_2x
+s64_2x_sra(f64_2x a, s32 count)
+{
+    f64_2x result;
+    result.mi = _mm_sra_epi64(a.mi, S64_2x(count, 0).mi);
     return result;
 }
 
@@ -1206,11 +1426,11 @@ select(v4_4x op0, f32_4x mask, v4_4x op1)
     return result;
 }
 
-internal SinCos_4x
+internal SinCos32_4x
 sincos_f32_4x_approx_small(f32_4x angles)
 {
     // NOTE(michiel): Valid for angles between -0.5 and 0.5
-    SinCos_4x result;
+    SinCos32_4x result;
 
     f32_4x one_4x = F32_4x(1.0f);
     f32_4x halfPi_4x = F32_4x(0.5f * F32_PI);
@@ -1274,7 +1494,7 @@ cos_f32_4x(f32_4x angles)
     f32_4x do_cos_mask = quadrant3 | (quadrants == zero_f32_4x());
     f32_4x do_inv_mask = quadrant2 | quadrant3;
 
-    SinCos_4x sincos = sincos_f32_4x_approx_small(angles);
+    SinCos32_4x sincos = sincos_f32_4x_approx_small(angles);
     f32_4x result = select(sincos.sin, do_cos_mask, sincos.cos);
     result = select(result, do_inv_mask, -result);
 
@@ -1289,7 +1509,7 @@ sin_f32_4x(f32_4x angles)
     return result;
 }
 
-internal SinCos_4x
+internal SinCos32_4x
 sincos_f32_4x(f32_4x angles)
 {
     // NOTE(michiel): Getting both the sine and cosine of some angle is basically free (about as fast as just a sine).
@@ -1315,8 +1535,8 @@ sincos_f32_4x(f32_4x angles)
     f32_4x do_invc_mask = quadrant2 | quadrant3;
     f32_4x do_invs_mask = quadrant3 | quadrant4;
 
-    SinCos_4x sincos = sincos_f32_4x_approx_small(angles);
-    SinCos_4x result;
+    SinCos32_4x sincos = sincos_f32_4x_approx_small(angles);
+    SinCos32_4x result;
     result.cos = select(sincos.sin, do_cos_mask, sincos.cos);
     result.cos = select(result.cos, do_invc_mask, -result.cos);
     result.sin = select(sincos.cos, do_cos_mask, sincos.sin);
@@ -1349,7 +1569,7 @@ sincos_f32_4x(f32_4x angles)
 
 #endif
 
-internal SinCos_4x
+internal SinCos32_4x
 sincos_pi_4x(f32_4x angles)
 {
     f32_4x zero_4x = zero_f32_4x();
@@ -1395,7 +1615,7 @@ sincos_pi_4x(f32_4x angles)
 
     f32_4x flipMask = s32_4x_equal(integerPart, oneInt_4x) | s32_4x_equal(integerPart, twoInt_4x);
 
-    SinCos_4x result;
+    SinCos32_4x result;
     result.sin = select(sinApprox, flipMask, cosApprox);
     result.cos = select(cosApprox, flipMask, sinApprox);
 

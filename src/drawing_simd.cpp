@@ -263,13 +263,13 @@ draw_line_simd(Image *image, v2 start, v2 end, v4 colourStart = V4(1, 1, 1, 1), 
                 v4 pixel3;
 
                 f32 gradient = diff.y / diff.x;
-                f32 xStart = round(start.x);
+                f32 xStart = round32(start.x);
                 f32 yStart = start.y + gradient * (xStart - start.x);
-                f32 gapStart = 1.0f - fraction(start.x + 0.5f);
+                f32 gapStart = 1.0f - fraction32(start.x + 0.5f);
 
-                f32 xEnd = round(end.x);
+                f32 xEnd = round32(end.x);
                 f32 yEnd = end.y + gradient * (xEnd - end.x);
-                f32 gapEnd = fraction(end.x + 0.5f);
+                f32 gapEnd = fraction32(end.x + 0.5f);
 
                 f32 intery = yStart + gradient;
 
@@ -278,10 +278,10 @@ draw_line_simd(Image *image, v2 start, v2 end, v4 colourStart = V4(1, 1, 1, 1), 
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
 
-                pixel0.a = colourStart.a * (1.0f - fraction(yStart)) * gapStart;
-                pixel1.a = colourStart.a * fraction(yStart) * gapStart;
-                pixel2.a = colourEnd.a * (1.0f - fraction(yEnd)) * gapEnd;
-                pixel3.a = colourEnd.a * fraction(yEnd) * gapEnd;
+                pixel0.a = colourStart.a * (1.0f - fraction32(yStart)) * gapStart;
+                pixel1.a = colourStart.a * fraction32(yStart) * gapStart;
+                pixel2.a = colourEnd.a * (1.0f - fraction32(yEnd)) * gapEnd;
+                pixel3.a = colourEnd.a * fraction32(yEnd) * gapEnd;
 
                 pixel0.rgb = pixel0.a * colourStart.rgb;
                 pixel1.rgb = pixel1.a * colourStart.rgb;
@@ -415,13 +415,13 @@ draw_line_simd(Image *image, v2 start, v2 end, v4 colourStart = V4(1, 1, 1, 1), 
                 v4 pixels[4];
 
                 f32 gradient = diff.x / diff.y;
-                f32 yStart = round(start.y);
+                f32 yStart = round32(start.y);
                 f32 xStart = start.x + gradient * (yStart - start.y);
-                f32 gapStart = 1.0f - fraction(start.y + 0.5f);
+                f32 gapStart = 1.0f - fraction32(start.y + 0.5f);
 
-                f32 yEnd = round(end.y);
+                f32 yEnd = round32(end.y);
                 f32 xEnd = end.x + gradient * (yEnd - end.y);
-                f32 gapEnd = fraction(end.y + 0.5f);
+                f32 gapEnd = fraction32(end.y + 0.5f);
 
                 f32 intery = xStart + gradient;
 
@@ -430,10 +430,10 @@ draw_line_simd(Image *image, v2 start, v2 end, v4 colourStart = V4(1, 1, 1, 1), 
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
 
-                pixels[0].a = colourStart.a * (1.0f - fraction(xStart)) * gapStart;
-                pixels[1].a = colourStart.a * fraction(xStart) * gapStart;
-                pixels[2].a = colourEnd.a * (1.0f - fraction(xEnd)) * gapEnd;
-                pixels[3].a = colourEnd.a * fraction(xEnd) * gapEnd;
+                pixels[0].a = colourStart.a * (1.0f - fraction32(xStart)) * gapStart;
+                pixels[1].a = colourStart.a * fraction32(xStart) * gapStart;
+                pixels[2].a = colourEnd.a * (1.0f - fraction32(xEnd)) * gapEnd;
+                pixels[3].a = colourEnd.a * fraction32(xEnd) * gapEnd;
 
                 pixels[0].rgb = pixels[0].a * colourStart.rgb;
                 pixels[1].rgb = pixels[1].a * colourStart.rgb;

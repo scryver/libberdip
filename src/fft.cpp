@@ -23,7 +23,7 @@ fft(u32 dftCount, Complex32 *signal)
         u32 index0 = index + 0;
         u32 index1 = index + 1;
 
-        u32 reversedIndex0 = reverse_bits(index0, highBit.index);
+        u32 reversedIndex0 = reverse_bits32(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
 
         if (reversedIndex0 > index0)
@@ -59,7 +59,7 @@ fft(u32 dftCount, Complex32 *signal)
     }
 
     {
-        SinCos_4x sinCos = sincos_f32_4x(F32_4x(0.0f, -0.125f, -0.25f, -0.375f));
+        SinCos32_4x sinCos = sincos_f32_4x(F32_4x(0.0f, -0.125f, -0.25f, -0.375f));
         f32_4x W4_reals;
         f32_4x W4_imags;
         W4_reals.mi = _mm_shuffle_epi32(sinCos.cos.mi, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
@@ -166,7 +166,7 @@ fft(u32 dftCount, Complex32 *signal)
         Wm4.real = fft_cos(-oneOverMPre * 8.0f);
         Wm4.imag = fft_sin(-oneOverMPre * 8.0f);
 #else
-        SinCos_4x sinCos = sincos_f32_4x(F32_4x(-oneOverMPre*2.0f, -oneOverMPre*4.0f, -oneOverMPre*6.0f, -oneOverMPre*8.0f));
+        SinCos32_4x sinCos = sincos_f32_4x(F32_4x(-oneOverMPre*2.0f, -oneOverMPre*4.0f, -oneOverMPre*6.0f, -oneOverMPre*8.0f));
         Wm.real = sinCos.cos.e[0];
         Wm.imag = sinCos.sin.e[0];
         Wm2.real = sinCos.cos.e[1];
@@ -355,7 +355,7 @@ ifft(u32 dftCount, Complex32 *signal)
         u32 index0 = index + 0;
         u32 index1 = index + 1;
 
-        u32 reversedIndex0 = reverse_bits(index0, highBit.index);
+        u32 reversedIndex0 = reverse_bits32(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
 
         if (reversedIndex0 > index0)
@@ -722,7 +722,7 @@ fft_exact(u32 dftCount, Complex32 *signal)
         u32 index0 = index + 0;
         u32 index1 = index + 1;
 
-        u32 reversedIndex0 = reverse_bits(index0, highBit.index);
+        u32 reversedIndex0 = reverse_bits32(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
 
         if (reversedIndex0 > index0)
@@ -758,7 +758,7 @@ fft_exact(u32 dftCount, Complex32 *signal)
     }
 
     {
-        SinCos_4x sinCos = sincos_f32_4x(F32_4x(0.0f, -0.125f, -0.25f, -0.375f));
+        SinCos32_4x sinCos = sincos_f32_4x(F32_4x(0.0f, -0.125f, -0.25f, -0.375f));
 
         f32_4x W4_reals;
         f32_4x W4_imags;
@@ -886,7 +886,7 @@ fft_exact(u32 dftCount, Complex32 *signal)
                     a_real.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                     a_imag.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
-                    SinCos_4x w0 = sincos_f32_4x(angles);
+                    SinCos32_4x w0 = sincos_f32_4x(angles);
                     angles = angles + angleStep;
 
                     f32_4x O0_real = (w0.cos * a_real) - (w0.sin * a_imag);
@@ -897,7 +897,7 @@ fft_exact(u32 dftCount, Complex32 *signal)
                     b_real.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                     b_imag.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
-                    SinCos_4x w1 = sincos_f32_4x(angles);
+                    SinCos32_4x w1 = sincos_f32_4x(angles);
                     angles = angles + angleStep;
 
                     f32_4x O1_real = (w1.cos * b_real) - (w1.sin * b_imag);
@@ -971,7 +971,7 @@ ifft_exact(u32 dftCount, Complex32 *signal)
         u32 index0 = index + 0;
         u32 index1 = index + 1;
 
-        u32 reversedIndex0 = reverse_bits(index0, highBit.index);
+        u32 reversedIndex0 = reverse_bits32(index0, highBit.index);
         u32 reversedIndex1 = reversedIndex0 ^ halfCount;
 
         if (reversedIndex0 > index0)
@@ -1007,7 +1007,7 @@ ifft_exact(u32 dftCount, Complex32 *signal)
     }
 
     {
-        SinCos_4x sinCos = sincos_f32_4x(F32_4x(0.0f, 0.125f, 0.25f, 0.375f));
+        SinCos32_4x sinCos = sincos_f32_4x(F32_4x(0.0f, 0.125f, 0.25f, 0.375f));
 
         f32_4x W4_reals;
         f32_4x W4_imags;
@@ -1152,7 +1152,7 @@ ifft_exact(u32 dftCount, Complex32 *signal)
                     a_real.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                     a_imag.m = _mm_shuffle_ps(a01.m, a23.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
-                    SinCos_4x w0 = sincos_f32_4x(angles);
+                    SinCos32_4x w0 = sincos_f32_4x(angles);
                     angles = angles + angleStep;
 
                     f32_4x mulX0 = w0.cos * a_real;
@@ -1168,7 +1168,7 @@ ifft_exact(u32 dftCount, Complex32 *signal)
                     b_real.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(0, 2, 0, 2));
                     b_imag.m = _mm_shuffle_ps(a45.m, a67.m, MULTILANE_SHUFFLE_MASK(1, 3, 1, 3));
 
-                    SinCos_4x w1 = sincos_f32_4x(angles);
+                    SinCos32_4x w1 = sincos_f32_4x(angles);
                     angles = angles + angleStep;
 
                     f32_4x mulY0 = w1.cos * b_real;

@@ -5,7 +5,7 @@
 global const char gDecimalChars[]  = "0123456789";
 global const char gLowerHexChars[] = "0123456789abcdef";
 global const char gUpperHexChars[] = "0123456789ABCDEF";
-#if COMPILER_MSVC
+#if COMPILER_MSVC || COMPILER_GCC
 global const u32 gNumFromHex[256] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -518,6 +518,7 @@ mmap_u64_put_u64(MemoryMap *map, u64 key, u64 value)
         else if (map->keys[hash] == key)
         {
             map->values[hash] = value;
+            break;
         }
         ++hash;
     }

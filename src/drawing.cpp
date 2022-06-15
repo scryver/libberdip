@@ -228,48 +228,48 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 }
 
                 f32 gradient = diff.y / diff.x;
-                f32 xEnd = round(start.x);
+                f32 xEnd = round32(start.x);
                 f32 yEnd = start.y + gradient * (xEnd - start.x);
-                f32 xGap = 1.0f - fraction(start.x + 0.5f);
+                f32 xGap = 1.0f - fraction32(start.x + 0.5f);
 
                 s32 xPixel1 = (s32)xEnd;
                 s32 yPixel1 = (s32)yEnd;
-                pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
+                pixel.a = colour.a * (1.0f - fraction32(yEnd)) * xGap;
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel1, yPixel1, pixel);
 
                 if (yPixel1 + 1 < image->height)
                 {
-                    pixel.a = colour.a * fraction(yEnd) * xGap;
+                    pixel.a = colour.a * fraction32(yEnd) * xGap;
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, xPixel1, yPixel1 + 1, pixel);
                 }
 
                 f32 intery = yEnd + gradient;
 
-                xEnd = round(end.x);
+                xEnd = round32(end.x);
                 yEnd = end.y + gradient * (xEnd - end.x);
-                xGap = fraction(end.x + 0.5f);
+                xGap = fraction32(end.x + 0.5f);
 
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
-                pixel.a = colour.a * (1.0f - fraction(yEnd)) * xGap;
+                pixel.a = colour.a * (1.0f - fraction32(yEnd)) * xGap;
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel2, yPixel2, pixel);
 
                 if (yPixel2 + 1 < image->height)
                 {
-                    pixel.a = colour.a * fraction(yEnd) * xGap;
+                    pixel.a = colour.a * fraction32(yEnd) * xGap;
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, xPixel2, yPixel2 + 1, pixel);
                 }
 
                 for (s32 x = xPixel1 + 1; x < xPixel2; ++x)
                 {
-                    pixel.a = colour.a * (1.0f - fraction(intery));
+                    pixel.a = colour.a * (1.0f - fraction32(intery));
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, x, (s32)intery, pixel);
-                    pixel.a = colour.a * fraction(intery);
+                    pixel.a = colour.a * fraction32(intery);
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, x, (s32)intery + 1, pixel);
                     intery += gradient;
@@ -288,48 +288,48 @@ draw_line(Image *image, v2 start, v2 end, v4 colour = V4(1, 1, 1, 1))
                 }
 
                 f32 gradient = diff.x / diff.y;
-                f32 yEnd = round(start.y);
+                f32 yEnd = round32(start.y);
                 f32 xEnd = start.x + gradient * (yEnd - start.y);
-                f32 yGap = 1.0f - fraction(start.y + 0.5f);
+                f32 yGap = 1.0f - fraction32(start.y + 0.5f);
 
                 s32 xPixel1 = (s32)xEnd;
                 s32 yPixel1 = (s32)yEnd;
-                pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
+                pixel.a = colour.a * (1.0f - fraction32(xEnd)) * yGap;
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel1, yPixel1, pixel);
 
                 if (xPixel1 + 1 < image->width)
                 {
-                    pixel.a = colour.a * fraction(xEnd) * yGap;
+                    pixel.a = colour.a * fraction32(xEnd) * yGap;
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, xPixel1 + 1, yPixel1, pixel);
                 }
 
                 f32 intery = xEnd + gradient;
 
-                yEnd = round(end.y);
+                yEnd = round32(end.y);
                 xEnd = end.x + gradient * (yEnd - end.y);
-                yGap = fraction(end.y + 0.5f);
+                yGap = fraction32(end.y + 0.5f);
 
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
-                pixel.a = colour.a * (1.0f - fraction(xEnd)) * yGap;
+                pixel.a = colour.a * (1.0f - fraction32(xEnd)) * yGap;
                 pixel.rgb = pixel.a * colour.rgb;
                 draw_pixel(image, xPixel2, yPixel2, pixel);
 
                 if (xPixel2 + 1 < image->width)
                 {
-                    pixel.a = colour.a * fraction(xEnd) * yGap;
+                    pixel.a = colour.a * fraction32(xEnd) * yGap;
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, xPixel2 + 1, yPixel2, pixel);
                 }
 
                 for (s32 y = yPixel1 + 1; y < yPixel2; ++y)
                 {
-                    pixel.a = colour.a * (1.0f - fraction(intery));
+                    pixel.a = colour.a * (1.0f - fraction32(intery));
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, (s32)intery, y, pixel);
-                    pixel.a = colour.a * fraction(intery);
+                    pixel.a = colour.a * fraction32(intery);
                     pixel.rgb = pixel.a * colour.rgb;
                     draw_pixel(image, (s32)intery + 1, y, pixel);
                     intery += gradient;
@@ -1162,13 +1162,13 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 v4 pixel3;
 
                 f32 gradient = diff.y / diff.x;
-                f32 xStart = round(start.x);
+                f32 xStart = round32(start.x);
                 f32 yStart = start.y + gradient * (xStart - start.x);
-                f32 gapStart = 1.0f - fraction(start.x + 0.5f);
+                f32 gapStart = 1.0f - fraction32(start.x + 0.5f);
 
-                f32 xEnd = round(end.x);
+                f32 xEnd = round32(end.x);
                 f32 yEnd = end.y + gradient * (xEnd - end.x);
-                f32 gapEnd = fraction(end.x + 0.5f);
+                f32 gapEnd = fraction32(end.x + 0.5f);
 
                 f32 intery = yStart + gradient;
 
@@ -1177,10 +1177,10 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
 
-                pixel0.a = colourStart.a * (1.0f - fraction(yStart)) * gapStart;
-                pixel1.a = colourStart.a * fraction(yStart) * gapStart;
-                pixel2.a = colourEnd.a * (1.0f - fraction(yEnd)) * gapEnd;
-                pixel3.a = colourEnd.a * fraction(yEnd) * gapEnd;
+                pixel0.a = colourStart.a * (1.0f - fraction32(yStart)) * gapStart;
+                pixel1.a = colourStart.a * fraction32(yStart) * gapStart;
+                pixel2.a = colourEnd.a * (1.0f - fraction32(yEnd)) * gapEnd;
+                pixel3.a = colourEnd.a * fraction32(yEnd) * gapEnd;
 
                 pixel0.rgb = pixel0.a * colourStart.rgb;
                 pixel1.rgb = pixel1.a * colourStart.rgb;
@@ -1223,9 +1223,6 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 f32_4x const_255 = F32_4x(255.0f);
                 f32_4x oneOver255 = F32_4x(1.0f / 255.0f);
                 f32_4x pixelMask = S32_4x(0x00FF);
-                f32_4x const_8_int = S32_4x(8);
-                f32_4x const_16_int = S32_4x(16);
-                f32_4x const_24_int = S32_4x(24);
 
                 for (s32 x = xPixel1 + 1; x < xPixel2; x += 4)
                 {
@@ -1285,14 +1282,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
 
                     v4_4x sourceA;
                     v4_4x sourceB;
-                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_16_int), pixelMask));
-                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_8_int), pixelMask));
+                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 16), pixelMask));
+                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 8), pixelMask));
                     sourceA.b = f32_4x_from_s32(s32_4x_and(sourceARaw, pixelMask));
-                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_24_int), pixelMask));
-                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_16_int), pixelMask));
-                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_8_int), pixelMask));
+                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 24), pixelMask));
+                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 16), pixelMask));
+                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 8), pixelMask));
                     sourceB.b = f32_4x_from_s32(s32_4x_and(sourceBRaw, pixelMask));
-                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_24_int), pixelMask));
+                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 24), pixelMask));
 
                     sourceA = sourceA * oneOver255;
                     sourceB = sourceB * oneOver255;
@@ -1378,13 +1375,13 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 v4 pixels[4];
 
                 f32 gradient = diff.x / diff.y;
-                f32 yStart = round(start.y);
+                f32 yStart = round32(start.y);
                 f32 xStart = start.x + gradient * (yStart - start.y);
-                f32 gapStart = 1.0f - fraction(start.y + 0.5f);
+                f32 gapStart = 1.0f - fraction32(start.y + 0.5f);
 
-                f32 yEnd = round(end.y);
+                f32 yEnd = round32(end.y);
                 f32 xEnd = end.x + gradient * (yEnd - end.y);
-                f32 gapEnd = fraction(end.y + 0.5f);
+                f32 gapEnd = fraction32(end.y + 0.5f);
 
                 f32 intery = xStart + gradient;
 
@@ -1393,10 +1390,10 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 s32 xPixel2 = (s32)xEnd;
                 s32 yPixel2 = (s32)yEnd;
 
-                pixels[0].a = colourStart.a * (1.0f - fraction(xStart)) * gapStart;
-                pixels[1].a = colourStart.a * fraction(xStart) * gapStart;
-                pixels[2].a = colourEnd.a * (1.0f - fraction(xEnd)) * gapEnd;
-                pixels[3].a = colourEnd.a * fraction(xEnd) * gapEnd;
+                pixels[0].a = colourStart.a * (1.0f - fraction32(xStart)) * gapStart;
+                pixels[1].a = colourStart.a * fraction32(xStart) * gapStart;
+                pixels[2].a = colourEnd.a * (1.0f - fraction32(xEnd)) * gapEnd;
+                pixels[3].a = colourEnd.a * fraction32(xEnd) * gapEnd;
 
                 pixels[0].rgb = pixels[0].a * colourStart.rgb;
                 pixels[1].rgb = pixels[1].a * colourStart.rgb;
@@ -1439,9 +1436,6 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
                 f32_4x const_255 = F32_4x(255.0f);
                 f32_4x oneOver255 = F32_4x(1.0f / 255.0f);
                 f32_4x pixelMask = S32_4x(0x00FF);
-                f32_4x const_8_int = S32_4x(8);
-                f32_4x const_16_int = S32_4x(16);
-                f32_4x const_24_int = S32_4x(24);
 
                 for (s32 y = yPixel1 + 1; y < yPixel2; y += 4)
                 {
@@ -1502,14 +1496,14 @@ draw_line(Image *image, v2 start, v2 end, v4 colourStart, v4 colourEnd)
 
                     v4_4x sourceA;
                     v4_4x sourceB;
-                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_16_int), pixelMask));
-                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_8_int), pixelMask));
+                    sourceA.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 16), pixelMask));
+                    sourceA.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 8), pixelMask));
                     sourceA.b = f32_4x_from_s32(s32_4x_and(sourceARaw, pixelMask));
-                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, const_24_int), pixelMask));
-                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_16_int), pixelMask));
-                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_8_int), pixelMask));
+                    sourceA.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceARaw, 24), pixelMask));
+                    sourceB.r = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 16), pixelMask));
+                    sourceB.g = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 8), pixelMask));
                     sourceB.b = f32_4x_from_s32(s32_4x_and(sourceBRaw, pixelMask));
-                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, const_24_int), pixelMask));
+                    sourceB.a = f32_4x_from_s32(s32_4x_and(s32_4x_srl(sourceBRaw, 24), pixelMask));
 
                     sourceA = sourceA * oneOver255;
                     sourceB = sourceB * oneOver255;
@@ -2071,6 +2065,18 @@ internal void
 fill_rectangle(Image *image, v2 pos, v2 dim, u32 colour)
 {
     fill_rectangle(image, pos, dim, unpack_colour(colour));
+}
+
+internal void
+fill_rectangle(Image *image, Rectangle2 rect, v4 colour)
+{
+    fill_rectangle(image, rect.min, get_dim(rect), colour);
+}
+
+internal void
+fill_rectangle(Image *image, Rectangle2 rect, u32 colour)
+{
+    fill_rectangle(image, rect, unpack_colour(colour));
 }
 
 internal void

@@ -145,6 +145,7 @@
 // TODO(michiel): Find a better solution to the casting...
 typedef union u32f32 { u32 u; f32 f; } U32F32;
 internal U32F32 u32f32(u32 u) { U32F32 t; t.u = u; return t; }
+internal U32F32 u32f32(f32 f) { U32F32 t; t.f = f; return t; }
 #define F32_SIGN_MASK           0x80000000U
 #define F32_EXP_MASK            0x7F800000U
 #define F32_FRAC_MASK           0x007FFFFFU
@@ -160,13 +161,14 @@ internal U32F32 u32f32(u32 u) { U32F32 t; t.u = u; return t; }
 
 typedef union u64f64 { u64 u; f64 f; } U64F64;
 internal U64F64 u64f64(u64 u) { U64F64 t; t.u = u; return t; }
+internal U64F64 u64f64(f64 f) { U64F64 t; t.f = f; return t; }
 #define F64_SIGN_MASK           0x8000000000000000ULL
 #define F64_EXP_MASK            0x7FF0000000000000ULL
 #define F64_FRAC_MASK           0x000FFFFFFFFFFFFFULL
 #if 1
-#define F64_MAX                 u64f64(0x7F00000000000000ULL).f
-#define F64_INF                 u64f64(F64_EXP_MASK).f
-#define F64_NAN                 u64f64(F64_EXP_MASK | F64_FRAC_MASK).f // NOTE(michiel): F64_FRAC_MASK can be anything but 0
+#define F64_MAX                 u64f64((u64)0x7F00000000000000ULL).f
+#define F64_INF                 u64f64((u64)F64_EXP_MASK).f
+#define F64_NAN                 u64f64((u64)(F64_EXP_MASK | F64_FRAC_MASK)).f // NOTE(michiel): F64_FRAC_MASK can be anything but 0
 #else
 #define F64_MAX                 DBL_MAX
 // TODO(michiel): Inf
@@ -247,20 +249,57 @@ internal u32 popcount(u32 value) { return __builtin_popcountl(value); }
 internal u64 popcount(u64 value) { return __builtin_popcountll(value); }
 #endif
 
-internal u32
-reverse_bits(u32 b, u32 msb)
+internal u8
+bit_reverse8(u8 b)
 {
-    u32 mask = (1 << msb) - 1;
-    u32 result = b;
-    --msb;
-    for (b >>= 1; b; b>>= 1)
-    {
-        result <<= 1;
-        result |= b & 1;
-        --msb;
-    }
-    result <<= msb;
-    return result & mask;
+    u8 rb = b;
+    rb = ((rb & 0x55) << 1) | ((rb >> 1) & 0x55);
+    rb = ((rb & 0x33) << 2) | ((rb >> 2) & 0x33);
+    u8 result = (rb << 4) | (rb >> 4);
+    return result;
+}
+
+internal u16
+bit_reverse16(u16 b)
+{
+    u16 rb = b;
+    rb = ((rb & 0x5555) << 1) | ((rb >> 1) & 0x5555);
+    rb = ((rb & 0x3333) << 2) | ((rb >> 2) & 0x3333);
+    rb = ((rb & 0x0F0F) << 4) | ((rb >> 4) & 0x0F0F);
+    u16 result = (rb << 8) | (rb >> 8);
+    return result;
+}
+
+internal u32
+bit_reverse32(u32 b)
+{
+    u32 rb = b;
+    rb = ((rb & 0x55555555) << 1) | ((rb >> 1) & 0x55555555);
+    rb = ((rb & 0x33333333) << 2) | ((rb >> 2) & 0x33333333);
+    rb = ((rb & 0x0F0F0F0F) << 4) | ((rb >> 4) & 0x0F0F0F0F);
+    rb = ((rb & 0x00FF00FF) << 8) | ((rb >> 8) & 0x00FF00FF);
+    u32 result = (rb << 16) | (rb >> 16);
+    return result;
+}
+
+internal u64
+bit_reverse64(u64 b)
+{
+    u64 rb = b;
+    rb = ((rb & 0x5555555555555555ULL) <<  1) | ((rb >>  1) & 0x5555555555555555ULL);
+    rb = ((rb & 0x3333333333333333ULL) <<  2) | ((rb >>  2) & 0x3333333333333333ULL);
+    rb = ((rb & 0x0F0F0F0F0F0F0F0FULL) <<  4) | ((rb >>  4) & 0x0F0F0F0F0F0F0F0FULL);
+    rb = ((rb & 0x00FF00FF00FF00FFULL) <<  8) | ((rb >>  8) & 0x00FF00FF00FF00FFULL);
+    rb = ((rb & 0x0000FFFF0000FFFFULL) << 16) | ((rb >> 16) & 0x0000FFFF0000FFFFULL);
+    u64 result = (rb << 32) | (rb >> 32);
+    return result;
+}
+
+internal u32
+reverse_bits32(u32 b, u32 msb)
+{
+    u32 result = bit_reverse32(b) >> (32 - msb);
+    return result;
 }
 
 internal u16

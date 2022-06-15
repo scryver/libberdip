@@ -184,6 +184,7 @@ sign_of(s64 value)
 internal f32
 sign_of(f32 value)
 {
+    // TODO(michiel): Can improve this
     f32 result = (value >= 0.0f) ? 1.0f : -1.0f;
     return result;
 }
