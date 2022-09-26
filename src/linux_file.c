@@ -178,6 +178,7 @@ GET_ALL_FILE_OF_TYPE_BEGIN(linux_get_all_files_of_type_begin)
     result.platform = linuxFileGroup;
     result.fileCount = 0;
     linuxFileGroup->wildcard = matchPattern;
+    linuxFileGroup->lastFileHandle = -1;
 
     LinuxFindFile findData;
     findData.dir = opendir(to_cstring(directory));
@@ -230,6 +231,10 @@ OPEN_NEXT_FILE(linux_open_next_file)
     if (linuxFileGroup->findData.dir)
     {
         s32 dirFd = dirfd(linuxFileGroup->findData.dir);
+
+        char pathBuffer[1024];
+        char *currentPath = getcwd(pathBuffer, sizeof(pathBuffer));
+
         fchdir(dirFd);
         if (linuxFileGroup->fileAvailable)
         {
@@ -252,7 +257,7 @@ OPEN_NEXT_FILE(linux_open_next_file)
                 linuxFileGroup->fileAvailable = false;
             }
         }
-        chdir("-");
+        chdir(currentPath);
     }
 
     return result;
